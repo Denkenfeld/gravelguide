@@ -916,6 +916,7 @@ body.navi-mode .maplibregl-ctrl-top-left{
         <div class="mc-grid">
           <button class="mc-btn" onclick="locateMe()">📍 Mein Ort</button>
           <button class="mc-btn green" id="btn-navi-ctrl" onclick="startNavi()">🚴 Navigation</button>
+          <button class="mc-btn" id="btn-auto-reroute" onclick="toggleAutoReroute()" title="Route automatisch neu berechnen bei Abweichung">🔄 Auto-Rerouting</button>
         </div>
       </div>
       <!-- ── GESPEICHERTE CLOUD-ROUTEN ── -->
@@ -1014,15 +1015,10 @@ body.navi-mode .maplibregl-ctrl-top-left{
           <button class="tool-btn" onclick="locateMe()"><span class="ti">📍</span>Mein Ort</button>
           <button class="tool-btn" id="t-hide" onclick="toggleHide()"><span class="ti">👁️</span>Karte ein/aus</button>
           <button class="tool-btn" id="t-meteo" onclick="toggleMeteo()"><span class="ti">⏸️</span>Meteo Pause</button>
+          <button class="tool-btn" id="t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
         </div>
       </div>
-      <!-- ── NAVIGATION ── -->
-      <div class="sb" style="border-bottom:none;border-top:1px solid var(--border);">
-        <div class="sb-title">Navigation</div>
-        <div class="tool-grid">
-          <button class="tool-btn" id="t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
-          <button class="tool-btn" id="btn-auto-reroute" onclick="toggleAutoReroute()"><span class="ti">🔄</span>Auto-Rerouting</button>
-          <button class="tool-btn" id="t-navi-arrow-big" onclick="toggleNaviArrowBig()"><span class="ti">🔵</span>Navi-Pfeil Groß</button> ── -->
+      <!-- ── OPTIK ── -->
       <div class="sb" style="border-bottom:none;border-top:1px solid var(--border);">
         <div style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
@@ -1121,6 +1117,7 @@ body.navi-mode .maplibregl-ctrl-top-left{
         <div class="mc-grid">
           <button class="mc-btn" onclick="locateMe()">📍 Mein Ort</button>
           <button class="mc-btn green" id="mob-btn-navi" onclick="if(sheetExpanded)toggleSheet();setTimeout(startNavi,350)">🚴 Navigation</button>
+          <button class="mc-btn" id="mob-btn-auto-reroute" onclick="toggleAutoReroute()" title="Route automatisch neu berechnen bei Abweichung">🔄 Auto-Rerouting</button>
         </div>
       </div>
       <!-- ── GESPEICHERTE CLOUD-ROUTEN (mobile) ── -->
@@ -1217,15 +1214,10 @@ body.navi-mode .maplibregl-ctrl-top-left{
           <button class="tool-btn" onclick="mapFitRoute()"><span class="ti">⊞</span>Zentrieren</button>
           <button class="tool-btn" id="mob-t-hide" onclick="toggleHide()"><span class="ti">👁️</span>Karte ein/aus</button>
           <button class="tool-btn" id="mob-t-meteo" onclick="toggleMeteo()"><span class="ti">⏸️</span>Meteo Pause</button>
+          <button class="tool-btn" id="mob-t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
         </div>
       </div>
-      <!-- Navigation -->
-      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
-        <div class="sb-title">Navigation</div>
-        <div class="tool-grid">
-          <button class="tool-btn" id="mob-t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
-          <button class="tool-btn" id="mob-btn-auto-reroute" onclick="toggleAutoReroute()"><span class="ti">🔄</span>Auto-Rerouting</button>
-          <button class="tool-btn" id="mob-t-navi-arrow-big" onclick="toggleNaviArrowBig()"><span class="ti">🔵</span>Navi-Pfeil Groß</button>
+      <!-- Optik -->
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
         <div style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
