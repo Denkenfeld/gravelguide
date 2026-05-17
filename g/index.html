@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GravelGuide 3D · Fahrradroutenplaner</title>
+<style>
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:300;font-display:swap;src:url('fonts/barlow-condensed-latin-300-normal.woff2') format('woff2');}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/barlow-condensed-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/barlow-condensed-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/barlow-condensed-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/barlow-condensed-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/barlow-condensed-latin-800-normal.woff2') format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/jetbrains-mono-latin-600-normal.woff2') format('woff2');}
+</style>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="d2-stats.js"></script>
+</head>
+<body>
+<!-- ══════════════════════════════════════════════
+     INVITE GATE
+     Pflege die gültigen Codes in INVITE_CODES.
+     Einen Code entfernen = Zugang sofort entzogen
+     (beim nächsten Seitenaufruf des Nutzers).
+     ══════════════════════════════════════════════ -->
+<div id="invite-gate" style="
+  display:none;position:fixed;inset:0;z-index:99999;
+  background:#040508;
+  font-family:'Barlow Condensed',sans-serif;
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:rgba(11,15,24,0.92);
+    border:1px solid rgba(255,255,255,0.085);
+    border-radius:18px;
+    box-shadow:0 8px 36px rgba(0,0,0,0.55);
+    backdrop-filter:blur(22px);
+    padding:36px 32px 32px;
+    width:100%;max-width:360px;
+    margin:20px;
+    text-align:center;
+  ">
+    <div style="font-size:28px;font-weight:800;letter-spacing:.16em;color:#00d4ff;
+      text-shadow:0 0 22px rgba(0,212,255,0.3);margin-bottom:6px;">
+      GRAVEL<span style="color:#e4ecf4;font-weight:300">GUIDE</span>
+      <span style="font-size:8px;font-weight:700;letter-spacing:.1em;
+        background:linear-gradient(135deg,#00d4ff,#00e676);color:#000;
+        padding:2px 5px;border-radius:3px;margin-left:5px;vertical-align:3px;">3D</span>
+    </div>
+    <div style="font-size:12px;color:#8b9bb4;letter-spacing:.08em;text-transform:uppercase;
+      margin-bottom:28px;">Privater Zugang · Invite Only</div>
+    <input id="invite-inp" type="text" placeholder="Einladungscode eingeben…"
+      autocomplete="off" autocorrect="off" spellcheck="false"
+      style="
+        width:100%;background:rgba(0,0,0,0.45);
+        border:1px solid rgba(255,255,255,0.085);
+        border-radius:9px;color:#e4ecf4;
+        padding:12px 14px;font-family:'Barlow Condensed',sans-serif;
+        font-size:16px;font-weight:500;letter-spacing:.12em;
+        text-align:center;outline:none;
+        transition:.2s cubic-bezier(.4,0,.2,1);
+        margin-bottom:10px;box-sizing:border-box;
+      "
+      onkeydown="if(event.key==='Enter')submitInvite()"
+      oninput="document.getElementById('invite-err').style.opacity=0"
+    >
+    <div id="invite-err" style="
+      font-size:11px;color:#ff3d6b;letter-spacing:.06em;
+      margin-bottom:10px;min-height:16px;
+      opacity:0;transition:opacity .2s;
+    ">Ungültiger Code</div>
+    <button onclick="submitInvite()" style="
+      width:100%;background:rgba(0,212,255,0.14);
+      border:1px solid rgba(0,212,255,0.5);border-radius:9px;
+      color:#00d4ff;font-family:'Barlow Condensed',sans-serif;
+      font-size:14px;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;padding:12px;cursor:pointer;
+      transition:.2s;
+    "
+    onmouseover="this.style.background='rgba(0,212,255,0.24)'"
+    onmouseout="this.style.background='rgba(0,212,255,0.14)'"
+    >Zugang anfragen</button>
+  </div>
+</div>
+<script src="js/invite.js"></script>
+
+<div id="api-overlay">
+  <div class="dlg g">
+    <div class="dlg-head">
+      <div class="dlg-logo">GRAVEL<em>GUIDE</em></div>
+      <div class="dlg-sub">Pro · 3D Routenplaner · Steigungsheatmap · Terrain</div>
+    </div>
+    <div class="dlg-body">
+      <p>Für <strong>3D-Gelände & Satelliten</strong> wird ein kostenloser <strong>MapTiler API Key</strong> benötigt. Kostenlos auf <a href="https://cloud.maptiler.com/account/keys/" target="_blank">maptiler.com</a> — 100.000 Tiles/Monat, keine Kreditkarte.</p>
+      <div class="dlg-lbl">MapTiler API Key (optional)</div>
+      <input class="dlg-inp" id="api-inp" placeholder="AbCdEfGh… (Enter drücken oder leer lassen)" autocomplete="off">
+      <div class="dlg-note">⚡ <strong>Ohne Key:</strong> Routing, Höhenprofil & Steigungsheatmap funktionieren vollständig — 3D-Terrain & Satellit benötigen einen Key.</div>
+      <div class="dlg-acts">
+        <button class="btn" onclick="launch('')">Demo-Modus</button>
+        <button class="btn ok" onclick="launch(document.getElementById('api-inp').value.trim())">Starten →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIMIT REACHED MODAL ────────────────────── -->
+<div id="limit-overlay">
+  <div class="dlg g">
+    <div class="dlg-head">
+      <div class="dlg-logo">GRAVEL<em>GUIDE</em></div>
+      <div class="dlg-sub" style="color:var(--orange)">⚠️ Kartenlimit erreicht</div>
+    </div>
+    <div class="dlg-body">
+      <p>Das monatliche Kartenlimit ist aufgebraucht. Du kannst die App weiter im <strong>Demo-Modus</strong> nutzen (Routing & Höhenprofil funktionieren), oder einen eigenen kostenlosen MapTiler-Key eingeben.</p>
+      <div class="dlg-lbl">Eigener MapTiler API Key (optional)</div>
+      <input class="dlg-inp" id="limit-key-inp" placeholder="Deinen Key hier eingeben…" autocomplete="off">
+      <div class="dlg-note">🔑 Kostenlosen Key auf <a href="https://cloud.maptiler.com/account/keys/" target="_blank">maptiler.com</a> erstellen — 100.000 Tiles/Monat, keine Kreditkarte nötig.</div>
+      <div class="dlg-acts">
+        <button class="btn" onclick="dismissLimitModal()">Demo-Modus fortsetzen</button>
+        <button class="btn ok" onclick="applyCustomKey()">Key aktivieren →</button>
+      </div>
+    </div>
+  </div>
+</div>
+  <div id="map"></div>
+  <div id="loading" class="g"><div class="spin"></div><span id="load-txt">Wird geladen…</span></div>
+
+  <!-- Ghost pin + hold ring for hold-to-place -->
+  <div id="wp-ghost-pin"></div>
+  <div id="wp-hold-ring"><svg viewBox="0 0 48 48" width="48" height="48"><circle class="track" cx="24" cy="24" r="22"/><circle class="prog" id="wp-hold-prog" cx="24" cy="24" r="22" stroke="var(--accent)" transform="rotate(-90 24 24)"/></svg></div>
+  <div id="rt-tip"></div>
+</div>
+
+<!-- Mobile-only header (hidden on desktop) -->
+<header id="header" class="g">
+  <div class="logo" onclick="locateMe()" style="cursor:pointer;" title="Zum aktuellen Standort">GRAVEL<em>GUIDE</em><span class="logo-badge">3D</span></div>
+  <div id="srch-wrap">
+    <input id="srch-inp" type="text" placeholder="Ort suchen…" autocomplete="off" style="padding-left:12px;">
+    <button id="srch-clear" onclick="clearSearch()">✕</button>
+    <div id="srch-drop"></div>
+  </div>
+  <div class="hdr-btns">
+    <button class="btn" id="mob-layer-btn" onclick="cycleLayerMode()" style="padding:7px 10px;font-size:12px;" title="Karte / Satellit / Hybrid"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><line x1="2" y1="16" x2="16" y2="2" stroke="#00d4ff" stroke-opacity="1"   stroke-width="2.5" stroke-linecap="round"/><line x1="7" y1="17" x2="17" y2="7" stroke="#00d4ff" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round"/><line x1="1"  y1="11" x2="11" y2="1" stroke="#00d4ff" stroke-opacity="0.25" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+    <div id="user-avatar-mob" class="user-avatar" onclick="openProfileMob()" title="Profil"></div>
+  </div>
+</header>
+
+<!-- map controls moved into sidebar -->
+
+<div id="elev-panel" class="g">
+  <div class="elev-hdr">
+    <div class="elev-title">▲ Höhenprofil</div>
+    <div class="elev-pos" id="elev-pos"></div>
+  </div>
+  <canvas id="elev-canvas"></canvas>
+</div>
+
+<aside id="sidebar" class="g">
+  <!-- ── SIDEBAR HEADER (desktop only) ── -->
+  <div class="sb-top">
+      <div class="sb-top-logo">
+      <div class="logo" onclick="locateMe()" style="font-size:18px;cursor:pointer;" title="Zum aktuellen Standort">GRAVEL<em>GUIDE</em><span class="logo-badge">3D</span></div>
+      <div id="user-avatar-desk" class="user-avatar" style="margin-left:auto;" onclick="openProfileTab()" title="Profil"></div>
+    </div>
+    <div class="sb-srch">
+      <input id="srch-inp-desk" type="text" class="set-inp" placeholder="Ort suchen…" autocomplete="off" style="width:100%;text-align:left;font-family:var(--font);font-size:13px;">
+      <button id="srch-clear-desk" onclick="clearSearchDesk()" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;display:none;">✕</button>
+      <div id="srch-drop-desk" style="position:absolute;top:calc(100% - 1px);left:10px;right:10px;background:rgba(8,12,20,.97);backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;display:none;z-index:200;box-shadow:0 16px 48px rgba(0,0,0,.6);"></div>
+    </div>
+    <div class="sb-top-actions">
+      <button class="btn" onclick="undoWp()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">↩ Undo</button>
+      <button class="btn danger" onclick="clearAll()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">✕ Clear</button>
+      <button class="btn" id="hdr-layer-btn" onclick="cycleLayerMode()" title="Karte / Satellit / Hybrid" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">🗺 Karte</button>
+      <button class="btn" onclick="shareRoute()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">🔗</button>
+    </div>
+  </div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('t-route',this)">Route</button>
+    <button class="tab-btn" onclick="switchTab('t-tools',this)">Tools</button>
+    <button class="tab-btn" onclick="switchTab('t-profil',this)">Profil</button>
+  </nav>
+  <div class="tab-body">
+
+    <div class="tab-pane on" id="t-route">
+      <div style="padding:9px 13px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+        <span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Wegpunkte <span id="wp-count" style="color:var(--accent);font-size:12px">0</span></span>
+      </div>
+      <div id="wp-list"><div class="wp-empty">Klicke auf die Karte<br>um Wegpunkte zu setzen</div></div>
+      <!-- ── ROUTENSTATISTIK ── -->
+      <div class="sb">
+        <div class="sb-title">Routenstatistik</div>
+        <div class="stat-grid">
+          <div class="sc"><div class="sv" id="s-dist">—</div><div class="sl">Distanz</div></div>
+          <div class="sc"><div class="sv" id="s-time" style="color:var(--accent)">—</div><div class="sl">Fahrzeit</div></div>
+          <div class="sc"><div class="sv" id="s-up" style="color:var(--red)">—</div><div class="sl">Aufstieg ↑</div></div>
+          <div class="sc"><div class="sv" id="s-down" style="color:var(--green)">—</div><div class="sl">Abstieg ↓</div></div>
+          <div class="sc"><div class="sv" id="s-grade" style="color:var(--orange)">—</div><div class="sl">Max. Steig.</div></div>
+          <div class="sc"><div class="sv" id="s-speed" style="color:var(--yellow)">—</div><div class="sl">Ø Tempo</div></div>
+        </div>
+        <div class="cal-card">
+          <div class="cal-ico">🔥</div>
+          <div><div class="cal-v" id="s-cal">—</div><div class="cal-l">Kalorien (kcal)</div></div>
+        </div>
+      </div>
+      <!-- ── ROUTE IN CLOUD SPEICHERN ── -->
+      <div class="sb" id="cloud-save-block-dsk">
+        <div class="sb-title" style="margin-bottom:8px;">☁️ Route speichern</div>
+        <div id="cloud-save-loggedout-dsk" style="display:none;font-size:11px;color:var(--dim);padding:4px 0 6px;">Einloggen um Routen zu speichern →&nbsp;<button onclick="openProfileTab()" style="background:none;border:none;color:var(--accent);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;">Profil</button></div>
+        <div id="cloud-save-form-dsk">
+          <div style="display:flex;gap:7px;margin-bottom:0;">
+            <input class="set-inp" id="save-name-inp" type="text" placeholder="Routenname…" style="flex:1;width:auto;text-align:left;" value="">
+            <button class="btn ok" style="padding:7px 14px;white-space:nowrap;" onclick="saveCurrentRouteToCloud('save-name-inp')">☁️</button>
+          </div>
+        </div>
+      </div>
+      <!-- ── ROUTING ── -->
+      <div class="sb">
+        <div class="sb-title">Routing</div>
+        <div class="mc-grid">
+          <button class="mc-btn" onclick="locateMe()">📍 Mein Ort</button>
+          <button class="mc-btn green" id="btn-navi-ctrl" onclick="startNavi()">🚴 Navigation</button>
+        </div>
+      </div>
+      <!-- ── GESPEICHERTE CLOUD-ROUTEN ── -->
+      <div class="sb" style="border-bottom:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="sb-title" style="margin-bottom:0;">Gespeicherte Routen</div>
+        </div>
+        <div id="cloud-routes-dsk" class="cloud-routes-list">
+          <div class="wp-empty" style="padding:14px 0;">Einloggen um Routen zu sehen →&nbsp;<button onclick="openProfileTab()" style="background:none;border:none;color:var(--accent);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Profil</button></div>
+        </div>
+        <div id="cloud-load-more-dsk" style="display:none;margin-top:6px;">
+          <button class="btn" style="width:100%;justify-content:center;font-size:11px;padding:8px;" onclick="loadMoreCloudRoutes()">▼ Mehr Routen laden …</button>
+        </div>
+      </div>
+      <!-- ── LUCKY: RANDOM ROUTE ── -->
+      <div class="sb lucky-section" style="border-top:none;border-bottom:none;margin:10px 0 0;">
+        <div class="sb-title" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <span style="font-size:13px;">🎲</span><span>Lucky</span>
+        </div>
+        <button class="btn lucky-btn" onclick="generateRandomRoute(this)">
+          <span id="lucky-dice-dsk" style="font-size:16px;display:inline-block;">🎲</span>&nbsp;Random Route
+        </button>
+        <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Streckenlänge</span>
+          <span id="lucky-km-val" style="font-family:var(--mono);font-size:13px;color:#c084fc;font-weight:600;">15 km</span>
+        </div>
+        <div class="sl-row" style="margin-bottom:0;">
+          <span>5</span>
+          <input type="range" id="lucky-slider" min="5" max="50" step="5" value="15" oninput="updateLuckyKm(this.value)" style="accent-color:#c084fc;">
+          <span>50</span>
+        </div>
+      </div>
+      <div class="sb" style="border-top:none;border-bottom:none;padding-top:10px;">
+        <button class="mc-btn" onclick="loadOsmRoutes()" style="width:100%;justify-content:center;padding:10px 14px;font-size:13px;">🗺 OSM Routen laden</button>
+      </div>
+      <div class="sb" id="osm-routes-panel" style="display:none;border-bottom:none;">
+        <div class="sb-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Fahrradrouten in der Region</span>
+          <button onclick="clearOsmRoutes()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;">✕</button>
+        </div>
+        <div id="osm-routes-list"><div class="wp-empty" style="padding:12px 0;">Lade Routen…</div></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="t-tools">
+      <!-- ── UNDO / CLEAR ── -->
+      <div class="sb" style="border-bottom:1px solid var(--border);">
+        <div style="display:flex;gap:6px;">
+          <button class="btn" style="flex:1;justify-content:center;padding:7px 6px;font-size:12px;" onclick="undoWp()">↩ Undo</button>
+          <button class="btn danger" style="flex:1;justify-content:center;padding:7px 6px;font-size:12px;" onclick="clearAll()">✕ Clear</button>
+        </div>
+      </div>
+      <!-- ── STRECKENOPTIONEN (top) ── -->
+      <div class="sb">
+        <div class="sb-title">🔀 Streckenoptionen</div>
+        <div id="dsk-brouter-profs">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;" id="bp-grid-dsk"></div>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="sb-title">Geländeüberhöhung</div>
+        <div class="sl-row">
+          <span>1×</span>
+          <input type="range" id="exag-sl" min="1" max="5" step="0.1" value="1.5" oninput="setExag(this.value)">
+          <span>5×</span>
+          <span class="sl-val" id="exag-v">1.5×</span>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="sb-title">Steigungsfarben</div>
+        <div class="grad-bar"></div>
+        <div class="grad-lbls"><span>≤-15%</span><span>-5%</span><span>Flach</span><span>+5%</span><span>+10%</span><span>+15%</span><span>≥20%</span></div>
+      </div>
+      <!-- ── EXPORT & IMPORT ── -->
+      <div class="sb">
+        <div class="sb-title">Export &amp; Import</div>
+        <div class="tool-grid">
+          <button class="tool-btn" onclick="exportGPX()"><span class="ti">⬇️</span>GPX Export</button>
+          <button class="tool-btn" onclick="document.getElementById('gpx-file').click()"><span class="ti">⬆️</span>GPX Import</button>
+          <button class="tool-btn" onclick="exportGMaps()"><span class="ti">🗺️</span>Google Maps</button>
+          <button class="tool-btn" onclick="shareRoute()"><span class="ti">🔗</span>Link teilen</button>
+        </div>
+      </div>
+      <!-- ── KARTE ── -->
+      <div class="sb" style="border-bottom:none;">
+        <div class="sb-title">Karte</div>
+        <div class="mc-grid" style="margin-bottom:7px;">
+          <button class="mc-btn active" id="btn-3d" onclick="toggle3D()">🏔 3D-Terrain</button>
+          <button class="mc-btn" id="btn-sat" onclick="toggleSat()">🛰 Satellit</button>
+          <button class="mc-btn" id="btn-mesh" onclick="toggleMesh()">⬡ Mesh</button>
+          <button class="mc-btn active" id="btn-wp-vis" onclick="toggleGlobalWps()">👁 Wegpunkte</button>
+        </div>
+        <div class="tool-grid">
+          <button class="tool-btn" id="t-km" onclick="toggleKmMarkers()"><span class="ti">📏</span>KM-Marker</button>
+          <button class="tool-btn" onclick="mapFitRoute()"><span class="ti">⊞</span>Zentrieren</button>
+          <button class="tool-btn" onclick="locateMe()"><span class="ti">📍</span>Mein Ort</button>
+          <button class="tool-btn" id="t-hide" onclick="toggleHide()"><span class="ti">👁️</span>Karte ein/aus</button>
+          <button class="tool-btn" id="t-meteo" onclick="toggleMeteo()"><span class="ti">⏸️</span>Meteo Pause</button>
+        </div>
+      </div>
+      <!-- ── NAVIGATION ── -->
+      <div class="sb" style="border-bottom:none;border-top:1px solid var(--border);">
+        <div class="sb-title">Navigation</div>
+        <div class="tool-grid">
+          <button class="tool-btn" id="t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
+          <button class="tool-btn" id="btn-auto-reroute" onclick="toggleAutoReroute()" title="Route automatisch neu berechnen bei Abweichung"><span class="ti">🔄</span>Rerouting</button>
+          <button class="tool-btn" id="t-navi-arrow-big" onclick="toggleNaviArrowBig()" title="Standort-Pfeil 3× größer während der Navigation"><span class="ti">🔵</span>Big Arrow</button>
+        </div>
+      </div>
+      <!-- ── OPTIK ── -->
+      <div class="sb" style="border-bottom:none;border-top:1px solid var(--border);">
+        <div class="sb-title">Optik</div>
+        <div class="tool-grid" style="margin-bottom:12px;">
+          <button class="tool-btn" id="t-big-font" onclick="toggleBigFont()"><span class="ti">🔡</span>Big</button>
+          <button class="tool-btn" id="t-bright-mode" onclick="toggleBrightMode()"><span class="ti">☀️</span>Bright Mode</button>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;">☀ Helligkeit</span>
+            <span class="optik-brightness-val" style="font-family:var(--mono);font-size:11px;color:var(--accent);">100%</span>
+          </div>
+          <input type="range" class="optik-brightness-inp" min="30" max="200" value="100" oninput="setOptikBrightness(this.value)" style="width:100%;accent-color:var(--accent);height:4px;cursor:pointer;">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;">◑ Kontrast</span>
+            <span class="optik-contrast-val" style="font-family:var(--mono);font-size:11px;color:var(--accent);">100%</span>
+          </div>
+          <input type="range" class="optik-contrast-inp" min="50" max="200" value="100" oninput="setOptikContrast(this.value)" style="width:100%;accent-color:var(--accent);height:4px;cursor:pointer;">
+        </div>
+      </div>
+      <!-- ── POWER SAVE NAVI ── -->
+      <div class="sb ps-section" style="border-top:1px solid rgba(0,230,118,.2);border-bottom:none;">
+        <div class="ps-master-row">
+          <div>
+            <div class="ps-master-lbl">🔋 Stromspar-Navigation</div>
+            <div class="ps-master-sub">Aktiv nur während der Live-Navigation</div>
+          </div>
+          <label class="ts" style="flex-shrink:0;"><input type="checkbox" id="ps-master-dsk" checked onchange="togglePsMaster(this.checked)"><div class="ts-sl" style="background:rgba(0,230,118,.22);"></div></label>
+        </div>
+        <div class="ps-opts on" id="ps-opts-dsk">
+          <div class="ps-opt-row" onclick="togglePs('gps')"><div class="ps-ico">📡</div><div class="ps-info"><div class="ps-name">GPS-Intervall</div><div class="ps-desc">Update nur alle 5 Sek. / 10 Meter</div></div><div class="ps-badge on" id="ps-gps-dsk">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('display')"><div class="ps-ico">🖥</div><div class="ps-info"><div class="ps-name">Bildschirm 1–2 Hz</div><div class="ps-desc">Karten-Refresh gedrosselt</div></div><div class="ps-badge on" id="ps-display-dsk">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('cache')"><div class="ps-ico">📦</div><div class="ps-info"><div class="ps-name">Routen-Cache</div><div class="ps-desc">Kacheln vorab laden &amp; speichern</div></div><div class="ps-badge on" id="ps-cache-dsk">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('darkhud')"><div class="ps-ico">🌑</div><div class="ps-info"><div class="ps-name">Minimales HUD</div><div class="ps-desc">Backdrop-Blur &amp; Glow deaktiviert</div></div><div class="ps-badge on" id="ps-darkhud-dsk">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('noanim')"><div class="ps-ico">✋</div><div class="ps-info"><div class="ps-name">Animationen aus</div><div class="ps-desc">Kamera-Übergänge minimal</div></div><div class="ps-badge on" id="ps-noanim-dsk">AN</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="t-profil">
+      <!-- Dynamisch durch Appwrite-Auth befüllt -->
+    </div>
+    <!-- weight-inp + custom-spd-inp müssen im DOM bleiben (für Kalorienkalkulation) -->
+    <div style="display:none;">
+      <input id="weight-inp" type="number" value="75" min="30" max="200" oninput="localStorage.setItem('vn_weight',this.value);recalcStats()">
+      <input id="custom-spd-inp" type="number" value="18" min="5" max="60" oninput="applyCustomSpeed()">
+      <button id="spd-casual" onclick="setSpeed(15,this)"></button>
+      <button id="spd-sport"  onclick="setSpeed(22,this)"></button>
+      <button id="spd-race"   onclick="setSpeed(30,this)"></button>
+      <button id="spd-custom" onclick="setSpeed(null,this,'custom')"></button>
+    </div>
+  </div>
+</aside>
+
+<div id="bsheet">
+  <div id="sh-handle" onclick="toggleSheet()"><div class="sh-bar"></div></div>
+  <div id="sh-peek">
+    <div class="pk-stat"><div class="pk-v" id="pm-dist">—</div><div class="pk-l">km</div></div>
+    <div class="pk-stat"><div class="pk-v" id="pm-up" style="color:var(--red)">—</div><div class="pk-l">↑ Hm</div></div>
+    <div class="pk-stat"><div class="pk-v" id="pm-time" style="color:var(--accent)">—</div><div class="pk-l">Zeit</div></div>
+    <div class="pk-stat"><div class="pk-v" id="pm-cal" style="color:var(--orange)">—</div><div class="pk-l">kcal</div></div>
+    <button id="mob-navi-stop" onclick="stopNavi()">✕ Stop</button>
+  </div>
+  <div id="sh-body">
+    <div class="sh-tabs">
+      <button class="sh-tab active" onclick="switchSheetTab('st-route',this)">Route</button>
+      <button class="sh-tab" onclick="switchSheetTab('st-tools',this)">Tools</button>
+      <button class="sh-tab" onclick="switchSheetTab('st-profil',this)">Profil</button>
+    </div>
+
+    <!-- ── ROUTE PANE ── -->
+    <div id="st-route" class="sh-pane on">
+      <!-- Mobile Höhenprofil -->
+      <div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--border);">
+        <div class="sb-title">Höhenprofil</div>
+        <div style="position:relative;height:100px;border-radius:var(--r-md);overflow:hidden;background:rgba(0,0,0,.28);border:1px solid var(--border);">
+          <canvas id="mob-elev-chart" style="width:100%;height:100%;display:block;"></canvas>
+          <div id="mob-elev-empty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim);">Route berechnen für Profil</div>
+        </div>
+        <div class="stat-grid" style="gap:6px;margin-top:8px;">
+          <div class="sc"><div class="sv" id="ms-grade" style="color:var(--orange)">—</div><div class="sl">Max. Steig.</div></div>
+          <div class="sc"><div class="sv" id="ms-down" style="color:var(--green)">—</div><div class="sl">Abstieg</div></div>
+        </div>
+      </div>
+      <div id="mob-wp-list"><div class="wp-empty">Keine Wegpunkte gesetzt.<br>Karte antippen.</div></div>
+      <!-- ── ROUTE IN CLOUD SPEICHERN (mobile) ── -->
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+        <div class="sb-title" style="margin-bottom:8px;">☁️ Route speichern</div>
+        <div id="cloud-save-loggedout-mob" style="display:none;font-size:11px;color:var(--dim);padding:0 0 8px;">Einloggen um Routen zu speichern</div>
+        <div id="cloud-save-form-mob">
+          <div style="display:flex;gap:7px;margin-bottom:0;">
+            <input class="set-inp" id="mob-save-inp" type="text" placeholder="Routenname…" style="flex:1;width:auto;text-align:left;">
+            <button class="btn ok" style="padding:7px 12px;white-space:nowrap;" onclick="saveCurrentRouteToCloud('mob-save-inp')">☁️</button>
+          </div>
+        </div>
+      </div>
+      <!-- ── ROUTING ── -->
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);margin-bottom:8px;">
+        <div class="sb-title">Routing</div>
+        <div class="mc-grid">
+          <button class="mc-btn" onclick="locateMe()">📍 Mein Ort</button>
+          <button class="mc-btn green" id="mob-btn-navi" onclick="if(sheetExpanded)toggleSheet();setTimeout(startNavi,350)">🚴 Navigation</button>
+        </div>
+      </div>
+      <!-- ── GESPEICHERTE CLOUD-ROUTEN (mobile) ── -->
+      <div style="margin-top:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div class="sb-title" style="margin-bottom:0;">Gespeicherte Routen</div>
+        </div>
+        <div id="cloud-routes-mob" class="cloud-routes-list">
+          <div class="wp-empty" style="padding:10px 0;">Einloggen um Routen zu sehen</div>
+        </div>
+        <div id="cloud-load-more-mob" style="display:none;margin-top:6px;">
+          <button class="btn" style="width:100%;justify-content:center;font-size:11px;padding:8px;" onclick="loadMoreCloudRoutes()">▼ Mehr Routen laden …</button>
+        </div>
+      </div>
+      <!-- ── LUCKY: RANDOM ROUTE (mobile) ── -->
+      <div style="margin-top:8px;padding:11px 12px;border-radius:var(--r-md);background:linear-gradient(135deg,rgba(168,85,247,.06),rgba(0,212,255,.04));border:1px solid rgba(168,85,247,.25);">
+        <div class="sb-title" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;color:#c084fc;">
+          <span style="font-size:13px;">🎲</span><span>Lucky</span>
+        </div>
+        <button class="btn lucky-btn" onclick="generateRandomRoute(this)">
+          <span id="lucky-dice-mob" style="font-size:16px;display:inline-block;">🎲</span>&nbsp;Random Route
+        </button>
+        <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Streckenlänge</span>
+          <span id="mob-lucky-km-val" style="font-family:var(--mono);font-size:13px;color:#c084fc;font-weight:600;">15 km</span>
+        </div>
+        <div class="sl-row" style="margin-bottom:0;">
+          <span>5</span>
+          <input type="range" id="mob-lucky-slider" min="5" max="50" step="5" value="15" oninput="updateLuckyKm(this.value)" style="accent-color:#c084fc;">
+          <span>50</span>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <button class="mc-btn" onclick="loadOsmRoutes()" style="width:100%;justify-content:center;padding:10px 14px;font-size:13px;">🗺 OSM Routen laden</button>
+        <div id="mob-osm-panel" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Fahrradrouten</span>
+            <button onclick="clearOsmRoutes()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;">✕</button>
+          </div>
+          <div id="mob-osm-list"><div class="wp-empty" style="padding:8px 0;">Lade…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TOOLS PANE ── -->
+    <div id="st-tools" class="sh-pane">
+      <!-- ── UNDO / CLEAR ── -->
+      <div style="display:flex;gap:5px;margin-bottom:9px;flex-wrap:wrap;">
+        <button class="btn" style="padding:6px 10px;font-size:11px;flex:1;" onclick="undoWp()">↩ Undo</button>
+        <button class="btn danger" style="padding:6px 10px;font-size:11px;flex:1;" onclick="clearAll()">✕ Clear</button>
+      </div>
+      <!-- ── STRECKENOPTIONEN (top) ── -->
+      <div style="margin-bottom:9px;padding:11px 12px;background:rgba(0,212,255,.028);border:1px solid rgba(0,212,255,.18);border-radius:var(--r-md);">
+        <div class="sb-title" style="margin-bottom:8px;">🔀 Streckenoptionen</div>
+        <div id="mob-brouter-profs">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;" id="mob-bp-grid"></div>
+        </div>
+      </div>
+      <!-- Geländeüberhöhung -->
+      <div style="margin-bottom:9px;border-top:1px solid var(--border);padding-top:8px;">
+        <div class="sb-title">Geländeüberhöhung</div>
+        <div class="sl-row">
+          <span>1×</span>
+          <input type="range" min="1" max="5" step="0.1" value="1.5" oninput="setExag(this.value);document.getElementById('mob-exag-v').textContent=Number(this.value).toFixed(1)+'×'">
+          <span>5×</span><span class="sl-val" id="mob-exag-v">1.5×</span>
+        </div>
+      </div>
+      <div style="margin-bottom:9px;padding-bottom:2px;border-bottom:1px solid var(--border);">
+        <div class="sb-title">Steigungsfarben</div>
+        <div class="grad-bar" style="margin-bottom:4px;"></div>
+        <div class="grad-lbls"><span>≤-15%</span><span>-5%</span><span>Flach</span><span>+5%</span><span>+10%</span><span>+15%</span><span>≥20%</span></div>
+      </div>
+      <!-- Export & Import -->
+      <div style="margin-bottom:9px;border-top:1px solid var(--border);padding-top:8px;">
+        <div class="sb-title">Export &amp; Import</div>
+        <div class="tool-grid">
+          <button class="tool-btn" onclick="exportGPX()"><span class="ti">⬇️</span>GPX Export</button>
+          <button class="tool-btn" onclick="document.getElementById('gpx-file').click()"><span class="ti">⬆️</span>GPX Import</button>
+          <button class="tool-btn" onclick="exportGMaps()"><span class="ti">🗺️</span>Google Maps</button>
+          <button class="tool-btn" onclick="shareRoute()"><span class="ti">🔗</span>Teilen</button>
+        </div>
+      </div>
+      <!-- Karte -->
+      <div style="border-top:1px solid var(--border);padding-top:8px;">
+        <div class="sb-title">Karte</div>
+        <div class="mc-grid" style="margin-bottom:7px;">
+          <button class="mc-btn active" id="mob-btn-3d" onclick="toggle3D()">🏔 3D-Terrain</button>
+          <button class="mc-btn" id="mob-btn-sat" onclick="toggleSat()">🛰 Satellit</button>
+          <button class="mc-btn" id="mob-btn-mesh" onclick="toggleMesh()">⬡ Mesh</button>
+          <button class="mc-btn active" id="mob-btn-wp-vis" onclick="toggleGlobalWps()">👁 Wegpunkte</button>
+        </div>
+        <div class="tool-grid">
+          <button class="tool-btn" id="mob-t-km" onclick="toggleKmMarkers()"><span class="ti">📏</span>KM-Marker</button>
+          <button class="tool-btn" onclick="mapFitRoute()"><span class="ti">⊞</span>Zentrieren</button>
+          <button class="tool-btn" id="mob-t-hide" onclick="toggleHide()"><span class="ti">👁️</span>Karte ein/aus</button>
+          <button class="tool-btn" id="mob-t-meteo" onclick="toggleMeteo()"><span class="ti">⏸️</span>Meteo Pause</button>
+        </div>
+      </div>
+      <!-- Navigation -->
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">
+        <div class="sb-title">Navigation</div>
+        <div class="tool-grid">
+          <button class="tool-btn" id="mob-t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
+          <button class="tool-btn" id="mob-btn-auto-reroute" onclick="toggleAutoReroute()"><span class="ti">🔄</span>Rerouting</button>
+          <button class="tool-btn" id="mob-t-navi-arrow-big" onclick="toggleNaviArrowBig()"><span class="ti">🔵</span>Big Arrow</button>
+        </div>
+      </div>
+      <!-- Optik -->
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
+        <div class="sb-title">Optik</div>
+        <div class="tool-grid" style="margin-bottom:12px;">
+          <button class="tool-btn" id="mob-t-big-font" onclick="toggleBigFont()"><span class="ti">🔡</span>Big</button>
+          <button class="tool-btn" id="mob-t-bright-mode" onclick="toggleBrightMode()"><span class="ti">☀️</span>Bright Mode</button>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;">☀ Helligkeit</span>
+            <span class="optik-brightness-val" style="font-family:var(--mono);font-size:11px;color:var(--accent);">100%</span>
+          </div>
+          <input type="range" class="optik-brightness-inp" min="30" max="200" value="100" oninput="setOptikBrightness(this.value)" style="width:100%;accent-color:var(--accent);height:4px;cursor:pointer;">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <span style="font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;">◑ Kontrast</span>
+            <span class="optik-contrast-val" style="font-family:var(--mono);font-size:11px;color:var(--accent);">100%</span>
+          </div>
+          <input type="range" class="optik-contrast-inp" min="50" max="200" value="100" oninput="setOptikContrast(this.value)" style="width:100%;accent-color:var(--accent);height:4px;cursor:pointer;">
+        </div>
+      </div>
+      <!-- ── POWER SAVE NAVI ── -->
+      <div style="margin-top:9px;padding:11px 12px;background:rgba(0,230,118,.028);border:1px solid rgba(0,230,118,.2);border-radius:var(--r-md);">
+        <div class="ps-master-row" style="padding-bottom:9px;margin-bottom:9px;">
+          <div>
+            <div class="ps-master-lbl">🔋 Stromspar-Navigation</div>
+            <div class="ps-master-sub">Aktiv nur während der Live-Navigation</div>
+          </div>
+          <label class="ts" style="flex-shrink:0;"><input type="checkbox" id="ps-master-mob" checked onchange="togglePsMaster(this.checked)"><div class="ts-sl" style="background:rgba(0,230,118,.22);"></div></label>
+        </div>
+        <div class="ps-opts on" id="ps-opts-mob">
+          <div class="ps-opt-row" onclick="togglePs('gps')"><div class="ps-ico">📡</div><div class="ps-info"><div class="ps-name">GPS-Intervall</div><div class="ps-desc">Update nur alle 5 Sek. / 10 Meter</div></div><div class="ps-badge on" id="ps-gps-mob">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('display')"><div class="ps-ico">🖥</div><div class="ps-info"><div class="ps-name">Bildschirm 1–2 Hz</div><div class="ps-desc">Karten-Refresh gedrosselt</div></div><div class="ps-badge on" id="ps-display-mob">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('cache')"><div class="ps-ico">📦</div><div class="ps-info"><div class="ps-name">Routen-Cache</div><div class="ps-desc">Kacheln vorab laden &amp; speichern</div></div><div class="ps-badge on" id="ps-cache-mob">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('darkhud')"><div class="ps-ico">🌑</div><div class="ps-info"><div class="ps-name">Minimales HUD</div><div class="ps-desc">Backdrop-Blur &amp; Glow deaktiviert</div></div><div class="ps-badge on" id="ps-darkhud-mob">AN</div></div>
+          <div class="ps-opt-row" onclick="togglePs('noanim')"><div class="ps-ico">✋</div><div class="ps-info"><div class="ps-name">Animationen aus</div><div class="ps-desc">Kamera-Übergänge minimal</div></div><div class="ps-badge on" id="ps-noanim-mob">AN</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROFIL PANE ── -->
+    <div id="st-profil" class="sh-pane">
+      <!-- Dynamisch durch Appwrite-Auth befüllt -->
+    </div>
+
+  </div>
+</div>
+
+<input type="file" id="gpx-file" accept=".gpx" style="display:none" onchange="importGPX(this)">
+<div id="toast"></div>
+
+<!-- ── NAVIGATION OVERLAY ─────────────────────── -->
+<div id="navi-overlay">
+  <!-- WATERMARK LOGO (shown when UI is hidden) -->
+  <div id="navi-watermark-logo" onclick="naviLogoTap()">GRAVEL<em>GUIDE</em></div>
+
+  <!-- TOP HUD -->
+  <!-- TURN-BY-TURN PANEL (only shown when feature is active AND stats are hidden) -->
+  <div id="navi-turn-panel" style="
+    position:absolute;
+    top:0; left:0; right:0;
+    padding: max(env(safe-area-inset-top,14px),14px) 14px 0;
+    z-index:4;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .5s;
+  ">
+    <div style="
+      background:rgba(4,5,8,.88);
+      backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+      border:1px solid rgba(0,212,255,.28);
+      border-radius:20px;
+      padding:10px 18px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,.65),0 0 0 1px rgba(0,212,255,.06);
+    ">
+      <div id="navi-turn-arrow" style="font-size:36px;line-height:1;flex-shrink:0;transition:transform .3s;">↑</div>
+      <div style="flex:1;min-width:0;display:flex;align-items:center;gap:12px;">
+        <div id="navi-turn-dist" style="font-size:28px;font-weight:800;color:var(--accent);font-family:var(--mono);white-space:nowrap;flex-shrink:0;">—</div>
+        <div id="navi-turn-street" style="font-size:18px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em;">Geradeaus</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="navi-top">
+    <div id="navi-hud-bar">
+      <div class="navi-metric">
+        <div class="navi-big" style="font-size:28px;" id="navi-remain">—</div>
+        <div class="navi-lbl">km übrig</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div class="navi-big green" style="font-size:28px;" id="navi-ridden">0.0</div>
+        <div class="navi-lbl">km gefahren</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div class="navi-big" style="font-size:32px;color:#fff;" id="navi-speed">—</div>
+        <div class="navi-lbl">km/h</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div class="navi-big" style="color:var(--red);font-size:24px;" id="navi-climb">0</div>
+        <div class="navi-lbl">hm ↑</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div class="navi-big" style="color:var(--orange);font-size:22px;" id="navi-cal-hud">0</div>
+        <div class="navi-lbl">kcal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZOOM BUTTONS (rechts, mittig) -->
+  <div id="navi-zoom">
+    <button class="navi-zbtn" ontouchstart="naviZoom(1)" onclick="naviZoom(1)">＋</button>
+    <button class="navi-zbtn" ontouchstart="naviZoom(-1)" onclick="naviZoom(-1)">－</button>
+  </div>
+
+  <!-- SPEED BUBBLE — jetzt Fahrzeit-Anzeige -->
+  <div id="navi-speed-bubble">
+    <div class="navi-elapsed" id="navi-elapsed">0:00</div>
+  </div>
+
+  <!-- BOTTOM: floating stop (right) + view toggle (left) + pause (above stop) -->
+  <div id="navi-bottom">
+    <button id="navi-view-fab" onclick="cycleNaviViewFab()"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5.5L8 3.5L14 5.5L20 3.5V17.5L14 19.5L8 17.5L2 19.5V5.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/><path d="M8 3.5V17.5M14 5.5V19.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto;">
+      <button id="navi-pause-fab" onclick="pauseNavi()" style="width:50px;height:50px;border-radius:50%;background:rgba(255,145,0,.22);border:2px solid rgba(255,145,0,.65);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:.15s;box-shadow:0 4px 16px rgba(255,145,0,.22);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="5" height="18" rx="2" fill="#ff9100"/><rect x="12" y="1" width="5" height="18" rx="2" fill="#ff9100"/></svg></button>
+      <button id="navi-stop-fab" onclick="stopNavi()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating resume NAVI button (shown when navi is paused) -->
+<button id="navi-resume-fab" onclick="resumeNavi()" style="position:fixed;right:16px;bottom:185px;z-index:12;background:rgba(255,145,0,.18);border:1.5px solid var(--orange);border-radius:16px;padding:11px 14px;display:none;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:.2s;font-family:var(--font);color:var(--orange);box-shadow:0 4px 20px rgba(255,145,0,.25);-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 20,11 4,20" fill="#ff9100"/></svg>
+  <span style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Weiter</span>
+</button>
+
+<!-- Floating resume REC button (shown when REC is paused) -->
+<button id="rec-resume-fab" onclick="resumeRec()" style="position:fixed;right:16px;bottom:185px;z-index:12;background:rgba(255,145,0,.18);border:1.5px solid var(--orange);border-radius:16px;padding:11px 14px;display:none;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:.2s;font-family:var(--font);color:var(--orange);box-shadow:0 4px 20px rgba(255,145,0,.25);-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="4,2 20,11 4,20" fill="#ff9100"/></svg>
+  <span style="font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">Weiter</span>
+</button>
+<button id="navi-start-fab" onclick="startNavi()">
+  <span class="fab-icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><polygon points="4,2 18,10 4,18" fill="#00e676" opacity="1"/></svg></span>
+  <span class="fab-lbl">Navi</span>
+</button>
+
+<!-- Floating REC button (shown when no route planned) -->
+<button id="rec-start-fab" onclick="toggleRec()">
+  <span class="rec-icon"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><circle cx="9" cy="9" r="7" fill="#ff3d6b"/></svg></span>
+  <span class="rec-lbl">REC</span>
+  <span class="rec-dist"></span>
+</button>
+
+<!-- ── REC OVERLAY (fullscreen, same hide/show as navi) ── -->
+<div id="rec-overlay">
+  <!-- WATERMARK LOGO for REC mode -->
+  <div id="rec-watermark-logo" onclick="recLogoTap()" style="position:absolute;top:max(env(safe-area-inset-top,14px),14px);left:50%;transform:translateX(-50%);font-family:var(--font);font-size:18px;font-weight:800;letter-spacing:.16em;color:var(--red);text-shadow:0 0 18px rgba(255,61,107,.4);opacity:0;pointer-events:none;transition:opacity .6s var(--ease);cursor:pointer;user-select:none;white-space:nowrap;z-index:5;padding:8px 16px;background:rgba(4,5,8,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,61,107,.28);border-radius:30px;">GRAVEL<em style="color:var(--text);font-style:normal;font-weight:300;">GUIDE</em> <span style="font-size:10px;color:var(--red);letter-spacing:.1em;opacity:.8;">⏺ REC</span></div>
+  <!-- REC TOP HUD -->
+  <div id="rec-top" style="position:absolute;top:0;left:0;right:0;padding:env(safe-area-inset-top,14px) 14px 0;padding-top:max(env(safe-area-inset-top),14px);pointer-events:none;transition:opacity .5s;">
+    <div style="background:rgba(4,5,8,.82);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(255,61,107,.35);border-radius:20px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,61,107,.06);">
+      <div class="navi-metric">
+        <div class="navi-big" style="color:var(--red);font-size:32px;" id="rec-hud-dist">0.0</div>
+        <div class="navi-lbl">km aufgezeichnet</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div class="navi-big" style="color:var(--text);font-size:28px;" id="rec-hud-time">0:00</div>
+        <div class="navi-lbl">Fahrzeit</div>
+      </div>
+      <div class="navi-vsep"></div>
+      <div class="navi-metric">
+        <div style="display:flex;align-items:center;justify-content:center;animation:recPulse 1.4s ease-in-out infinite;"><svg width="32" height="32" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7" fill="#ff3d6b"/></svg></div>
+        <div class="navi-lbl" style="color:var(--red);">aufnahme</div>
+      </div>
+    </div>
+  </div>
+  <!-- REC BOTTOM -->
+  <div id="rec-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:0 18px;padding-bottom:max(env(safe-area-inset-bottom),22px);pointer-events:none;display:flex;align-items:flex-end;justify-content:flex-end;transition:opacity .5s;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:auto;">
+      <button id="rec-pause-fab" onclick="pauseRec()" style="width:50px;height:50px;border-radius:50%;background:rgba(255,145,0,.22);border:2px solid rgba(255,145,0,.65);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:.15s;box-shadow:0 4px 16px rgba(255,145,0,.22);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="5" height="18" rx="2" fill="#ff9100"/><rect x="12" y="1" width="5" height="18" rx="2" fill="#ff9100"/></svg></button>
+      <button id="rec-stop-fab" onclick="stopRec()" style="width:62px;height:62px;border-radius:50%;background:rgba(255,61,107,.22);border:2px solid rgba(255,61,107,.55);color:#ff3d6b;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:.15s;box-shadow:0 4px 20px rgba(255,61,107,.25);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── NAVI ZIEL-MODAL ──────────────────────────── -->
+<div id="navi-finish-modal">
+  <div id="navi-finish-inner">
+    <canvas id="navi-finish-confetti" style="position:absolute;inset:0;pointer-events:none;width:100%;height:100%;border-radius:22px;"></canvas>
+    <!-- Auto-Save Countdown Bar -->
+    <div id="nf-autosave-bar">
+      <div id="nf-autosave-main">
+        <div id="nf-autosave-txt">⏱ Auto Speichern &amp; Schliessen in <span id="nf-countdown">20</span>s</div>
+        <div id="nf-autosave-prog"><div id="nf-autosave-fill"></div></div>
+      </div>
+      <button id="nf-autosave-x" onclick="cancelAutoSave()" title="Auto-Schliessen abbrechen">✕ Stop</button>
+    </div>
+    <div style="position:relative;z-index:1;">
+      <span class="nf-trophy">🏆</span>
+      <div class="nf-title">Ziel erreicht!</div>
+      <div class="nf-grid">
+        <div class="nf-cell"><div class="nf-v" style="color:var(--accent);" id="nf-dist">—</div><div class="nf-l">km gefahren</div></div>
+        <div class="nf-cell"><div class="nf-v" style="color:var(--green);" id="nf-time">—</div><div class="nf-l">Fahrzeit</div></div>
+        <div class="nf-cell"><div class="nf-v" style="color:var(--red);" id="nf-climb">—</div><div class="nf-l">hm ↑</div></div>
+        <div class="nf-cell"><div class="nf-v" style="color:var(--yellow);" id="nf-speed">—</div><div class="nf-l">Ø km/h</div></div>
+        <div class="nf-cell"><div class="nf-v" style="color:var(--orange);" id="nf-cal">—</div><div class="nf-l">kcal</div></div>
+        <div class="nf-cell"><div class="nf-v" style="color:var(--dim);" id="nf-wps">—</div><div class="nf-l">Wegpunkte</div></div>
+      </div>
+      <div class="nf-btns">
+        <button class="nf-btn share" onclick="naviFinishShare()">📤 Teilen &amp; Speichern</button>
+        <button class="nf-btn gpx" onclick="naviFinishGPX()">⬇️ GPX exportieren</button>
+        <button class="nf-btn close" onclick="closeNaviFinish()">✕ Schließen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── AUTH (Appwrite, ES module) ── -->
+<script type="module" src="js/app-auth.js"></script>
+
+<!-- ── APP SCRIPTS ── -->
+<script src="js/app-core.js"></script>
+<script src="js/app-map.js"></script>
+<script src="js/app-extras.js"></script>
+<script src="js/app-navi.js"></script>
+
+</body>
+</html>
