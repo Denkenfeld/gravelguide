@@ -95,20 +95,23 @@ const _d2Charts = new WeakMap();
 
 /* ── Daten ───────────────────────────────────────────── */
 function d2GetRides(){
-  let local = [];
+  var local = [];
   try { local = JSON.parse(localStorage.getItem('vn_rides')||'[]'); } catch(e){}
-  const cloud = window._cloudRides || [];
-  const merged = [...local];
-  cloud.forEach(cr => {
-    if(!merged.some(lr => lr.date===cr.date && Math.abs((lr.km||0)-(cr.km||0))<0.2)) merged.push(cr);
+  if(!Array.isArray(local)) local = [];
+  var cloud = window._cloudRides || [];
+  if(!Array.isArray(cloud)) cloud = [];
+  var merged = local.slice();
+  cloud.forEach(function(cr){
+    if(!merged.some(function(lr){ return lr.date===cr.date && Math.abs((lr.km||0)-(cr.km||0))<0.2; }))
+      merged.push(cr);
   });
-  return merged.map(r => ({
+  return merged.map(function(r){ return {
     name: r.name || 'Tour',
     date: r.date || '',
-    km:   r.km   || 0,
-    hm:   r.hm   || 0,
-    cal:  r.cal  || 0,
-  })).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    km:   parseFloat(r.km)  || 0,
+    hm:   parseFloat(r.hm)  || 0,
+    cal:  parseFloat(r.cal) || 0,
+  }; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
 }
 
 function d2FilterRides(rides){
@@ -171,6 +174,56 @@ function initD2Stats(){
   });
 }
 window.initD2Stats = initD2Stats;
+
+// ── Robust Init: MutationObserver wartet bis .d2-kpi-grid im DOM erscheint ──
+// Löst das Mobile-Problem: buildLoggedInHTML() rendert den Profil-Tab async
+// nach dem Appwrite-Login — auf Mobile kann das 300-2000ms nach DOMContentLoaded
+// passieren. Ohne Observer findet initD2Stats() keine Scopes und bricht still ab.
+(function(){
+  var _d2Initialized = false;
+  var _d2Obs = null;
+  var _d2RetryTimer = null;
+
+  function _tryInit(){
+    if(_d2Initialized) return;
+    var scopes = d2Scopes();
+    if(!scopes.length) return;
+    _d2Initialized = true;
+    if(_d2Obs){ _d2Obs.disconnect(); _d2Obs = null; }
+    if(_d2RetryTimer){ clearTimeout(_d2RetryTimer); _d2RetryTimer = null; }
+    setTimeout(initD2Stats, 80);
+  }
+
+  // 1. Sofortversuch
+  if(document.readyState !== 'loading') _tryInit();
+  document.addEventListener('DOMContentLoaded', _tryInit);
+
+  // 2. MutationObserver — erkennt wenn buildLoggedInHTML() den DOM einfügt
+  _d2Obs = new MutationObserver(function(){
+    if(document.querySelector('.d2-kpi-grid')) _tryInit();
+  });
+  _d2Obs.observe(document.documentElement, {childList:true, subtree:true});
+
+  // 3. Exponential-Retry als Fallback (langsame Mobile-Browser, schlechtes Netz)
+  var _retryDelay = 400;
+  function _retry(){
+    if(_d2Initialized) return;
+    _tryInit();
+    if(!_d2Initialized && _retryDelay < 10000){
+      _retryDelay *= 2;
+      _d2RetryTimer = setTimeout(_retry, _retryDelay);
+    }
+  }
+  _d2RetryTimer = setTimeout(_retry, 400);
+
+  // 4. Nach Logout/Login: _d2Initialized resetten damit erneuter Aufruf klappt
+  var _origInitD2 = initD2Stats;
+  window.initD2Stats = function(){
+    _d2Initialized = false;
+    _origInitD2();
+    _d2Initialized = true;
+  };
+})();
 
 /* ── Render-Funktionen ───────────────────────────────── */
 function d2RenderKPIs(scope, rides){
