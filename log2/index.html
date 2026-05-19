@@ -1636,15 +1636,23 @@ function submitInvite(){
   const AW_DB        = '69ff8f4c003d6fd82f1e';
   const AW_COL       = 'routes';
 
-  // Fix: Chrome/iOS bug — ensure endpoint is always a clean, non-empty string
-  // The error "t.split is not a function" is caused by setEndpoint receiving
-  // undefined or a non-string value (e.g. from localStorage returning null).
   const _safeEndpoint = (typeof AW_ENDPOINT === 'string' && AW_ENDPOINT)
-    ? AW_ENDPOINT.replace(/\/+$/, '')   // strip trailing slashes
+    ? AW_ENDPOINT.replace(/\/+$/, '')
     : 'https://cloud.appwrite.io/v1';
-  const client = new Client().setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
-  const account = new Account(client);
-  const db      = new Databases(client);
+
+  // let statt const — damit wir bei t.split-Korruption neu instanziieren können
+  let client  = new Client().setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
+  let account  = new Account(client);
+  let db       = new Databases(client);
+
+  // Frischen Client + Account + DB erzeugen (behebt Chrome iOS t.split Korruption)
+  function _freshClient(){
+    client  = new Client().setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
+    account = new Account(client);
+    db      = new Databases(client);
+    // Globale Referenzen aktualisieren (profil.js nutzt window.db)
+    window.db = db;
+  }
 
   // ── Mobile Safari / PWA: Session-Secret in localStorage persistieren ─────
   // Safari / Chrome Mobile blockieren in bestimmten Kontexten (PWA, cross-origin)
@@ -1735,6 +1743,7 @@ function submitInvite(){
     const name  = fieldVal(btn,'reg-name') || email;
     if(!email||!pass){ showToast('E-Mail und Passwort eingeben'); return; }
     btn.disabled = true; btn.textContent = '⏳ Bitte warten…';
+    _freshClient();
     try {
       await account.create(ID.unique(), email, pass, name);
       const session = await account.createEmailPasswordSession(email, pass);
@@ -1755,6 +1764,8 @@ function submitInvite(){
     const pass  = fieldValRaw(btn,'login-pass');
     if(!email||!pass){ showToast('E-Mail und Passwort eingeben'); return; }
     btn.disabled = true; btn.textContent = '⏳ Bitte warten…';
+    // Frischen Client erzeugen — behebt t.split Fehler nach Cache-Reset
+    _freshClient();
     try {
       const session = await account.createEmailPasswordSession(email, pass);
       _saveSession(session);
@@ -1770,9 +1781,7 @@ function submitInvite(){
 
   // ── Logout ────────────────────────────────────
   window.clearAuthCache = async function(){
-    // Erst serverseitige Session beenden (löscht auch den Browser-Cookie)
     try { await account.deleteSession('current'); } catch(e){}
-    // Dann lokalen State bereinigen
     try {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem('gg_navi_recovery');
@@ -1780,8 +1789,8 @@ function submitInvite(){
         k.startsWith('cookieFallback') || k.startsWith('a_session')
       ).forEach(k => localStorage.removeItem(k));
     } catch(e){}
-    // Client zurücksetzen
-    try { client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT); } catch(e){}
+    // Komplett frischen Client erzeugen statt nur setEndpoint
+    _freshClient();
     currentUser = null;
     renderProfileTab();
     showToast('🔄 Cache geleert — bitte neu einloggen');
@@ -2871,6 +2880,11 @@ function submitInvite(){
   window._awSaveRoute = saveRouteToCloud;
   window._awCurrentUser = () => currentUser;
   window._awLoadCloudRoutes = loadCloudRoutes;
+  // Für profil.js (Community-Karte nutzt window.db)
+  window.db     = db;
+  window.AW_DB  = AW_DB;
+  window.AW_COL = AW_COL;
+  window.Query  = Query;
 
   // ── Init ──────────────────────────────────────
   // Warten bis DOM fertig ist
