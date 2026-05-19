@@ -1624,89 +1624,142 @@ function submitInvite(){
 </div>
 
 <!-- ── APPWRITE SDK ──────────────────────────── -->
-<!-- Appwrite IIFE-Build: expliziter /dist/iife/sdk.js Pfad nötig!
-     Ohne den Pfad liefert jsdelivr den CJS-Build → kein window.Appwrite global
-     → Client/Account sind undefined → t.split-Crash beim ersten API-Call. -->
-<script src="https://cdn.jsdelivr.net/npm/appwrite@16.0.2/dist/iife/sdk.js"></script>
 <script>
-  // Guard: falls IIFE-Build doch nicht geladen wurde (CDN-Ausfall, Cache-Problem),
-  // lieber eine klare Fehlermeldung als einen kryptischen t.split-Crash.
-  if(typeof Appwrite === 'undefined'){
-    console.error('[GravelGuide] Appwrite SDK nicht geladen – Auth-Funktionen deaktiviert.');
-    // Dummy-Objekte damit der Rest der Seite nicht crasht
-    window.Appwrite = {
-      Client: function(){ this.config={endpoint:'',project:''}; this.setEndpoint=()=>this; this.setProject=()=>this; this.setSession=()=>this; },
-      Account: function(){ ['get','create','createEmailPasswordSession','deleteSession','updatePrefs','createRecovery','updateRecovery','getPrefs'].forEach(m=>this[m]=async()=>{throw new Error('SDK not loaded');}); },
-      Databases: function(){ this.listDocuments=async()=>({documents:[]}); this.createDocument=async()=>{}; this.deleteDocument=async()=>{}; },
-      ID: { unique: ()=> 'offline-'+Date.now() },
-      Query: { orderDesc:()=>'', limit:()=>'', cursorAfter:()=>'', equal:()=>'' }
+  // ══════════════════════════════════════════════════════════════════
+  // APPWRITE NATIVE CLIENT — kein CDN, kein SDK, kein t.split-Fehler
+  // Direkte REST-Calls via fetch(). Identische API-Oberfläche wie
+  // das offizielle SDK, aber ohne externe Abhängigkeit.
+  // ══════════════════════════════════════════════════════════════════
+
+  const AW_ENDPOINT = 'https://cloud.appwrite.io/v1';
+  const AW_PROJECT  = '69ff896300258f20e17a';
+  const AW_DB       = '69ff8f4c003d6fd82f1e';
+  const AW_COL      = 'routes';
+
+  // Aktive Session-ID (wird nach Login gesetzt)
+  let _awSessionId = null;
+
+  function _awHeaders(){
+    const h = {
+      'Content-Type':       'application/json',
+      'X-Appwrite-Project': AW_PROJECT,
     };
+    if(_awSessionId) h['X-Appwrite-Session'] = _awSessionId;
+    return h;
   }
-  const { Client, Account, Databases, ID, Query } = Appwrite;
 
-  // ── Appwrite Konfiguration ────────────────────
-  const AW_ENDPOINT  = 'https://cloud.appwrite.io/v1';
-  const AW_PROJECT   = '69ff896300258f20e17a';
-  const AW_DB        = '69ff8f4c003d6fd82f1e';
-  const AW_COL       = 'routes';
+  async function _awFetch(method, path, body){
+    const res = await fetch(AW_ENDPOINT + path, {
+      method,
+      headers: _awHeaders(),
+      // credentials: 'include' absichtlich NICHT gesetzt —
+      // Appwrite Cloud erlaubt keine cross-origin Cookies von Webseiten.
+      // Auth läuft ausschließlich über X-Appwrite-Session Header (_awSessionId).
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if(!res.ok){
+      let msg = res.statusText;
+      try { const j = await res.json(); msg = j.message || msg; } catch(e){}
+      const err = new Error(msg);
+      err.code = res.status;
+      throw err;
+    }
+    return res.json();
+  }
 
-  // Fix: Chrome/iOS bug — ensure endpoint is always a clean, non-empty string
-  // The error "t.split is not a function" is caused by setEndpoint receiving
-  // undefined or a non-string value (e.g. from localStorage returning null).
-  const _safeEndpoint = (typeof AW_ENDPOINT === 'string' && AW_ENDPOINT)
-    ? AW_ENDPOINT.replace(/\/+$/, '')   // strip trailing slashes
-    : 'https://cloud.appwrite.io/v1';
-  const client = new Client().setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
-  const account = new Account(client);
-  const db      = new Databases(client);
+  // ── account ───────────────────────────────────────
+  const account = {
+    get: () => _awFetch('GET', '/account'),
 
-  // ── Mobile Safari / PWA: Session-ID in localStorage persistieren ─────────
-  // Safari / Chrome Mobile blockieren in bestimmten Kontexten (PWA, cross-origin)
-  // die von Appwrite gesetzten Cookies. Workaround: nach Login die session.$id
-  // in localStorage sichern und bei jedem Start via client.setSession() wiederherstellen.
-  //
-  // WICHTIG: client.setSession() erwartet die Session-ID ($id), NICHT session.secret.
-  // session.secret ist bei normalen E-Mail-Sessions ein leerer String — das war die
-  // Wurzel des t.split-Crashes: setSession('') oder setSession('undefined') korrumpiert
-  // den internen Client-State des Appwrite SDK.
+    create: (userId, email, password, name) =>
+      _awFetch('POST', '/account', { userId, email, password, name }),
+
+    createEmailPasswordSession: async (email, password) => {
+      // Appwrite v1.5+: POST /account/sessions/email
+      // Fallback auf /account/sessions falls der Endpoint sich geändert hat
+      let session;
+      try {
+        session = await _awFetch('POST', '/account/sessions/email', { email, password });
+      } catch(e){
+        if(e.code === 404){
+          session = await _awFetch('POST', '/account/sessions', { email, password });
+        } else {
+          throw e;
+        }
+      }
+      // Session-ID SOFORT setzen damit account.get() danach authentifiziert ist
+      _awSessionId = session['$id'] || session.secret || null;
+      return session;
+    },
+
+    deleteSession: async (sessionId, clearLocal=true) => {
+      try { await _awFetch('DELETE', `/account/sessions/${sessionId}`); } catch(e){}
+      if(clearLocal) _awSessionId = null;
+    },
+
+    getPrefs: () => _awFetch('GET', '/account/prefs'),
+
+    updatePrefs: (prefs) => _awFetch('PATCH', '/account/prefs', prefs),
+
+    createRecovery: (email, url) =>
+      _awFetch('POST', '/account/recovery', { email, url }),
+
+    updateRecovery: (userId, secret, password) =>
+      _awFetch('PUT', '/account/recovery', { userId, secret, password, passwordAgain: password }),
+  };
+
+  // ── databases ─────────────────────────────────────
+  const db = {
+    listDocuments: (dbId, colId, queries=[]) => {
+      const params = new URLSearchParams();
+      queries.forEach(q => params.append('queries[]', q));
+      return _awFetch('GET', `/databases/${dbId}/collections/${colId}/documents?${params}`);
+    },
+
+    createDocument: (dbId, colId, docId, data) =>
+      _awFetch('POST', `/databases/${dbId}/collections/${colId}/documents`, {
+        documentId: docId, ...data
+      }),
+
+    deleteDocument: (dbId, colId, docId) =>
+      _awFetch('DELETE', `/databases/${dbId}/collections/${colId}/documents/${docId}`),
+  };
+
+  // ── ID & Query helpers ────────────────────────────
+  const ID = {
+    unique: () => 'unique()'
+  };
+
+  const Query = {
+    equal:       (attr, val) => `equal("${attr}", ${JSON.stringify(val)})`,
+    orderDesc:   (attr)      => `orderDesc("${attr}")`,
+    limit:       (n)         => `limit(${n})`,
+    offset:      (n)         => `offset(${n})`,
+    cursorAfter: (id)        => `cursorAfter("${id}")`,
+  };
+
+  // ── Session-Persistenz (Mobile Safari / Chrome iOS) ──
   const SESSION_KEY = 'gg_aw_session';
 
-  // Prüft ob ein gespeichertes Secret wirklich ein gültiger Token-String ist.
-  // Verhindert client.setSession('undefined') oder client.setSession('null'),
-  // was den Appwrite-Client intern korrumpiert und den t.split-Crash auslöst.
   function _isValidSecret(s){
-    return typeof s === 'string' && s.length > 20 && s !== 'undefined' && s !== 'null';
+    return typeof s === 'string' && s.length > 10 && s !== 'undefined' && s !== 'null' && s !== '';
   }
 
   function _saveSession(session){
     try {
-      // session.$id ist die Session-ID die setSession() erwartet.
-      // session.secret ist bei normalen Email-Sessions leer — nie verwenden!
       const token = session && (session['$id'] || session.secret);
       if(_isValidSecret(token)){
         localStorage.setItem(SESSION_KEY, token);
+        _awSessionId = token;
       }
     } catch(e){}
   }
 
-  function _restoreSession(){
-    try {
-      const secret = localStorage.getItem(SESSION_KEY);
-      if(_isValidSecret(secret)){ client.setSession(secret); return true; }
-      // Ungültigen Wert sofort wegräumen damit er nicht wieder stört
-      if(secret !== null) localStorage.removeItem(SESSION_KEY);
-    } catch(e){}
-    return false;
-  }
-
   function _clearSession(){
     try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+    _awSessionId = null;
   }
 
-  // Löscht ALLE Appwrite-Session-Daten aus localStorage inkl. cookieFallback.
-  // cookieFallback ist der Key der "prohibited when session is active" verursacht:
-  // der SDK liest ihn beim Start automatisch, schickt den abgelaufenen Token mit,
-  // und blockiert dann jeden neuen Login-Versuch.
   function _purgeAppwriteKeys(){
     try {
       Object.keys(localStorage)
@@ -1715,68 +1768,55 @@ function submitInvite(){
     } catch(e){}
   }
 
+  function _restoreSession(){
+    try {
+      const secret = localStorage.getItem(SESSION_KEY);
+      if(_isValidSecret(secret)){
+        _awSessionId = secret;
+        return true;
+      }
+      if(secret !== null) localStorage.removeItem(SESSION_KEY);
+    } catch(e){}
+    return false;
+  }
+
   // ── Session-State ────────────────────────────
   let currentUser = null;
 
   async function initAuth(){
-    // Passwort-Reset via E-Mail-Link?
     const params = new URLSearchParams(window.location.search);
     if(params.get('userId') && params.get('secret')){
       showRecoveryModal();
       return;
     }
 
-    // Alte korrumpierte Session-Werte ('undefined', 'null') aus localStorage entfernen
-    // bevor irgendetwas anderes passiert — das ist die Hauptquelle des t.split-Bugs
+    // Korrumpierte Werte aus localStorage entfernen
     try {
       const stale = localStorage.getItem(SESSION_KEY);
       if(stale !== null && !_isValidSecret(stale)){
         localStorage.removeItem(SESSION_KEY);
-        console.warn('[Auth] Stale/invalid session secret removed from localStorage:', JSON.stringify(stale));
       }
     } catch(e){}
 
-    // SOFORT: Login-Form rendern damit Tab nie leer ist (sync, vor allem async)
     currentUser = null;
     try { renderProfileTab(); } catch(e){}
     updateUserAvatars();
 
-    // HINTERGRUND: Session prüfen
-    const savedSecret = (() => { try { return localStorage.getItem(SESSION_KEY); } catch(e){ return null; } })();
+    // Gespeicherte Session wiederherstellen
+    _restoreSession();
 
-    // Versuch 1: Cookie/cookieFallback-basiert (Appwrite SDK liest das automatisch)
+    // Eingeloggt?
     try { currentUser = await account.get(); } catch(e){
       currentUser = null;
-      // WICHTIG: account.get() hat 401 geworfen, aber der SDK-Client hat
-      // cookieFallback noch im Speicher und schickt den abgelaufenen Token
-      // bei jedem weiteren Request mit => "prohibited when session is active".
-      // cookieFallback + alle a_session_* Keys sofort löschen:
+      _clearSession();
       _purgeAppwriteKeys();
     }
 
-    // Versuch 2: localStorage-Session (Mobile Safari / Chrome iOS / PWA)
-    if(!currentUser && _isValidSecret(savedSecret)){
-      try {
-        client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
-        client.setSession(savedSecret);
-        _guardClient();
-        currentUser = await account.get();
-      } catch(e){
-        currentUser = null;
-        _clearSession();
-        _purgeAppwriteKeys();
-        try { client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT); } catch(e2){}
-      }
-    }
-
-    // Tab mit korrektem Zustand neu rendern
     try { if(currentUser) await loadCloudRoutes(); } catch(e){ console.warn('loadCloudRoutes:', e); }
     try { renderProfileTab(); } catch(e){ console.warn('renderProfileTab:', e); }
   }
 
-  // ── Hilfsfunktion: Feld innerhalb des Containers finden ──
-  // Buttons übergeben sich selbst (this), wir gehen zum nächsten .sb-Container hoch
-  // und suchen dort das Input per data-field Attribut. Keine doppelten IDs nötig.
+  // ── Hilfsfunktionen für Formularfelder ──
   function fieldVal(btn, dataField){
     const container = btn.closest('.sb');
     if(!container) return '';
@@ -1798,12 +1838,11 @@ function submitInvite(){
     if(!email||!pass){ showToast('E-Mail und Passwort eingeben'); return; }
     btn.disabled = true; btn.textContent = '⏳ Bitte warten…';
     try {
-      // Vorhandene Session bereinigen bevor account.create() aufgerufen wird
-      try { await account.deleteSession('current'); } catch(e){}
+      try { await account.deleteSession('current', false); } catch(e){}
       _clearSession();
-      _purgeAppwriteKeys(); // cookieFallback löschen
-      _guardClient();
-      await account.create(ID.unique(), email, pass, name);
+      _purgeAppwriteKeys();
+      _awSessionId = null;
+      await account.create('unique()', email, pass, name);
       const session = await account.createEmailPasswordSession(email, pass);
       _saveSession(session);
       currentUser = await account.get();
@@ -1823,21 +1862,27 @@ function submitInvite(){
     if(!email||!pass){ showToast('E-Mail und Passwort eingeben'); return; }
     btn.disabled = true; btn.textContent = '⏳ Bitte warten…';
     try {
-      // Bestehende Session beenden bevor eine neue erstellt wird.
-      // Ohne diesen Schritt antwortet Appwrite mit "prohibited when session is active"
-      // wenn auf dem Handy (ohne Privatmodus) noch ein gespeichertes session.secret
-      // aus localStorage wiederhergestellt wurde.
-      try { await account.deleteSession('current'); } catch(e){}
+      // Alte Session bereinigen
+      try { await account.deleteSession('current', false); } catch(e){}
       _clearSession();
-      _purgeAppwriteKeys(); // cookieFallback löschen - sonst: "prohibited when session is active"
-      _guardClient();
+      _purgeAppwriteKeys();
+      _awSessionId = null;
+
+      // Neue Session erstellen
       const session = await account.createEmailPasswordSession(email, pass);
+      console.log('[Login] session.$id:', session['$id'], '| _awSessionId nach Login:', _awSessionId);
+
       _saveSession(session);
+
+      // account.get() mit der neuen Session-ID im Header
       currentUser = await account.get();
+      console.log('[Login] currentUser:', currentUser?.name, currentUser?.email);
+
       await loadCloudRoutes();
       renderProfileTab();
       showToast('✓ Willkommen zurück, ' + (currentUser.name||currentUser.email) + '!');
     } catch(e){
+      console.error('[Login] Fehler:', e.code, e.message);
       showToast('Login fehlgeschlagen: ' + (e.message||''));
       btn.disabled = false; btn.textContent = '🔑 Einloggen';
     }
@@ -1845,18 +1890,10 @@ function submitInvite(){
 
   // ── Logout ────────────────────────────────────
   window.clearAuthCache = async function(){
-    // Erst serverseitige Session beenden (löscht auch den Browser-Cookie)
     try { await account.deleteSession('current'); } catch(e){}
-    // Dann lokalen State bereinigen
-    try {
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.removeItem('gg_navi_recovery');
-      Object.keys(localStorage).filter(k =>
-        k.startsWith('cookieFallback') || k.startsWith('a_session')
-      ).forEach(k => localStorage.removeItem(k));
-    } catch(e){}
-    // Client zurücksetzen
-    try { client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT); } catch(e){}
+    _clearSession();
+    _purgeAppwriteKeys();
+    try { localStorage.removeItem('gg_navi_recovery'); } catch(e){}
     currentUser = null;
     renderProfileTab();
     showToast('🔄 Cache geleert — bitte neu einloggen');
@@ -1865,6 +1902,7 @@ function submitInvite(){
   window.logoutUser = async function(){
     try { await account.deleteSession('current'); } catch(e){}
     _clearSession();
+    _purgeAppwriteKeys();
     currentUser = null;
     renderProfileTab();
     renderCloudRoutes([]);
@@ -1888,7 +1926,6 @@ function submitInvite(){
     if(!sb) return;
     sb.querySelector('.auth-form-reset').style.display = 'none';
     sb.querySelector('.auth-form-login').style.display = '';
-    // Login-Tab optisch reaktivieren
     const loginTabBtn = sb.querySelector('.auth-tab-btn');
     if(loginTabBtn) Object.assign(loginTabBtn.style, {background:'var(--accent-dim)', color:'var(--accent)'});
   };
@@ -1903,7 +1940,6 @@ function submitInvite(){
     try {
       const redirectUrl = window.location.origin + window.location.pathname;
       await account.createRecovery(email, redirectUrl);
-      // Erfolgs-View zeigen
       const form = sb.querySelector('.auth-form-reset');
       if(form) form.innerHTML = `
         <div style="text-align:center;padding:8px 0 4px;">
@@ -1918,7 +1954,6 @@ function submitInvite(){
     }
   };
 
-  // ── Neues Passwort nach Recovery-Link setzen ─
   window.submitNewPassword = async function(btn){
     const sb = btn.closest('.sb') || btn.closest('.dlg-body');
     if(!sb) return;
@@ -1931,7 +1966,6 @@ function submitInvite(){
       const params = new URLSearchParams(window.location.search);
       await account.updateRecovery(params.get('userId'), params.get('secret'), p1);
       showToast('✓ Passwort geändert! Du kannst dich jetzt einloggen.');
-      // URL bereinigen & Recovery-Modal schließen
       window.history.replaceState({}, '', window.location.pathname);
       document.getElementById('recovery-modal')?.remove();
       renderProfileTab();
@@ -1941,9 +1975,7 @@ function submitInvite(){
     }
   };
 
-  // ── Gewicht via Appwrite User-Preferences speichern ─────
-  // account.updatePrefs() speichert beliebige Key-Value-Daten direkt am User-Account.
-  // Kein eigener DB-Eintrag, kein Index-Problem, kein Duplikat-Risiko.
+  // ── Einstellungen in Cloud speichern ─────────
   window.saveWeightToCloud = async function(weightKg){
     if(!currentUser) return;
     const w = parseFloat(weightKg);
@@ -1952,7 +1984,7 @@ function submitInvite(){
     const h = document.getElementById('weight-inp');
     if(h) h.value = w;
     try {
-      const curSpd = parseInt(localStorage.getItem('vn_speed')||'16');
+      const curSpd  = parseInt(localStorage.getItem('vn_speed')||'16');
       const curBike = parseFloat(localStorage.getItem('vn_bike_weight')||'12');
       await account.updatePrefs({ weight: w, speed: curSpd, bikeWeight: curBike });
     } catch(e){ console.warn('Weight prefs save failed:', e); }
@@ -1977,34 +2009,16 @@ function submitInvite(){
     if(typeof window.setSpeedFromProfile === 'function') window.setSpeedFromProfile(sp);
     if(!currentUser) return;
     try {
-      const curW   = parseFloat(localStorage.getItem('vn_weight')||'75');
+      const curW    = parseFloat(localStorage.getItem('vn_weight')||'75');
       const curBike = parseFloat(localStorage.getItem('vn_bike_weight')||'12');
       await account.updatePrefs({ speed: sp, weight: curW, bikeWeight: curBike });
     } catch(e){ console.warn('Speed prefs save failed:', e); }
   };
 
-  // ── Chrome iOS: "t.split is not a function" fix ──────────────────────────
-  // Appwrite SDK v16 internally calls endpoint.split(':') when building request URLs.
-  // In Chrome iOS, after client.setSession() the internal _endpoint can become
-  // corrupted/undefined on certain WebKit JIT paths. Fix: re-assert the endpoint
-  // before every DB/Account operation that triggers network calls.
-  function _guardClient(){
-    try {
-      const ep = client.config?.endpoint;
-      if(typeof ep !== 'string' || !ep || ep.trim() === ''){
-        client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
-      }
-    } catch(e){
-      // Letzter Ausweg: kompletten Client neu aufsetzen
-      try { client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT); } catch(e2){}
-    }
-  }
-
   // ── Route in Cloud speichern ──────────────────
   window.saveRouteToCloud = async function(routeData){
     if(!currentUser){ showToast('Bitte zuerst einloggen'); return; }
     try {
-      _guardClient();
       const w = parseFloat(routeData.weight) || parseFloat(document.getElementById('weight-inp')?.value) || 75;
       const spd = parseFloat(routeData.speed) || parseFloat(localStorage.getItem('vn_speed')) || 16;
       const doc = {
@@ -2040,7 +2054,6 @@ function submitInvite(){
   // ── Cloud-Routen laden & anzeigen ────────────
   async function loadCloudRoutes(append){
     if(!currentUser) return;
-    _guardClient();
     if(!append){
       _cloudAllDocs    = [];
       _cloudNextOffset = 0;
@@ -2289,7 +2302,6 @@ function submitInvite(){
   window.deleteCloudRoute = async function(docId){
     if(!confirm('Route wirklich löschen?')) return;
     try {
-      _guardClient();
       await db.deleteDocument(AW_DB, AW_COL, docId);
       showToast('✓ Route gelöscht');
       _cloudAllDocs = _cloudAllDocs.filter(d => d.$id !== docId);
@@ -2302,7 +2314,6 @@ function submitInvite(){
     const newName = prompt('Neuer Name:', currentName);
     if(!newName || newName.trim() === currentName) return;
     try {
-      _guardClient();
       await db.updateDocument(AW_DB, AW_COL, docId, { routeName: newName.trim() });
       const doc = _cloudAllDocs.find(d => d.$id === docId);
       if(doc) doc.routeName = newName.trim();
