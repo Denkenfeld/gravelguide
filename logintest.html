@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Test</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 20px; font-size: 14px; }
+  input { display: block; width: 100%; box-sizing: border-box; padding: 10px; margin: 8px 0; background: #222; border: 1px solid #444; color: #eee; border-radius: 6px; font-size: 14px; }
+  button { width: 100%; padding: 12px; margin: 8px 0; background: #0af; color: #000; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+  #log { margin-top: 20px; background: #000; padding: 14px; border-radius: 6px; white-space: pre-wrap; line-height: 1.8; font-size: 12px; min-height: 100px; }
+  .ok   { color: #0f0; }
+  .err  { color: #f44; }
+  .info { color: #0af; }
+  .warn { color: #fa0; }
+</style>
+</head>
+<body>
+
+<h2>🔬 Appwrite Login Test</h2>
+<p style="color:#888;font-size:12px;">Isolierter Test — kein anderer Code läuft hier.</p>
+
+<input id="email" type="email" placeholder="E-Mail" autocomplete="email">
+<input id="pass" type="password" placeholder="Passwort" autocomplete="current-password">
+<button onclick="runTest()">▶ Login testen</button>
+<button onclick="clearLS()" style="background:#444;color:#eee;">🗑 localStorage leeren</button>
+<button onclick="showLS()" style="background:#333;color:#eee;">📦 localStorage anzeigen</button>
+
+<div id="log">Bereit. E-Mail + Passwort eingeben, dann testen.</div>
+
+<script>
+const ENDPOINT = 'https://cloud.appwrite.io/v1';
+const PROJECT  = '69ff896300258f20e17a';
+
+function log(msg, type='') {
+  const el = document.getElementById('log');
+  const ts = new Date().toISOString().slice(11,23);
+  el.innerHTML += `<span class="${type}">[${ts}] ${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+async function apw(method, path, body, sessionId) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': PROJECT,
+  };
+  if (sessionId) headers['X-Appwrite-Session'] = sessionId;
+
+  log(`→ ${method} ${path}`, 'info');
+  if (sessionId) log(`  X-Appwrite-Session: ${sessionId.slice(0,20)}…`, 'info');
+
+  const res = await fetch(ENDPOINT + path, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); } catch(e) { json = { raw: text }; }
+
+  if (!res.ok) {
+    log(`← ${res.status} FEHLER: ${json.message || text}`, 'err');
+    const err = new Error(json.message || res.statusText);
+    err.code = res.status;
+    err.data = json;
+    throw err;
+  }
+
+  log(`← ${res.status} OK`, 'ok');
+  return json;
+}
+
+async function runTest() {
+  clearLog();
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('pass').value;
+
+  if (!email || !pass) { log('E-Mail und Passwort eingeben!', 'err'); return; }
+
+  log('=== START LOGIN TEST ===', 'warn');
+  log(`localStorage Keys vorher: ${Object.keys(localStorage).join(', ') || '(leer)'}`, 'info');
+
+  // Schritt 1: createEmailPasswordSession
+  log('\n--- Schritt 1: Session erstellen ---', 'warn');
+  let session;
+  try {
+    session = await apw('POST', '/account/sessions/email', { email, password: pass });
+    log(`session.$id = ${session['$id']}`, 'ok');
+    log(`session.userId = ${session.userId}`, 'ok');
+    log(`session.expire = ${session.expire}`, 'ok');
+  } catch(e) {
+    log(`FEHLER bei Session erstellen: ${e.message}`, 'err');
+    log(`Code: ${e.code}`, 'err');
+    log(`\nTest abgebrochen.`, 'err');
+    return;
+  }
+
+  const sessionId = session['$id'];
+
+  // Schritt 2: account.get() MIT Session-ID
+  log('\n--- Schritt 2: account.get() mit Session-ID ---', 'warn');
+  try {
+    const user = await apw('GET', '/account', null, sessionId);
+    log(`user.name = ${user.name}`, 'ok');
+    log(`user.email = ${user.email}`, 'ok');
+    log(`user.$id = ${user['$id']}`, 'ok');
+    log('\n✅ LOGIN ERFOLGREICH!', 'ok');
+  } catch(e) {
+    log(`FEHLER bei account.get(): ${e.message}`, 'err');
+    log(`Code: ${e.code}`, 'err');
+    log(`\nDas ist der eigentliche Bug. Session-ID kam an aber account.get() schlägt fehl.`, 'err');
+  }
+
+  // Schritt 3: account.get() OHNE Session-ID (Cookie-Test)
+  log('\n--- Schritt 3: account.get() ohne Header (nur Cookie) ---', 'warn');
+  try {
+    const user2 = await apw('GET', '/account', null, null);
+    log(`Cookie-Auth funktioniert: ${user2.email}`, 'ok');
+  } catch(e) {
+    log(`Cookie-Auth schlägt fehl (${e.code}): ${e.message}`, 'warn');
+    log('→ Normal auf iOS, Cookies werden blockiert', 'warn');
+  }
+}
+
+function clearLS() {
+  const n = localStorage.length;
+  localStorage.clear();
+  log(`localStorage geleert (${n} Keys entfernt)`, 'ok');
+  showLS();
+}
+
+function showLS() {
+  clearLog();
+  if (localStorage.length === 0) {
+    log('localStorage ist leer.', 'info');
+    return;
+  }
+  log('=== localStorage Inhalt ===', 'warn');
+  Object.keys(localStorage).forEach(k => {
+    const v = localStorage.getItem(k);
+    log(`${k} = ${v?.slice(0, 80)}${v?.length > 80 ? '…' : ''}`, 'info');
+  });
+}
+</script>
+</body>
+</html>
