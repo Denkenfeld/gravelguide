@@ -1682,36 +1682,34 @@ function submitInvite(){
       showRecoveryModal();
       return;
     }
+
+    // SOFORT: Login-Form rendern damit Tab nie leer ist (sync, vor allem async)
+    currentUser = null;
+    try { renderProfileTab(); } catch(e){}
     updateUserAvatars();
 
-    // Gespeicherte Session aus localStorage holen
+    // HINTERGRUND: Session prüfen
     const savedSecret = (() => { try { return localStorage.getItem(SESSION_KEY); } catch(e){ return null; } })();
 
-    // Versuch 1: Cookie-basiert (Desktop / normaler Browser ohne ITP)
-    try {
-      currentUser = await account.get();
-    } catch(e){ currentUser = null; }
+    // Versuch 1: Cookie-basiert
+    try { currentUser = await account.get(); } catch(e){ currentUser = null; }
 
     // Versuch 2: localStorage-Session (Mobile Safari / Chrome iOS / PWA)
     if(!currentUser && savedSecret){
       try {
-        // Frischen Client-State herstellen bevor setSession
         client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT);
         client.setSession(savedSecret);
         currentUser = await account.get();
       } catch(e){
         currentUser = null;
-        _clearSession(); // Token abgelaufen oder ungültig → weg damit
-        // Client zurücksetzen damit nachfolgende Calls (Login etc.) funktionieren
+        _clearSession();
         try { client.setEndpoint(_safeEndpoint).setProject(AW_PROJECT); } catch(e2){}
       }
     }
 
-    // renderProfileTab IMMER aufrufen — garantiert kein leeres Tab
-    try {
-      if(currentUser) await loadCloudRoutes();
-    } catch(e){ console.warn('loadCloudRoutes failed:', e); }
-    try { renderProfileTab(); } catch(e){ console.warn('renderProfileTab failed:', e); }
+    // Tab mit korrektem Zustand neu rendern
+    try { if(currentUser) await loadCloudRoutes(); } catch(e){ console.warn('loadCloudRoutes:', e); }
+    try { renderProfileTab(); } catch(e){ console.warn('renderProfileTab:', e); }
   }
 
   // ── Hilfsfunktion: Feld innerhalb des Containers finden ──
