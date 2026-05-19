@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GravelGuide · Auth Repair</title>
+<style>
+  body { font-family: monospace; background: #040508; color: #e4ecf4; padding: 20px; font-size: 13px; }
+  h1 { color: #00d4ff; font-size: 18px; margin-bottom: 4px; }
+  .sub { color: #8b9bb4; font-size: 11px; margin-bottom: 24px; }
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .card-title { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8b9bb4; margin-bottom: 10px; }
+  .key-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .key-row:last-child { border-bottom: none; }
+  .key-name { color: #00d4ff; min-width: 220px; flex-shrink: 0; word-break: break-all; }
+  .key-val { color: #e4ecf4; word-break: break-all; flex: 1; }
+  .key-val.bad { color: #ff3d6b; }
+  .key-val.ok { color: #00e676; }
+  .key-val.warn { color: #ff9100; }
+  .badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+  .badge.bad { background: rgba(255,61,107,0.2); color: #ff3d6b; border: 1px solid rgba(255,61,107,0.4); }
+  .badge.ok { background: rgba(0,230,118,0.12); color: #00e676; border: 1px solid rgba(0,230,118,0.35); }
+  .badge.warn { background: rgba(255,145,0,0.12); color: #ff9100; border: 1px solid rgba(255,145,0,0.35); }
+  .empty { color: #3d4d60; font-style: italic; }
+  button { font-family: monospace; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 10px 18px; border-radius: 7px; border: 1px solid; cursor: pointer; margin: 4px; }
+  .btn-del { background: rgba(255,61,107,0.15); border-color: rgba(255,61,107,0.5); color: #ff3d6b; }
+  .btn-del:hover { background: rgba(255,61,107,0.3); }
+  .btn-ok { background: rgba(0,230,118,0.12); border-color: rgba(0,230,118,0.4); color: #00e676; }
+  .btn-ok:hover { background: rgba(0,230,118,0.25); }
+  .btn-info { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.35); color: #00d4ff; }
+  .btn-info:hover { background: rgba(0,212,255,0.2); }
+  #log { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 12px; margin-top: 10px; min-height: 60px; white-space: pre-wrap; font-size: 11px; color: #8b9bb4; line-height: 1.7; }
+  .log-ok  { color: #00e676; }
+  .log-bad { color: #ff3d6b; }
+  .log-warn{ color: #ff9100; }
+  .log-info{ color: #00d4ff; }
+  .section-sep { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<h1>🔧 GravelGuide · Auth Repair Tool</h1>
+<div class="sub">Analysiert & repariert den lokalen Auth-Zustand im Browser</div>
+
+<div class="card" id="card-ls">
+  <div class="card-title">📦 LocalStorage — alle Keys</div>
+  <div id="ls-content"><span class="empty">Lade…</span></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔑 Session-Diagnose</div>
+  <div id="session-diag"><span class="empty">Analysiere…</span></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🛠 Aktionen</div>
+  <div style="margin-bottom:10px; color:#8b9bb4; font-size:11px;">
+    Wähle was du bereinigen möchtest. <strong style="color:#ff9100">Deine Routen/Einstellungen bleiben erhalten.</strong>
+  </div>
+  <button class="btn-del" onclick="clearAuthOnly()">🗑 Nur Auth-Session löschen</button>
+  <button class="btn-del" onclick="clearAllAppwrite()">🗑 Alle Appwrite-Keys löschen</button>
+  <button class="btn-del" onclick="clearEverything()">⚠️ Kompletter Reset (Auth + Einstellungen)</button>
+  <hr class="section-sep">
+  <button class="btn-info" onclick="runDiag()">🔄 Neu analysieren</button>
+  <button class="btn-ok" onclick="goToApp()">→ Zur App (nach Reparatur)</button>
+</div>
+
+<div class="card">
+  <div class="card-title">📋 Log</div>
+  <div id="log">Bereit.</div>
+</div>
+
+<script>
+const SESSION_KEY = 'gg_aw_session';
+
+function log(msg, type='') {
+  const el = document.getElementById('log');
+  const cls = type ? `log-${type}` : '';
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function isValidSecret(s) {
+  return typeof s === 'string' && s.length > 20 && s !== 'undefined' && s !== 'null' && s !== '';
+}
+
+function truncate(s, n=60) {
+  if(!s) return s;
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function classifyKey(k, v) {
+  // Auth/Session Keys
+  if(k === SESSION_KEY) {
+    if(!v) return { status: 'bad', label: 'FEHLT', note: 'Kein Session-Token gespeichert' };
+    if(v === 'undefined' || v === 'null' || v === '') return { status: 'bad', label: 'KORRUMPIERT', note: 'Ungültiger Wert — das ist die Crash-Ursache!' };
+    if(v.length < 20) return { status: 'warn', label: 'VERDÄCHTIG', note: 'Zu kurz für eine echte Session-ID' };
+    return { status: 'ok', label: 'OK', note: 'Sieht wie eine gültige Session-ID aus' };
+  }
+  if(k.startsWith('a_session') || k.startsWith('cookieFallback')) {
+    return { status: 'warn', label: 'APPWRITE', note: 'Vom Appwrite SDK gesetzt' };
+  }
+  if(k === 'gg_invite_ok') return { status: 'ok', label: 'INVITE', note: '' };
+  if(k.startsWith('vn_')) return { status: 'ok', label: 'APP-DATA', note: '' };
+  return { status: 'ok', label: 'OTHER', note: '' };
+}
+
+function runDiag() {
+  // LocalStorage
+  const lsEl = document.getElementById('ls-content');
+  const diagEl = document.getElementById('session-diag');
+  
+  if(localStorage.length === 0) {
+    lsEl.innerHTML = '<span class="empty">localStorage ist leer — keine Einträge gefunden</span>';
+  } else {
+    const allKeys = Object.keys(localStorage).sort();
+    let html = '';
+    allKeys.forEach(k => {
+      const v = localStorage.getItem(k);
+      const { status, label, note } = classifyKey(k, v);
+      const displayVal = k === SESSION_KEY || k.startsWith('a_session') 
+        ? (v ? truncate(v, 40) : '<span class="empty">(leer)</span>') 
+        : truncate(v, 80);
+      html += `<div class="key-row">
+        <div class="key-name">${k}</div>
+        <div class="key-val ${status === 'bad' ? 'bad' : status === 'warn' ? 'warn' : ''}">${displayVal || '<span class="empty">(leer)</span>'}</div>
+        <div class="badge ${status}">${label}</div>
+      </div>`;
+      if(note) html += `<div style="font-size:10px;color:#ff9100;padding:2px 0 4px 220px;">⚠ ${note}</div>`;
+    });
+    lsEl.innerHTML = html;
+  }
+
+  // Session-Diagnose
+  const sessionVal = localStorage.getItem(SESSION_KEY);
+  const awKeys = Object.keys(localStorage).filter(k => k.startsWith('a_session') || k.startsWith('cookieFallback'));
+  
+  let diagHtml = '';
+
+  if(!sessionVal) {
+    diagHtml += `<div class="key-row"><div class="key-name">gg_aw_session</div><div class="key-val bad">Nicht vorhanden</div><div class="badge bad">KEIN TOKEN</div></div>
+    <div style="font-size:11px;color:#8b9bb4;margin-top:8px;">→ Beim nächsten Login wird ein neues Token gespeichert. Das ist normal wenn du dich noch nie eingeloggt hast oder die Session manuell gelöscht wurde.</div>`;
+  } else if(!isValidSecret(sessionVal)) {
+    diagHtml += `<div class="key-row"><div class="key-name">gg_aw_session</div><div class="key-val bad">"${sessionVal}"</div><div class="badge bad">KORRUMPIERT</div></div>
+    <div style="font-size:11px;color:#ff3d6b;margin-top:8px;">→ DIESER WERT IST DIE CRASH-URSACHE. Er wird an client.setSession() übergeben und korrumpiert den Appwrite-Client. Bitte "Nur Auth-Session löschen" klicken.</div>`;
+  } else {
+    diagHtml += `<div class="key-row"><div class="key-name">gg_aw_session</div><div class="key-val ok">${truncate(sessionVal, 40)}</div><div class="badge ok">GÜLTIG</div></div>
+    <div style="font-size:11px;color:#8b9bb4;margin-top:8px;">→ Token sieht gut aus. Falls du trotzdem nicht eingeloggt bist, ist die Session auf dem Server abgelaufen. Einmal löschen und neu einloggen.</div>`;
+  }
+
+  if(awKeys.length > 0) {
+    diagHtml += `<div style="margin-top:10px;font-size:11px;color:#ff9100;">⚠ ${awKeys.length} Appwrite SDK-Key(s) gefunden: ${awKeys.join(', ')}<br>Diese können veraltete Sessions enthalten. Bei Problemen mit "Alle Appwrite-Keys löschen" bereinigen.</div>`;
+  }
+
+  diagEl.innerHTML = diagHtml;
+}
+
+function clearAuthOnly() {
+  document.getElementById('log').innerHTML = '';
+  log('Lösche Auth-Session-Token…', 'info');
+  try {
+    const old = localStorage.getItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    log(`✓ ${SESSION_KEY} gelöscht (war: "${truncate(old||'',40)}")`, 'ok');
+  } catch(e) { log('✗ Fehler: ' + e.message, 'bad'); }
+  log('Fertig. Bitte jetzt neu einloggen.', 'ok');
+  runDiag();
+}
+
+function clearAllAppwrite() {
+  document.getElementById('log').innerHTML = '';
+  log('Lösche alle Appwrite-Keys…', 'info');
+  let count = 0;
+  try {
+    const keys = Object.keys(localStorage).filter(k =>
+      k === SESSION_KEY ||
+      k.startsWith('a_session') ||
+      k.startsWith('cookieFallback') ||
+      k === 'gg_navi_recovery'
+    );
+    keys.forEach(k => {
+      localStorage.removeItem(k);
+      log(`✓ Gelöscht: ${k}`, 'ok');
+      count++;
+    });
+    if(count === 0) log('Keine Appwrite-Keys gefunden.', 'warn');
+    else log(`\n${count} Key(s) gelöscht. Bitte neu einloggen.`, 'ok');
+  } catch(e) { log('✗ Fehler: ' + e.message, 'bad'); }
+  runDiag();
+}
+
+function clearEverything() {
+  if(!confirm('Wirklich ALLES löschen? Gespeicherte Routen, Gewicht, Einstellungen — alles weg!')) return;
+  document.getElementById('log').innerHTML = '';
+  log('Lösche localStorage komplett…', 'warn');
+  try {
+    const n = localStorage.length;
+    localStorage.clear();
+    log(`✓ ${n} Einträge gelöscht.`, 'ok');
+    log('App ist jetzt im Ausgangszustand.', 'ok');
+  } catch(e) { log('✗ Fehler: ' + e.message, 'bad'); }
+  runDiag();
+}
+
+function goToApp() {
+  window.location.href = 'index.html';
+}
+
+function truncate(s, n) {
+  if(!s || typeof s !== 'string') return s;
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+// Init
+runDiag();
+</script>
+</body>
+</html>
