@@ -118,6 +118,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);letter-spaci
 .ts.boost input:checked+.ts-sl:before{background:#fff;}
 
 /* ── USER AVATAR ─────────────────── */
+.user-avatar{width:32px;height:32px;border-radius:50%;background:rgba(0,212,255,.15);border:1.5px solid rgba(0,212,255,.35);color:var(--accent);font-family:var(--mono);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:.2s;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:0;}
+.user-avatar:hover{background:rgba(0,212,255,.25);border-color:var(--accent);box-shadow:0 0 12px var(--accent-glow);}
+.user-avatar.logged-in{background:rgba(0,230,118,.15);border-color:rgba(0,230,118,.5);color:var(--green);}
+.user-avatar.logged-in:hover{background:rgba(0,230,118,.25);border-color:var(--green);box-shadow:0 0 12px rgba(0,230,118,.3);}
 
 /* ── SIDEBAR ─────────────────────── */
 #sidebar{position:fixed;top:16px;right:16px;bottom:16px;width:var(--sw);display:flex;flex-direction:column;overflow:hidden;z-index:10;}
@@ -301,14 +305,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);letter-spaci
 }
 
 /* ── OSM ROUTE PIN ───────────────── */
+.osm-pin-wrap{cursor:pointer;filter:drop-shadow(0 3px 6px rgba(0,0,0,.55));transition:transform .12s;-webkit-tap-highlight-color:transparent;}
+.osm-pin-wrap:hover{transform:scale(1.12) translateY(-2px);}
 
 /* ── POPUP CLOSE X ───────────────── */
 .popup-x{position:absolute;top:6px;right:7px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:var(--dim);font-size:13px;line-height:22px;text-align:center;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;}
 .popup-x:hover{background:rgba(255,61,107,.2);border-color:var(--red);color:var(--red);}
 
 /* ── OSM ROUTE NUMBER BADGE ──────── */
+.osm-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;flex-shrink:0;}
 
 /* ── POWER SAVE ──────────────────── */
+.ps-section{background:rgba(0,230,118,.028);border-color:rgba(0,230,118,.2)!important;}
 .ps-master-row{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid rgba(0,230,118,.18);}
 .ps-master-lbl{font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;}
 .ps-master-sub{font-size:10px;color:var(--dim);margin-top:2px;font-weight:400;letter-spacing:.03em;}
@@ -346,7 +354,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);letter-spaci
 .dlg-acts{display:flex;gap:10px;justify-content:flex-end;}
 
 /* ── BOTTOM SHEET (MOBILE) ────────── */
+#bsheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:15;
+  border-radius:22px 22px 0 0;
+  background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);border-bottom:none;
+  box-shadow:0 -8px 44px rgba(0,0,0,.55);
+  /* Default: collapsed — only peek (60px) visible */
+  transform:translateY(calc(100% - 60px));
+  transition:transform .4s var(--spring);
+  display:flex;flex-direction:column;
+  height:62vh;
+  padding-bottom:env(safe-area-inset-bottom);
+}
 /* Expanded: one open state — full 62vh visible */
+#bsheet.exp{transform:translateY(0);}
 #sh-handle{display:flex;flex-direction:column;align-items:center;padding:10px 0 0;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .sh-bar{width:34px;height:4px;background:rgba(255,255,255,.22);border-radius:2px;}
 #sh-peek{display:flex;align-items:center;justify-content:space-around;padding:7px 12px 9px;flex-shrink:0;border-bottom:1px solid var(--border);}
@@ -362,6 +384,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);letter-spaci
 
 /* ── RESPONSIVE ──────────────────── */
 @media(min-width:861px){
+  #bsheet{display:none!important;}
   #header{display:none!important;}
   .maplibregl-ctrl-top-left{top:120px!important;left:14px!important;}
 }
@@ -383,6 +406,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);letter-spaci
 
 /* ── NAVI MODE MOBILE ─────────────── */
 @media(max-width:860px){
+  body.navi-mode #bsheet{
+    transform:translateY(100%)!important;
+    pointer-events:none;
+    transition:transform .35s var(--spring);
+  }
+  body.navi-mode #bsheet.navi-peek{
+    transform:translateY(calc(100% - 60px))!important;
+    pointer-events:auto;
+  }
   body.navi-mode #navi-zoom{display:none!important;}
   body.navi-mode #header{opacity:0!important;pointer-events:none!important;}
 }
@@ -406,6 +438,15 @@ body.navi-mode .maplibregl-ctrl-top-left{
 }
 
 /* OSM Routes panel */
+.osm-route-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--glass-lite);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:5px;cursor:pointer;transition:.2s;}
+.osm-route-item:hover{background:var(--glass-hover);border-color:rgba(0,212,255,.3);}
+.osm-route-item.selected{background:var(--accent-dim);border-color:var(--accent);}
+.osm-route-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.osm-route-info{flex:1;min-width:0;}
+.osm-route-name{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.osm-route-meta{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:2px;}
+.osm-route-use{background:none;border:1px solid rgba(0,212,255,.4);color:var(--accent);font-family:var(--font);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 7px;border-radius:var(--r-sm);cursor:pointer;text-transform:uppercase;transition:.15s;white-space:nowrap;}
+.osm-route-use:hover{background:var(--accent-dim);}
 /* Map ctrl buttons (now used in sidebar) */
 .mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
 .mc-btn{font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:.05em;background:var(--glass-lite);border:1px solid var(--border);color:var(--dim);padding:8px 7px;border-radius:var(--r-md);cursor:pointer;transition:.2s;text-transform:uppercase;white-space:nowrap;display:flex;align-items:center;gap:5px;justify-content:center;}
@@ -539,11 +580,31 @@ body.navi-mode .maplibregl-ctrl-top-left{
 #navi-start-fab .fab-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
 
 /* ── REC FAB ──────────────────────────────── */
+#rec-start-fab{
+  position:fixed;right:16px;bottom:185px;z-index:12;
+  background:rgba(255,61,107,.16);border:1.5px solid var(--red);
+  border-radius:16px;padding:11px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;transition:.2s;
+  font-family:var(--font);color:var(--red);
+  box-shadow:0 4px 20px rgba(255,61,107,.22);
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+#rec-start-fab:hover{background:rgba(255,61,107,.26);transform:translateY(-2px);}
+#rec-start-fab:active{transform:scale(.95);}
+#rec-start-fab .rec-icon{font-size:20px;line-height:1;}
+#rec-start-fab .rec-lbl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+#rec-start-fab .rec-dist{font-size:8px;color:rgba(255,61,107,.7);font-family:var(--mono);min-height:10px;}
+#rec-start-fab.is-recording{
+  background:rgba(255,61,107,.26);
+  animation:recPulse 1.4s ease-in-out infinite;
+}
 @keyframes recPulse{
   0%,100%{box-shadow:0 4px 20px rgba(255,61,107,.22);}
   50%{box-shadow:0 4px 28px rgba(255,61,107,.55),0 0 0 7px rgba(255,61,107,.10);}
 }
 @media(max-width:860px){
+  #rec-start-fab{bottom:80px!important;}
 }
 
 /* Navi-Pulse: current position dot */
@@ -667,6 +728,11 @@ body.navi-mode .maplibregl-ctrl-top-left{
 #navi-watermark-logo em{color:var(--text);font-style:normal;font-weight:300;}
 
 /* ── REC OVERLAY (same structure as navi-overlay) ── */
+#rec-overlay{
+  position:fixed;inset:0;z-index:15;
+  display:none;pointer-events:none;
+}
+#rec-overlay.active{display:block;}
 
 /* ── AUTO-REROUTE old route (dashed yellow) ── */
 /* rendered by MapLibre, no extra CSS needed */
@@ -726,9 +792,86 @@ body.navi-mode .maplibregl-ctrl-top-left{
 }
 
 /* ── AUTO-SAVE COUNTDOWN BAR ─────────────── */
+#nf-autosave-bar{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.28);
+  border-radius:10px;padding:9px 12px 8px;margin-bottom:14px;
+  position:relative;z-index:1;
+}
+#nf-autosave-bar.cancelled{
+  background:rgba(255,255,255,.03);border-color:var(--border);
+}
+#nf-autosave-bar.cancelled #nf-autosave-prog{display:none;}
+#nf-autosave-main{flex:1;min-width:0;}
+#nf-autosave-txt{font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--green);text-transform:uppercase;}
+#nf-autosave-bar.cancelled #nf-autosave-txt{color:var(--muted);}
+#nf-autosave-prog{height:3px;background:rgba(0,230,118,.15);border-radius:2px;margin-top:6px;overflow:hidden;}
+#nf-autosave-fill{height:100%;background:var(--green);border-radius:2px;width:100%;transition:width .9s linear;}
+#nf-autosave-x{
+  background:none;border:1px solid rgba(255,255,255,.1);color:var(--muted);
+  cursor:pointer;font-size:13px;padding:3px 8px;border-radius:6px;line-height:1.4;
+  transition:.15s;flex-shrink:0;font-family:var(--font);font-weight:700;letter-spacing:.04em;
+}
+#nf-autosave-x:hover{color:var(--text);border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.06);}
 
 /* ── LUCKY / RANDOM ROUTE ─────────────────── */
+.lucky-section{background:linear-gradient(135deg,rgba(168,85,247,.06),rgba(0,212,255,.04));border:1px solid rgba(168,85,247,.25)!important;border-radius:var(--r-md)!important;}
+.lucky-section .sb-title{color:#c084fc;}
+.lucky-btn{
+  width:100%;justify-content:center;padding:11px;margin-bottom:10px;
+  background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(0,212,255,.1))!important;
+  border:1.5px solid rgba(168,85,247,.5)!important;color:#c084fc!important;
+  font-size:13px!important;letter-spacing:.07em;
+  box-shadow:0 0 18px rgba(168,85,247,.15);
+}
+.lucky-btn:hover{box-shadow:0 0 28px rgba(168,85,247,.3)!important;border-color:rgba(168,85,247,.8)!important;transform:translateY(-1px);}
+.lucky-btn:active{transform:scale(.97)!important;}
+.lucky-spin{animation:luckySpin .5s var(--spring);}
 @keyframes luckySpin{0%{transform:rotate(0deg) scale(0.85);}50%{transform:rotate(180deg) scale(1.2);}100%{transform:rotate(360deg) scale(1);}}
+
+/* ── MOBILE LAYOUT ─────────────────────── */
+body{margin:0;overflow:hidden;background:#0e0e12;}
+#mob-header{position:fixed;top:10px;left:10px;right:66px;z-index:50;}
+#mob-srch-wrap{display:flex;align-items:center;gap:6px;background:rgba(20,20,26,.92);
+  border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:0 14px;
+  backdrop-filter:blur(16px);box-shadow:0 4px 20px rgba(0,0,0,.4);}
+#srch-inp{flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-size:15px;padding:11px 0;font-family:var(--font);-webkit-appearance:none;}
+#srch-inp::placeholder{color:var(--dim);}
+#srch-clear{background:none;border:none;color:var(--dim);font-size:16px;
+  cursor:pointer;padding:4px;display:none;}
+#srch-drop{position:fixed;top:58px;left:10px;right:10px;z-index:51;
+  background:rgba(20,20,26,.97);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;overflow:hidden;display:none;backdrop-filter:blur(20px);
+  max-height:50vh;overflow-y:auto;}
+#sidebar{position:fixed;bottom:0;left:0;right:0;height:52vh;z-index:40;
+  display:flex;flex-direction:column;background:rgba(14,14,18,.96);
+  backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.1);
+  border-radius:20px 20px 0 0;}
+.tab-bar{display:flex;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
+.tab-btn{flex:1;padding:13px 8px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--dim);font-size:14px;font-weight:600;cursor:pointer;transition:.15s;
+  font-family:var(--font);}
+.tab-btn.on{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-pane{display:none;flex:1;overflow-y:auto;padding:6px 0 80px;overscroll-behavior:contain;}
+.tab-pane.on{display:block;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px 12px 4px;}
+.sc{background:rgba(255,255,255,.04);border-radius:10px;padding:8px 6px;text-align:center;}
+.sv{font-size:18px;font-weight:700;color:var(--text);}
+.sl{font-size:11px;color:var(--dim);margin-top:2px;}
+.cal-row{display:flex;align-items:center;gap:6px;padding:2px 14px 8px;}
+.cal-v{font-size:17px;font-weight:700;color:var(--yellow);}
+.cal-l{font-size:12px;color:var(--dim);}
+.sb{padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.05);}
+.sb-title{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;padding:4px 0 6px;}
+.mc-btn{width:100%;margin-bottom:5px;padding:10px 14px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);
+  font-size:14px;text-align:left;cursor:pointer;transition:.15s;font-family:var(--font);}
+.mc-btn:active{background:rgba(255,255,255,.12);}
+.mc-btn.active{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.3);color:var(--green);}
+.mc-btn.red{color:var(--red);}
+.wp-empty{padding:20px 16px;color:var(--dim);font-size:14px;line-height:1.5;}
+
 </style>
 </head>
 
@@ -772,32 +915,14 @@ body.navi-mode .maplibregl-ctrl-top-left{
     </div>
   </div>
 </div>
-<div id="map-container">
   <div id="map"></div>
-  <div id="loading" class="g"><div class="spin"></div>
-</div><!-- /map-container --><span id="load-txt">Wird geladen…</span></div>
+  <div id="loading" class="g"><div class="spin"></div><span id="load-txt">Wird geladen…</span></div>
 
   <!-- Ghost pin + hold ring for hold-to-place -->
   <div id="wp-ghost-pin"></div>
   <div id="wp-hold-ring"><svg viewBox="0 0 48 48" width="48" height="48"><circle class="track" cx="24" cy="24" r="22"/><circle class="prog" id="wp-hold-prog" cx="24" cy="24" r="22" stroke="var(--accent)" transform="rotate(-90 24 24)"/></svg></div>
   <div id="rt-tip"></div>
 </div>
-
-<!-- Mobile-only header (hidden on desktop) -->
-<header id="header" class="g">
-  <div class="logo" onclick="locateMe()" style="cursor:pointer;" title="Zum aktuellen Standort">GRAVEL<em>GUIDE</em><span class="logo-badge">3D</span></div>
-  <div id="srch-wrap">
-    <input id="srch-inp" type="text" placeholder="Ort suchen…" autocomplete="off" style="padding-left:12px;">
-    <button id="srch-clear" onclick="clearSearch()">✕</button>
-    <div id="srch-drop"></div>
-  </div>
-  <div class="hdr-btns">
-    <button class="btn" id="mob-layer-btn" onclick="cycleLayerMode()" style="padding:7px 10px;font-size:12px;" title="Karte / Satellit / Hybrid"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;"><line x1="2" y1="16" x2="16" y2="2" stroke="#00d4ff" stroke-opacity="1"   stroke-width="2.5" stroke-linecap="round"/><line x1="7" y1="17" x2="17" y2="7" stroke="#00d4ff" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round"/><line x1="1"  y1="11" x2="11" y2="1" stroke="#00d4ff" stroke-opacity="0.25" stroke-width="2.5" stroke-linecap="round"/></svg></button>
-    <div id="user-avatar-mob" class="user-avatar" onclick="openProfileMob()" title="Profil"></div>
-  </div>
-</header>
-
-<!-- map controls moved into sidebar -->
 
 <div id="elev-panel" class="g">
   <div class="elev-hdr">
@@ -807,138 +932,71 @@ body.navi-mode .maplibregl-ctrl-top-left{
   <canvas id="elev-canvas"></canvas>
 </div>
 
-<aside id="sidebar" class="g">
-  <!-- ── SIDEBAR HEADER (desktop only) ── -->
-  <div class="sb-top">
-      <div class="sb-top-logo">
-      <div class="logo" onclick="locateMe()" style="font-size:18px;cursor:pointer;" title="Zum aktuellen Standort">GRAVEL<em>GUIDE</em><span class="logo-badge">3D</span></div>
+
+<!-- ── MOBILE SEARCH ── -->
+<div id="mob-header">
+  <div id="mob-srch-wrap">
+    <input id="srch-inp" type="search" placeholder="🔍 Ort suchen…" autocomplete="off"
+      oninput="onSrchInput(this.value)" onkeydown="if(event.key==='Enter')selectFirstResult()">
+    <button id="srch-clear" onclick="clearSearch()">✕</button>
+  </div>
+  <div id="srch-drop"></div>
+</div>
+
+<!-- ── SIDEBAR ── -->
+<div id="sidebar" class="g">
+  <div class="tab-bar">
+    <button class="tab-btn on" onclick="switchTab('t-route',this)">Route</button>
+    <button class="tab-btn" onclick="switchTab('t-tools',this)">Tools</button>
+  </div>
+
+  <div class="tab-pane on" id="t-route">
+    <div id="wp-list"><div class="wp-empty">Karte tippen, um Wegpunkte zu setzen</div></div>
+    <div class="stats-row">
+      <div class="sc"><div class="sv" id="s-dist">—</div><div class="sl">km</div></div>
+      <div class="sc"><div class="sv" id="s-time" style="color:var(--accent)">—</div><div class="sl">Zeit</div></div>
+      <div class="sc"><div class="sv" id="s-up" style="color:var(--red)">—</div><div class="sl">↑ hm</div></div>
+      <div class="sc"><div class="sv" id="s-down" style="color:var(--green)">—</div><div class="sl">↓ hm</div></div>
+      <div class="sc"><div class="sv" id="s-grade" style="color:var(--orange)">—</div><div class="sl">Max%</div></div>
+      <div class="sc"><div class="sv" id="s-speed" style="color:var(--yellow)">—</div><div class="sl">Ø km/h</div></div>
     </div>
-    <div class="sb-srch">
-      <input id="srch-inp-desk" type="text" class="set-inp" placeholder="Ort suchen…" autocomplete="off" style="width:100%;text-align:left;font-family:var(--font);font-size:13px;">
-      <button id="srch-clear-desk" onclick="clearSearchDesk()" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;display:none;">✕</button>
-      <div id="srch-drop-desk" style="position:absolute;top:calc(100% - 1px);left:10px;right:10px;background:rgba(8,12,20,.97);backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;display:none;z-index:200;box-shadow:0 16px 48px rgba(0,0,0,.6);"></div>
-    </div>
-    <div class="sb-top-actions">
-      <button class="btn" onclick="undoWp()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">↩ Undo</button>
-      <button class="btn danger" onclick="clearAll()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">✕ Clear</button>
-      <button class="btn" id="hdr-layer-btn" onclick="cycleLayerMode()" title="Karte / Satellit / Hybrid" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">🗺 Karte</button>
-      <button class="btn" onclick="shareRoute()" style="flex:1;justify-content:center;padding:5px 6px;font-size:11px;">🔗</button>
+    <div class="cal-row"><span class="cal-v" id="s-cal">—</span><span class="cal-l"> kcal</span></div>
+    <div id="bp-grid-dsk" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:4px 10px;"></div>
+    <div class="sb">
+      <div id="saves-list"></div>
     </div>
   </div>
-  <nav class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('t-route',this)">Route</button>
-    <button class="tab-btn" onclick="switchTab('t-tools',this)">Tools</button>
-  </nav>
-  <div class="tab-body">
 
-    <div class="tab-pane on" id="t-route">
-      <div style="padding:9px 13px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
-        <span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Wegpunkte <span id="wp-count" style="color:var(--accent);font-size:12px">0</span></span>
-      </div>
-      <div id="wp-list"><div class="wp-empty">Klicke auf die Karte<br>um Wegpunkte zu setzen</div></div>
-      <!-- ── ROUTENSTATISTIK ── -->
-      <div class="sb">
-        <div class="sb-title">Routenstatistik</div>
-        <div class="stat-grid">
-          <div class="sc"><div class="sv" id="s-dist">—</div><div class="sl">Distanz</div></div>
-          <div class="sc"><div class="sv" id="s-time" style="color:var(--accent)">—</div><div class="sl">Fahrzeit</div></div>
-          <div class="sc"><div class="sv" id="s-up" style="color:var(--red)">—</div><div class="sl">Aufstieg ↑</div></div>
-          <div class="sc"><div class="sv" id="s-down" style="color:var(--green)">—</div><div class="sl">Abstieg ↓</div></div>
-          <div class="sc"><div class="sv" id="s-grade" style="color:var(--orange)">—</div><div class="sl">Max. Steig.</div></div>
-          <div class="sc"><div class="sv" id="s-speed" style="color:var(--yellow)">—</div><div class="sl">Ø Tempo</div></div>
-        </div>
-        <div class="cal-card">
-          <div class="cal-ico">🔥</div>
-          <div><div class="cal-v" id="s-cal">—</div><div class="cal-l">Kalorien (kcal)</div></div>
-        </div>
-      </div>
-      <!-- ── ROUTING ── -->
-      <div class="sb">
-        <div class="sb-title">Routing</div>
-        <div class="mc-grid">
-          <button class="mc-btn" onclick="locateMe()">📍 Mein Ort</button>
-          <button class="mc-btn green" id="btn-navi-ctrl" onclick="startNavi()">🚴 Navigation</button>
-        </div>
-      </div>
+  <div class="tab-pane" id="t-tools">
+    <div class="sb">
+      <button class="mc-btn" onclick="undoWaypoint()">↩ Undo</button>
+      <button class="mc-btn red" onclick="clearAll()">🗑 Alles löschen</button>
     </div>
-
-    <div class="tab-pane" id="t-tools">
-      <!-- ── UNDO / CLEAR ── -->
-      <div class="sb" style="border-bottom:1px solid var(--border);">
-        <div style="display:flex;gap:6px;">
-          <button class="btn" style="flex:1;justify-content:center;padding:7px 6px;font-size:12px;" onclick="undoWp()">↩ Undo</button>
-          <button class="btn danger" style="flex:1;justify-content:center;padding:7px 6px;font-size:12px;" onclick="clearAll()">✕ Clear</button>
-        </div>
-      </div>
-      <!-- ── STRECKENOPTIONEN (top) ── -->
-      <div class="sb">
-        <div class="sb-title">🔀 Streckenoptionen</div>
-        <div id="dsk-brouter-profs">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;" id="bp-grid-dsk"></div>
-        </div>
-      </div>
-      <!-- ── EXPORT & IMPORT ── -->
-      <div class="sb">
-        <div class="sb-title">Export &amp; Import</div>
-        <div class="tool-grid">
-          <button class="tool-btn" onclick="exportGPX()"><span class="ti">⬇️</span>GPX Export</button>
-          <button class="tool-btn" onclick="document.getElementById('gpx-file').click()"><span class="ti">⬆️</span>GPX Import</button>
-          <button class="tool-btn" onclick="exportGMaps()"><span class="ti">🗺️</span>Google Maps</button>
-          <button class="tool-btn" onclick="shareRoute()"><span class="ti">🔗</span>Link teilen</button>
-        </div>
-      </div>
-      <!-- ── KARTE ── -->
-      <div class="sb" style="border-bottom:none;">
-        <div class="sb-title">Karte</div>
-        <div class="mc-grid" style="margin-bottom:7px;">
-          <button class="mc-btn active" id="btn-3d" onclick="toggle3D()">🏔 3D-Terrain</button>
-          <button class="mc-btn" id="btn-sat" onclick="toggleSat()">🛰 Satellit</button>
-          <button class="mc-btn" id="btn-mesh" onclick="toggleMesh()">⬡ Mesh</button>
-          <button class="mc-btn active" id="btn-wp-vis" onclick="toggleGlobalWps()">👁 Wegpunkte</button>
-        </div>
-        <div class="tool-grid">
-          <button class="tool-btn" id="t-km" onclick="toggleKmMarkers()"><span class="ti">📏</span>KM-Marker</button>
-          <button class="tool-btn" onclick="mapFitRoute()"><span class="ti">⊞</span>Zentrieren</button>
-          <button class="tool-btn" onclick="locateMe()"><span class="ti">📍</span>Mein Ort</button>
-          <button class="tool-btn" id="t-hide" onclick="toggleHide()"><span class="ti">👁️</span>Karte ein/aus</button>
-          <button class="tool-btn" id="t-meteo" onclick="toggleMeteo()"><span class="ti">⏸️</span>Meteo Pause</button>
-          <button class="tool-btn" id="t-offline-maps" onclick="cacheOfflineMaps()" title="Karten rund um den Standort (20km) in den Cache laden"><span class="ti">📦</span>Offline Karten</button>
-          <button class="tool-btn active" id="t-topo-3d" onclick="toggleTopo3D()" title="3D Topografie ein/ausschalten"><span class="ti">🏔</span>3D/2D</button>
-        </div>
-      </div>
-      <!-- ── NAVIGATION ── -->
-      <div class="sb" style="border-bottom:none;border-top:1px solid var(--border);">
-        <div class="sb-title">Navigation</div>
-        <div class="tool-grid">
-          <button class="tool-btn" id="t-turnbyturn" onclick="toggleTurnByTurn()"><span class="ti">🔀</span>Abbiegungen</button>
-          <button class="tool-btn" id="btn-auto-reroute" onclick="toggleAutoReroute()" title="Route automatisch neu berechnen bei Abweichung"><span class="ti">🔄</span>Rerouting</button>
-          <button class="tool-btn" id="t-navi-arrow-big" onclick="toggleNaviArrowBig()" title="Standort-Pfeil 3× größer während der Navigation"><span class="ti">🔵</span>Big Arrow</button>
-          <button class="tool-btn" id="t-screen-wake" onclick="toggleScreenWake()" title="Verhindert dass der Bildschirm ausgeht während der Navigation"><span class="ti">💡</span>Bildschirm An</button>
-          <button class="tool-btn" id="t-wide-routes" onclick="toggleWideRoutes()" title="Routen 3× breiter anzeigen"><span class="ti">〰️</span>Breite Routen</button>
-          <button class="tool-btn" id="t-elev-overlay" onclick="toggleElevOverlay()" title="Höhenprofil während der Fahrt einblenden"><span class="ti">⛰</span>Höhenprofil</button>
-          <button class="tool-btn" id="t-stats-locked" onclick="toggleNaviStatsLocked()" title="Stats dauerhaft eingeblendet lassen"><span class="ti">📊</span>Stats On</button>
-          <button class="tool-btn" id="t-navi-shortcuts" onclick="toggleNaviShortcuts()" title="Shortcut-Buttons während der Navigation"><span class="ti">⚡</span>Shortcuts</button>
-        </div>
-      </div>
-      <!-- ── POWER SAVE NAVI ── -->
-      <div class="sb ps-section" style="border-top:1px solid rgba(0,230,118,.2);border-bottom:none;">
-        <div class="ps-master-row">
-          <div>
-            <div class="ps-master-lbl">🔋 Stromspar-Navigation</div>
-            <div class="ps-master-sub">Aktiv nur während der Live-Navigation</div>
-          </div>
-          <label class="ts" style="flex-shrink:0;"><input type="checkbox" id="ps-master-dsk" checked onchange="togglePsMaster(this.checked)"><div class="ts-sl" style="background:rgba(0,230,118,.22);"></div></label>
-        </div>
-        <div class="ps-opts on" id="ps-opts-dsk">
-          <div class="ps-opt-row" onclick="togglePs('gps')"><div class="ps-ico">📡</div><div class="ps-info"><div class="ps-name">GPS-Intervall</div><div class="ps-desc">Update nur alle 5 Sek. / 10 Meter</div></div><div class="ps-badge on" id="ps-gps-dsk">AN</div></div>
-          <div class="ps-opt-row" onclick="togglePs('display')"><div class="ps-ico">🖥</div><div class="ps-info"><div class="ps-name">Bildschirm 1–2 Hz</div><div class="ps-desc">Karten-Refresh gedrosselt</div></div><div class="ps-badge on" id="ps-display-dsk">AN</div></div>
-          <div class="ps-opt-row" onclick="togglePs('cache')"><div class="ps-ico">📦</div><div class="ps-info"><div class="ps-name">Routen-Cache</div><div class="ps-desc">Kacheln vorab laden &amp; speichern</div></div><div class="ps-badge on" id="ps-cache-dsk">AN</div></div>
-          <div class="ps-opt-row" onclick="togglePs('darkhud')"><div class="ps-ico">🌑</div><div class="ps-info"><div class="ps-name">Minimales HUD</div><div class="ps-desc">Backdrop-Blur &amp; Glow deaktiviert</div></div><div class="ps-badge on" id="ps-darkhud-dsk">AN</div></div>
-          <div class="ps-opt-row" onclick="togglePs('noanim')"><div class="ps-ico">✋</div><div class="ps-info"><div class="ps-name">Animationen aus</div><div class="ps-desc">Kamera-Übergänge minimal</div></div><div class="ps-badge on" id="ps-noanim-dsk">AN</div></div>
-        </div>
-      </div>
+    <div class="sb">
+      <div class="sb-title">Export &amp; Import</div>
+      <button class="mc-btn" onclick="exportGPX()">⬇ GPX Export</button>
+      <button class="mc-btn" onclick="document.getElementById('gpx-file').click()">⬆ GPX Import</button>
+      <button class="mc-btn" onclick="shareRoute()">🔗 Route teilen</button>
+      <button class="mc-btn" onclick="saveRoute()">💾 Route speichern</button>
+      <button class="mc-btn" onclick="exportGMaps()">📍 Google Maps öffnen</button>
     </div>
-</aside>
+    <div class="sb">
+      <div class="sb-title">Karte</div>
+      <button class="mc-btn toggle" id="t-3d" onclick="toggle3D()">🏔 3D Gebäude</button>
+      <button class="mc-btn toggle" id="t-topo-3d" onclick="toggleTopo3D()">⛰ Terrain 3D</button>
+      <button class="mc-btn toggle" id="t-sat" onclick="toggleSat()">🛰 Satellit</button>
+      <button class="mc-btn toggle" id="t-hide" onclick="toggleHide()">👁 Karte ausblenden</button>
+    </div>
+    <div class="sb">
+      <div class="sb-title">Navigation</div>
+      <button class="mc-btn toggle" id="t-turnbyturn" onclick="toggleTurnByTurn()">↗ Turn-by-Turn</button>
+      <button class="mc-btn toggle" id="t-auto-reroute" onclick="toggleAutoReroute()">🔄 Auto-Reroute</button>
+      <button class="mc-btn toggle" id="t-navi-stats" onclick="toggleNaviStats()">📊 Navi-Stats</button>
+      <button class="mc-btn toggle" id="t-navi-arrow-big" onclick="toggleNaviArrowBig()">🧭 Großer Pfeil</button>
+      <button class="mc-btn toggle" id="t-wide-routes" onclick="toggleWideRoutes()">🛣 Breite Route</button>
+    </div>
+  </div>
+</div>
 
 <input type="file" id="gpx-file" accept=".gpx" style="display:none" onchange="importGPX(this)">
 <div id="toast"></div>
@@ -1102,7 +1160,7 @@ body.navi-mode .maplibregl-ctrl-top-left{
         <div class="nf-cell"><div class="nf-v" style="color:var(--dim);" id="nf-wps">—</div><div class="nf-l">Wegpunkte</div></div>
       </div>
       <div class="nf-btns">
-        <button class="nf-btn share" onclick="shareRoute()">🔗 Route teilen</button>
+        <button class="nf-btn share" onclick="shareRoute()">📤 Teilen &amp; Speichern</button>
         <button class="nf-btn gpx" onclick="exportGPX()">⬇️ GPX exportieren</button>
         <button class="nf-btn close" onclick="closeNaviFinish()">✕ Schließen</button>
       </div>
@@ -1113,53 +1171,69 @@ body.navi-mode .maplibregl-ctrl-top-left{
 
 <script>
 
-// ── STUBS (removed features) ──────────────────────────────────
+// ── STUBS ──────────────────────────────────────────
 let recActive = false;
 function pauseRec(){}
 function resumeRec(){}
 function recLogoTap(){}
-function saveCurrentRouteToCloud(){ showToast('Lokal gespeichert'); }
+function saveCurrentRouteToCloud(){}
 function loadCloudRoutes(){}
 function renderCloudRoutes(){}
 window._awSaveRoute = null;
-window._awCurrentUser = () => null;
+window._awCurrentUser = ()=>null;
 function openProfileTab(){}
-function openProfileMob(){}
 function updateUserAvatars(){}
 function renderProfileTab(){}
-function generateRandomRoute(){ showToast('Lucky Route nicht verfügbar'); }
+function generateRandomRoute(){ showToast('Nicht verfügbar'); }
 function updateLuckyKm(){}
 function loadMoreCloudRoutes(){}
 function loadOsmRoutes(){}
 function renderOsmRoutes(){}
-function toggleMeteo(){
-  meteoPaused = !meteoPaused;
-  document.getElementById('t-meteo')?.classList.toggle('active', meteoPaused);
-  showToast(meteoPaused ? 'Meteo pausiert' : 'Meteo aktiv');
+function selectOsmRoute(){}
+function clearOsmRoutes(){}
+function showOsmRoutePopup(){}
+function exportGMaps(){
+  if(!waypoints.length){ showToast('Keine Route'); return; }
+  window.open('https://maps.google.com/maps/dir/'+waypoints.map(w=>w.lat+','+w.lng).join('/'), '_blank');
 }
+function toggleHide(){
+  mapHidden=!mapHidden;
+  (map.getStyle().layers||[]).forEach(l=>{
+    if(l.id.startsWith('vn-')||l.id.startsWith('route-')) return;
+    try{ map.setLayoutProperty(l.id,'visibility',mapHidden?'none':'visible'); }catch(e){}
+  });
+  document.getElementById('t-hide')?.classList.toggle('active',mapHidden);
+}
+function toggleMeteo(){ meteoPaused=!meteoPaused; showToast(meteoPaused?'Meteo pausiert':'Meteo aktiv'); }
 function toggleBigFont(){}
 function toggleBrightMode(){}
-function setOptikBrightness(){}
-function setOptikContrast(){}
-window.cacheOfflineMaps = function(){ showToast('Offline-Cache nicht verfügbar'); };
-window.toggleTopo3D = function(){
-  if(!map) return;
-  terrainOn = !terrainOn;
-  try {
-    if(terrainOn && apiKey){
+window.cacheOfflineMaps=function(){ showToast('Offline-Cache nicht verfügbar'); };
+window.toggleTopo3D=function(){
+  if(!map) return; terrainOn=!terrainOn;
+  try{
+    if(terrainOn&&apiKey){
       if(!map.getSource('dem')) map.addSource('dem',{type:'raster-dem',
         url:'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key='+apiKey,tileSize:256});
       map.setTerrain({source:'dem',exaggeration:1.5});
     } else { map.setTerrain(null); }
-  } catch(e){}
-  ['btn-3d','mob-btn-3d','t-topo-3d','mob-t-topo-3d'].forEach(id=>
-    document.getElementById(id)?.classList.toggle('active',terrainOn));
-  showToast(terrainOn ? '3D Terrain aktiv' : '2D Ansicht');
+  }catch(e){}
+  document.getElementById('t-topo-3d')?.classList.toggle('active',terrainOn);
+  showToast(terrainOn?'Terrain 3D aktiv':'2D Ansicht');
 };
 function switchSheetTab(){}
 function setSheetState(){}
-// ── END STUBS ──────────────────────────────────────────────────
-
+function saveRoute(){
+  if(!fullRoute.coords.length){ showToast('Keine Route'); return; }
+  const name=prompt('Route speichern als:','Route');
+  if(name) saveAs(name);
+}
+function selectResultDesk(r){ selectResultMob(r); }
+function togglePsMaster(){}
+function togglePs(){}
+function psApply(){}
+function psRestore(){}
+// ── END STUBS ──────────────────────────────────────
+<script>
 // ══════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════
@@ -3145,6 +3219,26 @@ function importGPX(input){
   reader.readAsText(file);
 }
 
+function exportGMaps(){
+  if(waypoints.length < 2){ showToast('Mindestens 2 Wegpunkte nötig'); return; }
+  // Google Maps supports max 10 stops (origin + 8 waypoints + destination)
+  const pts = waypoints.filter((_, i) => i === 0 || i === waypoints.length-1 || waypoints.length <= 10);
+  let stops;
+  if(waypoints.length <= 10){
+    stops = waypoints;
+  } else {
+    // Sample: start, ~7 intermediate, end
+    const step = Math.floor((waypoints.length-2) / 7);
+    stops = [waypoints[0]];
+    for(let i=step; i<waypoints.length-1; i+=step) stops.push(waypoints[i]);
+    stops.push(waypoints[waypoints.length-1]);
+    stops = stops.slice(0,10);
+  }
+  const coords = stops.map(w => `${w.lat.toFixed(6)},${w.lng.toFixed(6)}`);
+  const url = `https://www.google.com/maps/dir/${coords.join('/')}`;
+  window.open(url, '_blank');
+  showToast('✓ Google Maps geöffnet');
+}
 
 function saveRoute(){
   if(waypoints.length<2){ showToast('Mindestens 2 Wegpunkte nötig'); return; }
@@ -3603,7 +3697,7 @@ function switchSheetTab(id,btn){
   document.querySelectorAll('.sh-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(id==='st-tools') renderBrouterProfileBtns();
-  
+  if(id==='st-profil' && typeof initD2Stats === 'function') setTimeout(initD2Stats, 50);
 }
 
 // ── LAYER CYCLE (Satellit → Hybrid → Karte → Satellit → …) ──────────
@@ -3905,13 +3999,46 @@ const NAVI_VIEW_LABELS = ['🧭 Nah', '↑ Nord', '▷ Abschn.', '⊞ Gesamt'];
 // ══════════════════════════════════════════════════
 // POWER SAVE
 // ══════════════════════════════════════════════════
-function togglePsMaster(){}
+function togglePsMaster(on){
+  ps.master = on;
+  ['dsk','mob'].forEach(sfx => {
+    const opts = document.getElementById(`ps-opts-${sfx}`);
+    if(opts) opts.classList.toggle('disabled', !on);
+    const cb = document.getElementById(`ps-master-${sfx}`);
+    if(cb) cb.checked = on;
+  });
+  localStorage.setItem('vn_ps', JSON.stringify(ps));
+}
 
-function togglePs(){}
+function togglePs(key){
+  ps[key] = !ps[key];
+  const label = ps[key] ? 'AN' : 'AUS';
+  ['dsk','mob'].forEach(sfx => {
+    const b = document.getElementById(`ps-${key}-${sfx}`);
+    if(b){ b.textContent = label; b.className = 'ps-badge' + (ps[key] ? ' on' : ''); }
+  });
+  localStorage.setItem('vn_ps', JSON.stringify(ps));
+}
 
-function psApply(){}
+function psApply(){
+  if(!ps.master) return;
+  if(ps.darkhud){
+    // Remove expensive backdrop-blur from HUD during navi
+    const ov = document.getElementById('navi-overlay');
+    if(ov) ov.style.cssText += ';--blur:blur(2px)';
+    const hud = document.getElementById('navi-hud-bar');
+    if(hud) hud.style.backdropFilter = 'none';
+    
+    
+  }
+}
 
-function psRestore(){}
+function psRestore(){
+  const hud = document.getElementById('navi-hud-bar');
+  if(hud) hud.style.backdropFilter = '';
+  
+  
+}
 
 async function psCacheTiles(){
   if(naviActive) return;  // never cache tiles during active navigation
@@ -4160,7 +4287,7 @@ window.naviRecover = async function(){
     if(map.getSource('vn-gps'))        map.getSource('vn-gps').setData(emptyFC());
 
     if(window.innerWidth <= 860){
-      // setSheetState removed
+      // sheet removed
       const mobStop = document.getElementById('mob-navi-stop');
       if(mobStop) mobStop.style.display = 'block';
     }
@@ -4244,7 +4371,7 @@ function startNavi(){
 
   // Mobile: collapse & hide bsheet, show stop button
   if(window.innerWidth <= 860){
-    // setSheetState removed
+    // sheet removed
     const mobStop = document.getElementById('mob-navi-stop');
     if(mobStop) mobStop.style.display = 'block';
   }
@@ -4356,7 +4483,8 @@ function stopNavi(silent){
   // Mobile: restore bsheet state, hide stop button
   // bsheet removed
   
-  
+  const mobStop = document.getElementById('mob-navi-stop');
+  if(mobStop) mobStop.style.display = 'none';
 
   // Show FAB again if route still exists
   const fab = document.getElementById('navi-start-fab');
@@ -4881,7 +5009,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       if(src === 'handle' || src === 'peek'){
         // Handle / Peek: auf/zu toggle, 30px reichen
         if(dy < -30)      setSheetState(1); // rauf → öffnen
-        else if(dy > 30)  // setSheetState removed // runter → schließen
+        else if(dy > 30)  // sheet removed // runter → schließen
       } else {
         // Body: NUR runter (minimieren) erlaubt — kein versehentliches Öffnen
         // beim Scrollen von Inhalten
@@ -4889,7 +5017,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         const threshold = 90;
         if(dy < threshold) return;
         if(swScrollTop > 8) return; // User scrollt Inhalt → ignorieren
-        // setSheetState removed
+        // sheet removed
       }
     };
 
@@ -4967,9 +5095,9 @@ document.addEventListener('beforeinput', e => {
 // ══════════════════════════════════════════════════
 let srchDeskTimer = null;
 document.addEventListener('DOMContentLoaded', () => {
-  const inp = document.getElementById('srch-inp-desk');
-  const clr = document.getElementById('srch-clear-desk');
-  const drop = document.getElementById('srch-drop-desk');
+  const inp = document.getElementById('srch-inp');
+  const clr = document.getElementById('srch-clear');
+  const drop = document.getElementById('srch-drop');
   if(!inp) return;
 
   inp.addEventListener('input', e => {
@@ -4987,7 +5115,7 @@ async function doSearchDesk(q){
     const bias = map ? `&viewbox=${map.getCenter().lng-1},${map.getCenter().lat+1},${map.getCenter().lng+1},${map.getCenter().lat-1}&bounded=0` : '';
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&accept-language=de&addressdetails=1${bias}`);
     const data = await res.json();
-    const drop = document.getElementById('srch-drop-desk');
+    const drop = document.getElementById('srch-drop');
     if(!data.length){ drop.innerHTML='<div class="sr-item" style="color:var(--muted)"><span class="sr-pin">🔍</span><div><div class="sr-name">Keine Ergebnisse</div></div></div>'; drop.style.display='block'; return; }
     drop.innerHTML = data.map(r => {
       const name = r.display_name.split(',')[0];
@@ -5003,28 +5131,14 @@ async function doSearchDesk(q){
 }
 
 function clearSearchDesk(){
-  const inp = document.getElementById('srch-inp-desk');
-  const clr = document.getElementById('srch-clear-desk');
-  const drop = document.getElementById('srch-drop-desk');
+  const inp = document.getElementById('srch-inp');
+  const clr = document.getElementById('srch-clear');
+  const drop = document.getElementById('srch-drop');
   if(inp) inp.value='';
   if(clr) clr.style.display='none';
   if(drop) drop.style.display='none';
 }
 
-function selectResultDesk(lat, lng, name){
-  clearSearchDesk();
-  lat=parseFloat(lat); lng=parseFloat(lng);
-  map.flyTo({center:[lng,lat],zoom:14,speed:1.8});
-  if(searchPin) searchPin.remove();
-  searchPin = new maplibregl.Marker({color:'#ff3d6b'}).setLngLat([lng,lat]).addTo(map);
-  const popup = new maplibregl.Popup({closeButton:false,offset:30,anchor:'bottom'})
-    .setHTML(`<div style="font-family:var(--font);text-align:center;padding:5px;">
-      <div style="margin-bottom:8px;font-size:14px;font-weight:600">${name}</div>
-      <button class="btn ok" style="width:100%;margin-bottom:5px;justify-content:center" onclick="addWpFromSearch(${lng},${lat})">📍 Als Wegpunkt</button>
-      <button class="btn danger" style="width:100%;justify-content:center" onclick="clearSearchPin()">✕</button>
-    </div>`);
-  searchPin.setPopup(popup).togglePopup();
-}
 
 // ══════════════════════════════════════════════════
 // OSM CYCLING ROUTES IMPORT (Overpass API)
@@ -5032,6 +5146,59 @@ function selectResultDesk(lat, lng, name){
 let osmRoutesData = [];
 let selectedOsmRoute = null;
 
+async function loadOsmRoutes(){
+  if(!map) return;
+  const isMob = window.innerWidth <= 860;
+  const panel = document.getElementById(isMob ? 'mob-osm-panel' : 'osm-routes-panel');
+  const list  = document.getElementById(isMob ? 'mob-osm-list' : 'osm-routes-list');
+  if(!panel||!list) return;
+  panel.style.display = 'block';
+  list.innerHTML = '<div class="wp-empty" style="padding:12px 0;"><div class="spin" style="margin:0 auto 8px;"></div>Lade Fahrradrouten…</div>';
+
+  if(isMob) {
+    // Sheet aufklappen, aber im Route-Tab bleiben
+    if(!sheetExpanded){ setSheetState(1); }
+  }
+
+  const b = map.getBounds();
+  const bbox = `${b.getSouth().toFixed(4)},${b.getWest().toFixed(4)},${b.getNorth().toFixed(4)},${b.getEast().toFixed(4)}`;
+  const query = `[out:json][timeout:60];(relation["type"="route"]["route"~"bicycle|mtb"](${bbox}););out body geom;`;
+
+  try {
+    const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+    if(!res.ok) throw new Error('Overpass-Fehler');
+    const data = await res.json();
+    osmRoutesData = (data.elements||[]).filter(e => e.type==='relation' && e.members);
+
+    if(!osmRoutesData.length){
+      list.innerHTML = '<div class="wp-empty" style="padding:12px 0;">Keine Routen im aktuellen Bereich.</div>';
+      return;
+    }
+
+    // Show routes on map + start-point pins
+    renderOsmRoutes(osmRoutesData);
+
+    // Render list with numbers
+    const colors = ['#e040fb','#ff6d00','#00e5ff','#69f0ae','#ffea00','#ff1744','#40c4ff'];
+    list.innerHTML = osmRoutesData.slice(0,20).map((r,i)=>{
+      const tags = r.tags||{};
+      const name = tags.name || tags.ref || `Route ${i+1}`;
+      const type = tags.route === 'mtb' ? 'MTB' : 'Rad';
+      const dist = tags.distance ? `${parseFloat(tags.distance).toFixed(0)} km` : '';
+      const col = colors[i % colors.length];
+      return `<div class="osm-route-item" id="osm-ri-${r.id}" onclick="selectOsmRoute(${r.id})">
+        <div class="osm-num" style="background:${col}">${i+1}</div>
+        <div class="osm-route-info">
+          <div class="osm-route-name">${name}</div>
+          <div class="osm-route-meta">${type}${dist?' · '+dist:''}</div>
+        </div>
+        <button class="osm-route-use" onclick="useOsmRoute(event,${r.id})">Route nutzen</button>
+      </div>`;
+    }).join('');
+  } catch(err){
+    list.innerHTML = `<div class="wp-empty" style="padding:12px 0;color:var(--red)">Fehler: ${err.message}</div>`;
+  }
+}
 
 function renderOsmRoutes(routes){
   if(!map.getSource('vn-osm-routes')) map.addSource('vn-osm-routes',{type:'geojson',data:emptyFC()});
@@ -5088,7 +5255,59 @@ function osmDifficulty(tags){
   return {label:'Leicht', color:'#00e676'};
 }
 
+function showOsmRoutePopup(r, idx, col, lngLat){
+  const tags   = r.tags||{};
+  const name   = tags.name || tags.ref || `Route ${idx+1}`;
+  const type   = tags.route === 'mtb' ? '🚵 MTB' : '🚴 Radroute';
+  const distKm = tags.distance ? `${parseFloat(tags.distance).toFixed(1)} km` : '—';
+  const elevM  = tags['ascent']||tags['ele:gain']||tags.ascent || null;
+  const elevStr= elevM ? `${Math.round(parseFloat(elevM))} m` : '—';
+  // Estimated duration at 15 km/h
+  const durStr = tags.distance ? fmtTime((parseFloat(tags.distance)/15)*3600) : '—';
+  const diff   = osmDifficulty(tags);
+  const net    = tags.network||tags.ref||'';
 
+  new maplibregl.Popup({closeButton:false, anchor:'bottom', offset:10, maxWidth:'260px'})
+    .setLngLat(lngLat)
+    .setHTML(`
+      <div style="position:relative;font-family:var(--font);min-width:220px;padding-top:6px;">
+        <div class="popup-x" onclick="document.querySelector('.maplibregl-popup')?.remove()">✕</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:26px;height:26px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;flex-shrink:0;">${idx+1}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.25;">${name}</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:1px;">${type}${net?' · '+net:''}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px;">
+          <div style="background:var(--glass-lite);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;">Strecke</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">${distKm}</div>
+          </div>
+          <div style="background:var(--glass-lite);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;">Höhenmeter</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">${elevStr}</div>
+          </div>
+          <div style="background:var(--glass-lite);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;">Dauer</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-top:2px;">${durStr}</div>
+          </div>
+          <div style="background:var(--glass-lite);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;">Schwierigkeit</div>
+            <div style="font-size:13px;font-weight:700;color:${diff.color};margin-top:2px;">${diff.label}</div>
+          </div>
+        </div>
+        <button class="btn ok" style="width:100%;justify-content:center;padding:8px;font-size:12px;" onclick="document.querySelector('.maplibregl-popup')?.remove();useOsmRouteById(${r.id})">📍 Diese Route wählen</button>
+      </div>
+    `).addTo(map);
+}
+
+function selectOsmRoute(id){
+  selectedOsmRoute = id;
+  document.querySelectorAll('.osm-route-item').forEach(el=>el.classList.remove('selected'));
+  const el = document.getElementById(`osm-ri-${id}`);
+  if(el) el.classList.add('selected');
+}
 
 async function useOsmRoute(event, id){
   if(typeof event?.stopPropagation === 'function') event.stopPropagation();
@@ -5125,6 +5344,15 @@ async function useOsmRouteById(id){
   await useOsmRoute({stopPropagation:()=>{}}, id);
 }
 
+function clearOsmRoutes(){
+  document.getElementById('osm-routes-panel').style.display='none';
+  const mobPanel = document.getElementById('mob-osm-panel');
+  if(mobPanel) mobPanel.style.display='none';
+  if(map.getLayer('vn-osm-routes')) map.setLayoutProperty('vn-osm-routes','visibility','none');
+  osmPinMarkers.forEach(m => m.remove());
+  osmPinMarkers = [];
+  osmRoutesData=[];
+}
 
 
 let pulseReqId = null;
@@ -5886,6 +6114,8 @@ function prefetchSatTiles(){
   launch('');
   document.getElementById('limit-overlay').classList.add('show');
 })();
+
+</script>
 
 </script>
 </body>
