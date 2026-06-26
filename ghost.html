@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bike Ghost Racer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+            overflow: hidden;
+        }
+
+        #app {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* MAP */
+        #map {
+            flex: 1;
+            background: #e8f4f8;
+            position: relative;
+        }
+
+        /* LIVE DATA OVERLAY */
+        #liveOverlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 400;
+            max-width: 360px;
+        }
+
+        .live-diff {
+            font-size: 42px;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .live-diff.ahead {
+            color: #10b981;
+        }
+
+        .live-diff.behind {
+            color: #ef4444;
+        }
+
+        .live-diff.neutral {
+            color: #6b7280;
+        }
+
+        .live-times {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .live-times strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* BOTTOM SHEET */
+        #controlsSheet {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+            max-height: 45%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sheet-handle {
+            height: 4px;
+            width: 40px;
+            background: #d1d5db;
+            border-radius: 2px;
+            margin: 8px auto;
+        }
+
+        .sheet-content {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0 16px 16px;
+        }
+
+        .sheet-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sheet-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sheet-content::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: none;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* BUTTONS */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .btn-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        button {
+            padding: 14px 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .btn-ghost {
+            background: #f3f4f6;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-ghost:hover:not(:disabled) {
+            background: #f9fafb;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .run-card {
+            display: flex;
+            gap: 12px;
+        }
+
+        .run-card-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0fdf4;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .run-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .run-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .run-card-meta {
+            font-size: 12px;
+            color: #9ca3af;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .run-card-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 24px 16px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .empty-state-hint {
+            font-size: 12px;
+            color: #d1d5db;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: flex-end;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-sheet {
+            background: white;
+            width: 100%;
+            border-radius: 24px 24px 0 0;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 20px 16px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #9ca3af;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            flex: 1;
+            padding: 16px;
+        }
+
+        .modal-footer {
+            padding: 16px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* INPUT */
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #f9fafb;
+            color: #1f2937;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #10b981;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            padding: 8px 16px;
+            background: #f0fdf4;
+            color: #15803d;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 500;
+            border-top: 1px solid #dcfce7;
+        }
+
+        .status-bar.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-top-color: #fcd34d;
+        }
+
+        .status-bar.info {
+            background: #eff6ff;
+            color: #0c4a6e;
+            border-top-color: #bfdbfe;
+        }
+
+        /* SEGMENT CARD */
+        .segment-card {
+            background: #f9fafb;
+            border-left: 3px solid #3b82f6;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .segment-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .segment-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .segment-stat {
+            flex: 1;
+        }
+
+        .segment-stat-label {
+            color: #9ca3af;
+            font-size: 11px;
+        }
+
+        .segment-stat-value {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* STAT BOX */
+        .stat-box {
+            background: #f9fafb;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #f0f0f0;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* BADGE */
+        .badge {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #10b981;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.ghost {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .badge.blue {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        /* RESPONSIVE */
+        @media (max-height: 600px) {
+            #liveOverlay {
+                top: 8px;
+                left: 8px;
+                right: 8px;
+                padding: 12px;
+            }
+
+            .live-diff {
+                font-size: 32px;
+            }
+
+            #controlsSheet {
+                max-height: 50%;
+            }
+        }
+
+        /* Scrollable list */
+        .scrollable-list {
+            max-height: 300px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* CHECKPOINT MGMT */
+        .checkpoint-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+
+        .checkpoint-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border: 2px solid #f0f0f0;
+            transition: all 0.2s;
+        }
+
+        .checkpoint-item.dragging {
+            background: #ecfdf5;
+            border-color: #10b981;
+            opacity: 0.8;
+        }
+
+        .checkpoint-handle {
+            cursor: grab;
+            color: #9ca3af;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .checkpoint-handle:active {
+            cursor: grabbing;
+        }
+
+        .checkpoint-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .checkpoint-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .checkpoint-item-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .checkpoint-item-delete {
+            padding: 6px 8px;
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="map"></div>
+
+        <div id="liveOverlay" style="display:none;">
+            <div class="live-diff neutral" id="liveDiff">0.0s</div>
+            <div class="live-times">
+                <span>📍 <strong id="liveUserTime">00:00</strong></span>
+                <span>👻 <strong id="liveGhostTime">00:00</strong></span>
+            </div>
+        </div>
+
+        <div class="status-bar info" id="statusBar">Setup | Klicke Karte → Checkpoints</div>
+
+        <div id="controlsSheet">
+            <div class="sheet-handle"></div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('record')">🔴 Record</button>
+                <button class="tab" onclick="switchTab('race')">🏁 Race</button>
+                <button class="tab" onclick="switchTab('library')">📂 Library</button>
+                <button class="tab" onclick="switchTab('stats')">📊 Stats</button>
+            </div>
+
+            <div class="sheet-content">
+                <!-- RECORD TAB -->
+                <div id="tab-record" class="tab-content active">
+                    <div class="btn-group full">
+                        <button class="btn-primary" id="btn-record" onclick="startRecording()">🔴 Start Recording</button>
+                        <button class="btn-primary" id="btn-record-stop" onclick="stopActivity()" disabled style="background: #ef4444;">⏹️ Stop</button>
+                    </div>
+                    <div class="btn-group full" style="margin-bottom: 16px;">
+                        <button class="btn-secondary" id="btn-save" onclick="openSaveModal()" disabled>💾 Save Route</button>
+                        <button class="btn-ghost" onclick="clearRoute()">🗑️ Clear All</button>
+                    </div>
+
+                    <div id="cpListContainer" style="display:none; margin-bottom: 16px;">
+                        <h3 style="font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 8px;">Checkpoints</h3>
+                        <div id="checkpointsList" class="checkpoint-list"></div>
+                    </div>
+
+                    <div class="card">
+                        <p style="font-size: 13px; color: #6b7280; line-height: 1.5;">
+                            <strong style="color: #1f2937;">📍 Click on map:</strong> Add checkpoint<br>
+                            <strong style="color: #1f2937;">🟢 During recording:</strong> Add checkpoints mid-ride<br>
+                            <strong style="color: #1f2937;">☰ Drag/Delete:</strong> Manage checkpoints
+                        </p>
+                    </div>
+                </div>
+
+                <!-- RACE TAB -->
+                <div id="tab-race" class="tab-content">
+                    <div id="raceEmpty" class="empty-state">
+                        <div class="empty-state-icon">👻</div>
+                        <p><strong>Kein Ghost ausgewählt</strong></p>
+                        <p class="empty-state-hint">Geh zur Library und wähle eine Strecke</p>
+                    </div>
+                    <div id="raceContent" style="display:none;">
+                        <div class="btn-group full">
+                            <button class="btn-primary" id="btn-race-start" onclick="startRace()">🏁 Start Race</button>
+                            <button class="btn-primary" id="btn-race-stop" onclick="stopActivity()" disabled style="background: #ef4444;">⏹️ Stop</button>
+                        </div>
+                        <div class="card" id="raceInfo" style="margin-bottom: 12px;"></div>
+                        
+                        <h3 style="font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 8px;">Ghost Checkpoints</h3>
+                        <div id="ghostCheckpointsList" class="checkpoint-list"></div>
+                    </div>
+                </div>
+
+                <!-- LIBRARY TAB -->
+                <div id="tab-library" class="tab-content">
+                    <div id="libraryEmpty" class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <p><strong>Keine Strecken gespeichert</strong></p>
+                        <p class="empty-state-hint">Record mode → Route speichern</p>
+                    </div>
+                    <div id="libraryList" class="scrollable-list"></div>
+                </div>
+
+                <!-- STATS TAB -->
+                <div id="tab-stats" class="tab-content">
+                    <div id="statsEmpty" class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p><strong>Keine Daten</strong></p>
+                        <p class="empty-state-hint">Fahre ein paar Runden</p>
+                    </div>
+                    <div id="statsContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAVE MODAL -->
+    <div id="saveModal" class="modal">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h2>💾 Save Route</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Route Name</label>
+                    <input type="text" id="routeName" placeholder="z.B. Morgentour">
+                </div>
+                <div class="input-group">
+                    <label>Notes</label>
+                    <textarea id="routeNotes" placeholder="Bedingungen, Feeling..."></textarea>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Duration</div>
+                        <div class="stat-value" id="saveDuration">00:00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Checkpoints</div>
+                        <div class="stat-value" id="saveCheckpoints">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()" style="flex: 1;">Cancel</button>
+                <button class="btn-primary" onclick="confirmSave()" style="flex: 1;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let state = {
+            map: null,
+            userMarker: null,
+            ghostMarker: null,
+            routeLine: null,
+            ghostLine: null,
+            checkpointMarkers: [],
+            
+            recordedRoute: [],
+            currentRoute: [],
+            checkpoints: [],
+            
+            isRecording: false,
+            isRacing: false,
+            
+            startTime: null,
+            watchId: null,
+            loopInterval: null,
+            
+            userTime: 0,
+            ghostTime: 0,
+            lastUserPos: null,
+            
+            runs: [],
+            selectedGhost: null
+        };
+
+        function initMap() {
+            state.map = L.map('map').setView([52.52, 13.40], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OSM',
+                maxZoom: 19
+            }).addTo(state.map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const { latitude, longitude } = pos.coords;
+                    state.map.setView([latitude, longitude], 16);
+                    state.userMarker = L.circleMarker([latitude, longitude], {
+                        color: '#10b981', radius: 8, fillColor: '#10b981', fillOpacity: 1, weight: 0
+                    }).addTo(state.map);
+                });
+            }
+
+            state.map.on('click', e => {
+                // Allow adding checkpoints even during recording
+                const cp = {
+                    lat: e.latlng.lat,
+                    lng: e.latlng.lng,
+                    name: `CP ${state.checkpoints.length + 1}`,
+                    time: state.isRecording ? Date.now() - state.startTime : null
+                };
+                
+                state.checkpoints.push(cp);
+                addCheckpointMarker(cp, state.checkpoints.length - 1);
+                updateCheckpointsList();
+                updateStatus(`✓ ${state.checkpoints.length} Checkpoint(s)`);
+            });
+
+            state.routeLine = L.polyline([], { color: '#10b981', weight: 4, opacity: 0.8 }).addTo(state.map);
+            state.ghostLine = L.polyline([], { color: '#ef4444', weight: 3, dashArray: '5,5', opacity: 0.6 }).addTo(state.map);
+
+            loadData();
+            updateLibrary();
+        }
+
+        function addCheckpointMarker(cp, idx) {
+            const marker = L.marker([cp.lat, cp.lng], {
+                draggable: true,
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="14" fill="white" stroke="%2310b981" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="14" fill="%2310b981" font-weight="bold">▼</text></svg>',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                })
+            }).bindPopup(`${cp.name}`).addTo(state.map);
+
+            // Drag event
+            marker.on('dragend', () => {
+                const newLatLng = marker.getLatLng();
+                state.checkpoints[idx].lat = newLatLng.lat;
+                state.checkpoints[idx].lng = newLatLng.lng;
+                updateCheckpointsList();
+            });
+
+            marker.on('click', () => {
+                renameCheckpoint(idx);
+            });
+
+            if (!state.checkpointMarkers[idx]) {
+                state.checkpointMarkers[idx] = marker;
+            } else {
+                state.checkpointMarkers[idx] = marker;
+            }
+        }
+
+        function updateCheckpointsList() {
+            const container = document.getElementById('cpListContainer');
+            const list = document.getElementById('checkpointsList');
+
+            if (state.checkpoints.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            list.innerHTML = state.checkpoints.map((cp, idx) => `
+                <div class="checkpoint-item" id="cp-item-${idx}" draggable="true">
+                    <div class="checkpoint-handle">☰</div>
+                    <div class="checkpoint-item-info">
+                        <div class="checkpoint-item-name">${cp.name}</div>
+                        <div class="checkpoint-item-time">${cp.time ? formatTime(cp.time) : '—'}</div>
+                    </div>
+                    <button class="checkpoint-item-delete" onclick="deleteCheckpoint(${idx})">✕</button>
+                </div>
+            `).join('');
+
+            // Drag & drop in list
+            document.querySelectorAll('.checkpoint-item').forEach((item, idx) => {
+                item.addEventListener('dragstart', e => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', e.target);
+                    item.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                });
+
+                item.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                item.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const draggedIdx = parseInt(e.target.closest('.checkpoint-item').id.split('-')[2]);
+                    if (draggedIdx !== idx && draggedIdx !== undefined) {
+                        const [removed] = state.checkpoints.splice(draggedIdx, 1);
+                        const insertIdx = draggedIdx < idx ? idx - 1 : idx;
+                        state.checkpoints.splice(insertIdx, 0, removed);
+                        
+                        // Reorder markers
+                        const allMarkers = state.checkpointMarkers;
+                        state.checkpointMarkers = [];
+                        state.checkpoints.forEach((cp, i) => {
+                            state.checkpointMarkers[i] = allMarkers[i];
+                        });
+                        
+                        updateCheckpointsList();
+                    }
+                });
+            });
+        }
+
+        function deleteCheckpoint(idx) {
+            if (confirm(`Delete ${state.checkpoints[idx].name}?`)) {
+                state.map.removeLayer(state.checkpointMarkers[idx]);
+                state.checkpoints.splice(idx, 1);
+                state.checkpointMarkers.splice(idx, 1);
+                updateCheckpointsList();
+                updateStatus(`✓ Deleted. ${state.checkpoints.length} CP(s) left`);
+            }
+        }
+
+        function renameCheckpoint(idx) {
+            const newName = prompt(`Rename checkpoint:`, state.checkpoints[idx].name);
+            if (newName && newName.trim()) {
+                state.checkpoints[idx].name = newName.trim();
+                state.checkpointMarkers[idx].bindPopup(newName);
+                updateCheckpointsList();
+            }
+        }
+        }
+
+        function startRecording() {
+            state.isRecording = true;
+            state.currentRoute = [];
+            state.startTime = Date.now();
+            
+            document.getElementById('btn-record').disabled = true;
+            document.getElementById('btn-record-stop').disabled = false;
+            document.getElementById('btn-save').disabled = true;
+            document.getElementById('liveOverlay').style.display = 'block';
+
+            updateStatus('🔴 Recording...');
+            startGPS();
+            startTimer();
+        }
+
+        function startGPS() {
+            state.watchId = navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                const timeOffset = Date.now() - state.startTime;
+                const currentPos = [latitude, longitude];
+
+                if (!state.userMarker) {
+                    state.userMarker = L.circleMarker(currentPos, {
+                        color: '#10b981', radius: 8, fillColor: '#10b981', fillOpacity: 1, weight: 0
+                    }).addTo(state.map);
+                } else {
+                    state.userMarker.setLatLng(currentPos);
+                }
+
+                state.lastUserPos = { lat: latitude, lng: longitude };
+                state.map.panTo(currentPos);
+
+                if (state.isRecording) {
+                    state.currentRoute.push({ lat: latitude, lng: longitude, time: timeOffset });
+                    state.routeLine.addLatLng(currentPos);
+                }
+
+                if (state.isRacing) {
+                    state.routeLine.addLatLng(currentPos);
+                    calculateDifference();
+                }
+            }, err => console.error(err), {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000
+            });
+        }
+
+        function startTimer() {
+            state.loopInterval = setInterval(() => {
+                const elapsed = Date.now() - state.startTime;
+
+                if (state.isRecording) {
+                    state.userTime = elapsed;
+                    document.getElementById('liveDiff').textContent = formatTime(elapsed);
+                    document.getElementById('liveUserTime').textContent = formatTime(elapsed);
+                }
+
+                if (state.isRacing && state.selectedGhost) {
+                    state.userTime = elapsed;
+                    document.getElementById('liveUserTime').textContent = formatTime(elapsed);
+
+                    let ghostTarget = state.selectedGhost.route.find(p => p.time >= elapsed);
+                    if (!ghostTarget) ghostTarget = state.selectedGhost.route[state.selectedGhost.route.length - 1];
+
+                    if (!state.ghostMarker) {
+                        state.ghostMarker = L.circleMarker([ghostTarget.lat, ghostTarget.lng], {
+                            color: '#ef4444', radius: 8, fillColor: '#ef4444', fillOpacity: 1, weight: 0
+                        }).addTo(state.map);
+                    } else {
+                        state.ghostMarker.setLatLng([ghostTarget.lat, ghostTarget.lng]);
+                    }
+
+                    document.getElementById('liveGhostTime').textContent = formatTime(ghostTarget.time);
+
+                    // Update ghost checkpoint times in race tab
+                    state.selectedGhost.checkpoints.forEach((cp, i) => {
+                        const timeEl = document.getElementById(`cp-time-${i}`);
+                        if (timeEl) {
+                            const reached = elapsed >= cp.time;
+                            timeEl.textContent = formatTime(cp.time) + (reached ? ' ✓' : '');
+                            timeEl.style.color = reached ? '#10b981' : '#9ca3af';
+                        }
+                    });
+                }
+            }, 100);
+        }
+
+        function calculateDifference() {
+            if (!state.selectedGhost || !state.lastUserPos) return;
+
+            let closest = state.selectedGhost.route[0];
+            let minDist = Infinity;
+
+            state.selectedGhost.route.forEach(point => {
+                const d = Math.sqrt(
+                    Math.pow(point.lat - state.lastUserPos.lat, 2) +
+                    Math.pow(point.lng - state.lastUserPos.lng, 2)
+                );
+                if (d < minDist) {
+                    minDist = d;
+                    closest = point;
+                }
+            });
+
+            const diff = state.userTime - closest.time;
+            const diffSec = (diff / 1000).toFixed(1);
+
+            const el = document.getElementById('liveDiff');
+            if (diff <= 0) {
+                el.textContent = `${diffSec}s`;
+                el.className = 'live-diff ahead';
+            } else {
+                el.textContent = `+${diffSec}s`;
+                el.className = 'live-diff behind';
+            }
+        }
+
+        function stopActivity() {
+            if (state.watchId) navigator.geolocation.clearWatch(state.watchId);
+            clearInterval(state.loopInterval);
+
+            if (state.isRecording) {
+                state.recordedRoute = [...state.currentRoute];
+                state.isRecording = false;
+                document.getElementById('btn-record').disabled = false;
+                document.getElementById('btn-record-stop').disabled = true;
+                document.getElementById('btn-save').disabled = false;
+                updateStatus('✓ Route saved');
+            }
+
+            if (state.isRacing) {
+                state.isRacing = false;
+                document.getElementById('btn-race-start').disabled = false;
+                document.getElementById('btn-race-stop').disabled = true;
+                updateStatus('Race stopped');
+            }
+
+            document.getElementById('liveOverlay').style.display = 'none';
+        }
+
+        function startRace() {
+            if (!state.selectedGhost) {
+                updateStatus('Select ghost first!');
+                return;
+            }
+
+            state.isRacing = true;
+            state.startTime = Date.now();
+            state.routeLine.setLatLngs([]);
+            state.userTime = 0;
+
+            document.getElementById('liveDiff').textContent = '0.0s';
+            document.getElementById('liveDiff').className = 'live-diff neutral';
+            document.getElementById('liveOverlay').style.display = 'block';
+
+            document.getElementById('btn-race-start').disabled = true;
+            document.getElementById('btn-race-stop').disabled = false;
+
+            updateStatus('🏁 RACE!');
+
+            const coords = state.selectedGhost.route.map(p => [p.lat, p.lng]);
+            state.ghostLine.setLatLngs(coords);
+
+            startGPS();
+            startTimer();
+        }
+
+        function clearRoute() {
+            stopActivity();
+            state.checkpoints = [];
+            state.recordedRoute = [];
+            state.checkpointMarkers.forEach(m => state.map.removeLayer(m));
+            state.checkpointMarkers = [];
+            state.routeLine.setLatLngs([]);
+            state.ghostLine.setLatLngs([]);
+            if (state.ghostMarker) { state.map.removeLayer(state.ghostMarker); state.ghostMarker = null; }
+
+            document.getElementById('liveDiff').textContent = '0.0s';
+            document.getElementById('liveDiff').className = 'live-diff neutral';
+            document.getElementById('liveOverlay').style.display = 'none';
+            document.getElementById('cpListContainer').style.display = 'none';
+
+            updateStatus('Setup | Klicke Karte → Checkpoints');
+        }
+
+        function openSaveModal() {
+            document.getElementById('routeName').value = `Route ${new Date().toLocaleDateString('de-DE')}`;
+            document.getElementById('saveDuration').textContent = formatTime(state.recordedRoute[state.recordedRoute.length - 1]?.time || 0);
+            document.getElementById('saveCheckpoints').textContent = state.checkpoints.length;
+            document.getElementById('saveModal').classList.add('active');
+        }
+
+        function confirmSave() {
+            const name = document.getElementById('routeName').value || 'Unnamed';
+            const notes = document.getElementById('routeNotes').value;
+
+            const run = {
+                id: Date.now(),
+                name: name,
+                notes: notes,
+                date: new Date().toLocaleString('de-DE'),
+                duration: state.recordedRoute[state.recordedRoute.length - 1]?.time || 0,
+                route: state.recordedRoute,
+                checkpoints: state.checkpoints,
+                distance: calculateDistance(state.recordedRoute)
+            };
+
+            state.runs.push(run);
+            saveData();
+            closeModal();
+            clearRoute();
+            updateLibrary();
+            updateStatus('✓ Route saved!');
+        }
+
+        function updateLibrary() {
+            const list = document.getElementById('libraryList');
+            const empty = document.getElementById('libraryEmpty');
+
+            if (state.runs.length === 0) {
+                empty.style.display = 'block';
+                list.innerHTML = '';
+                return;
+            }
+
+            empty.style.display = 'none';
+            list.innerHTML = state.runs.map((run, idx) => `
+                <div class="card run-card">
+                    <div class="run-card-icon">🛤️</div>
+                    <div class="run-card-info">
+                        <div class="run-card-name">${run.name}</div>
+                        <div class="run-card-meta">
+                            <span>⏱️ ${formatTime(run.duration)}</span>
+                            <span>🏁 ${run.checkpoints.length}</span>
+                            <span style="color: #d1d5db;">•</span>
+                            <span>${run.date.split(' ')[0]}</span>
+                        </div>
+                    </div>
+                    <div class="run-card-actions">
+                        <button class="btn-secondary btn-small" onclick="selectGhost(${idx})">Select</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectGhost(idx) {
+            state.selectedGhost = state.runs[idx];
+            
+            const coords = state.selectedGhost.route.map(p => [p.lat, p.lng]);
+            state.ghostLine.setLatLngs(coords);
+
+            state.checkpointMarkers.forEach(m => state.map.removeLayer(m));
+            state.checkpointMarkers = [];
+            state.checkpoints = [];
+
+            state.selectedGhost.checkpoints.forEach((cp, cpIdx) => {
+                const marker = L.marker([cp.lat, cp.lng], {
+                    icon: L.icon({
+                        iconUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="14" fill="white" stroke="%23ef4444" stroke-width="2"/><text x="16" y="20" text-anchor="middle" font-size="16">👻</text></svg>',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32]
+                    })
+                }).addTo(state.map);
+                state.checkpointMarkers.push(marker);
+                state.checkpoints.push(cp);
+            });
+
+            // Show ghost checkpoints in race tab
+            const gcList = document.getElementById('ghostCheckpointsList');
+            gcList.innerHTML = state.selectedGhost.checkpoints.map((cp, i) => `
+                <div class="checkpoint-item">
+                    <div style="font-size: 16px; flex-shrink: 0;">👻</div>
+                    <div class="checkpoint-item-info">
+                        <div class="checkpoint-item-name">${cp.name}</div>
+                        <div class="checkpoint-item-time" id="cp-time-${i}">—</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('raceEmpty').style.display = 'none';
+            document.getElementById('raceContent').style.display = 'block';
+            document.getElementById('raceInfo').innerHTML = `
+                <p><strong>${state.selectedGhost.name}</strong></p>
+                <p style="font-size: 12px; color: #9ca3af; margin: 6px 0 0;">${state.selectedGhost.notes || 'No notes'}</p>
+            `;
+
+            document.getElementById('btn-race-start').disabled = false;
+            switchTab('race');
+            updateStatus(`✓ Ghost "${state.selectedGhost.name}" selected`);
+        }
+
+        function updateStats() {
+            if (state.runs.length === 0) {
+                document.getElementById('statsEmpty').style.display = 'block';
+                document.getElementById('statsContent').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('statsEmpty').style.display = 'none';
+
+            const segments = {};
+            state.runs.forEach(run => {
+                run.checkpoints.forEach((cp, i) => {
+                    if (i === 0) return;
+                    const prev = run.checkpoints[i - 1];
+                    const key = `${prev.name} → ${cp.name}`;
+                    if (!segments[key]) segments[key] = { times: [], best: Infinity };
+                    segments[key].times.push(cp.time - (run.checkpoints[i-1].time || 0));
+                    segments[key].best = Math.min(segments[key].best, cp.time - (run.checkpoints[i-1].time || 0));
+                });
+            });
+
+            let html = '';
+            Object.entries(segments).slice(0, 5).forEach(([name, data]) => {
+                const avg = Math.round(data.times.reduce((a, b) => a + b) / data.times.length);
+                html += `
+                    <div class="segment-card">
+                        <div class="segment-name">${name}</div>
+                        <div class="segment-stats">
+                            <div class="segment-stat">
+                                <div class="segment-stat-label">Best</div>
+                                <div class="segment-stat-value">${formatTime(data.best)}</div>
+                            </div>
+                            <div class="segment-stat">
+                                <div class="segment-stat-label">Avg</div>
+                                <div class="segment-stat-value">${formatTime(avg)}</div>
+                            </div>
+                            <div class="segment-stat">
+                                <div class="segment-stat-label">x${data.times.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const total = state.runs.reduce((s, r) => s + r.duration, 0);
+            html = `
+                <div class="stat-grid" style="margin-bottom: 16px;">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Rides</div>
+                        <div class="stat-value">${state.runs.length}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Total Time</div>
+                        <div class="stat-value">${formatTime(total)}</div>
+                    </div>
+                </div>
+                <h3 style="font-size: 14px; font-weight: 600; color: #1f2937; margin-bottom: 10px;">Top Segments</h3>
+            ` + html;
+
+            document.getElementById('statsContent').innerHTML = html;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tab === 'stats') updateStats();
+        }
+
+        function formatTime(ms) {
+            const s = Math.floor(ms / 1000);
+            const m = Math.floor(s / 60);
+            return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+        }
+
+        function calculateDistance(route) {
+            if (route.length < 2) return 0;
+            let dist = 0;
+            for (let i = 1; i < route.length; i++) {
+                const R = 6371000;
+                const lat1 = route[i-1].lat * Math.PI / 180;
+                const lat2 = route[i].lat * Math.PI / 180;
+                const dLat = (route[i].lat - route[i-1].lat) * Math.PI / 180;
+                const dLon = (route[i].lng - route[i-1].lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1) * Math.cos(lat2) *
+                          Math.sin(dLon/2) * Math.sin(dLon/2);
+                dist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
+            return dist;
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('statusBar').textContent = msg;
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        }
+
+        function saveData() {
+            localStorage.setItem('bikeGhostRuns', JSON.stringify(state.runs));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('bikeGhostRuns');
+            if (saved) {
+                try {
+                    state.runs = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Load error:', e);
+                }
+            }
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
