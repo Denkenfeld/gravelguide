@@ -25,6 +25,8 @@
     scope: "activity:read",
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
     earliestDate: "2026-10-01", // nichts laden, was vor diesem Datum liegt (JJJJ-MM-TT)
+    minMinutes: 3, // Fahrten unter dieser Dauer (Minuten) werden nicht geladen
+    minKm: 1, // Fahrten unter dieser Strecke (km) werden nicht geladen
     perPage: 100, // Maximum der API
     // Datei-Eingabefeld deiner App; "" = nichts automatisch übergeben.
     // Besser eine eindeutige Auswahl, z. B. "#fitUpload"
@@ -295,7 +297,11 @@
       }
       const got = new Set(); // neu heruntergeladene Fahrten
       const have = new Set(await tx("fits", "readonly", (s) => s.getAllKeys()));
-      const todo = list.filter((a) => idOf(a) && !have.has(idOf(a)));
+      // Fahrten, die vor dem Stichtag liegen (oder die die App nicht lesen kann), merken wir uns
+      const skipped = new Set((await kvGet("skipped")) || []);
+      let newSkipped = 0;
+      const cutoff = Date.parse(CONFIG.earliestDate + "T00:00:00"); // lokale Mitternacht
+      const todo = list.filter((a) => idOf(a) && !have.has(idOf(a)) && !skipped.has(idOf(a)));
 
       await tx("activities", "readwrite", (s) => {
         list.forEach((a) => idOf(a) && s.put({ ...a, _id: idOf(a) }));
@@ -322,6 +328,25 @@
             continue;
           }
           const buf = await res.arrayBuffer();
+
+          // Fahrtdatum, Dauer und Strecke aus der FIT-Datei prüfen (die API-Liste filtert nur
+          // nach dem Anlage-Datum des Eintrags, nicht nach dem Fahrtdatum)
+          if (window.GravelGuide && typeof window.GravelGuide.fitInfo === "function") {
+            let info = null;
+            try {
+              info = window.GravelGuide.fitInfo(buf);
+            } catch (e) {} // nicht lesbar, z. B. ohne GPS: die App würde sie ohnehin ablehnen
+            if (
+              !info ||
+              info.t < cutoff ||
+              info.min < CONFIG.minMinutes ||
+              info.km < CONFIG.minKm
+            ) {
+              skipped.add(id);
+              newSkipped++;
+              continue;
+            }
+          }
           await tx("fits", "readwrite", (s) =>
             s.put({ _id: id, name: "hammerhead-" + id + ".fit", createdAt: a.createdAt || null, buf })
           );
@@ -332,12 +357,14 @@
         }
       }
 
+      if (newSkipped) await kvSet("skipped", [...skipped]);
       if (failed === 0 && !manualStart) await kvSet("lastSync", Date.now());
       await deliver(got);
 
       const total = (await tx("fits", "readonly", (s) => s.getAllKeys())).length;
       setStatus(
         list.length + " gefunden, " + got.size + " neu geladen, " + total + " gespeichert" +
+          (newSkipped ? ", " + newSkipped + " übersprungen (zu alt, zu kurz oder nicht lesbar)" : "") +
           (failed ? " – " + failed + " fehlgeschlagen, neuer Versuch folgt" : "")
       );
     } catch (e) {
