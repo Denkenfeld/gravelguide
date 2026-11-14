@@ -1,14 +1,18 @@
 /*
- * Hammerhead-Anbindung für gravel-guide.de
+ * Hammerhead-Anbindung für gravel-guide.de  (Version 2)
  * Einbinden in gg7.html:  <script src="hammerhead-sync.js"></script>
  *
- * Benötigte Elemente (optional, id genau so):
+ * Elemente (optional, id genau so):
  *   <button id="hh-login">Mit Hammerhead anmelden</button>
  *   <button id="hh-logout" hidden>Abmelden</button>
  *   <span id="hh-status"></span>
  *
- * Neue Daten melden: document.addEventListener("hammerhead:update", e => ...)
- * Fahrten lesen:      await HammerheadSync.getActivities()
+ * Die Fahrten werden als FIT-Dateien geladen und wie ein manueller Upload an das
+ * Datei-Eingabefeld deiner App übergeben (siehe CONFIG.fileInputSelector).
+ *
+ * Eigene Auswertung:
+ *   document.addEventListener("hammerhead:update", e => e.detail.files)  // neue File-Objekte
+ *   await HammerheadSync.getFitFiles()                                    // alle gespeicherten
  */
 (() => {
   "use strict";
@@ -20,15 +24,23 @@
     authorizeUrl: "https://api.hammerhead.io/v1/auth/oauth/authorize",
     scope: "activity:read",
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
+    backfillDays: 90, // beim ersten Login so viele Tage zurück laden
+    perPage: 100, // Maximum der API
+    // Datei-Eingabefeld deiner App; "" = nichts automatisch übergeben.
+    // Besser eine eindeutige Auswahl, z. B. "#fitUpload"
+    fileInputSelector: "input[type=file]",
   };
 
   /* ---------- IndexedDB ---------- */
   const dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open("gravel-guide-hh", 1);
+    const req = indexedDB.open("gravel-guide-hh", 2);
     req.onupgradeneeded = () => {
       const db = req.result;
-      db.createObjectStore("kv");
-      db.createObjectStore("activities", { keyPath: "_id" });
+      if (!db.objectStoreNames.contains("kv")) db.createObjectStore("kv");
+      if (!db.objectStoreNames.contains("activities"))
+        db.createObjectStore("activities", { keyPath: "_id" });
+      if (!db.objectStoreNames.contains("fits"))
+        db.createObjectStore("fits", { keyPath: "_id" });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -49,10 +61,9 @@
   const kvGet = (k) => tx("kv", "readonly", (s) => s.get(k));
   const kvSet = (k, v) => tx("kv", "readwrite", (s) => s.put(v, k));
   const clearAll = () =>
-    Promise.all([
-      tx("kv", "readwrite", (s) => s.clear()),
-      tx("activities", "readwrite", (s) => s.clear()),
-    ]);
+    Promise.all(
+      ["kv", "activities", "fits"].map((n) => tx(n, "readwrite", (s) => s.clear()))
+    );
 
   /* ---------- UI ---------- */
   const $ = (id) => document.getElementById(id);
@@ -169,74 +180,150 @@
     });
   }
 
-  /* ---------- Sync ---------- */
+  /* ---------- Hilfsfunktionen ---------- */
+  const ymd = (ms) => new Date(ms).toISOString().slice(0, 10); // YYYY-MM-DD, wie die API es verlangt
+
   function extractList(data) {
     if (Array.isArray(data)) return data;
     return data.activities || data.data || data.items || data.results || [];
   }
-  function hasMorePages(data) {
-    if (!data || Array.isArray(data)) return false;
-    return Boolean(
-      data.next || data.nextPage || data.nextCursor || data.nextPageToken || data.hasMore
-    );
+  const idOf = (a) => (a.id ?? a.activityId) == null ? null : String(a.id ?? a.activityId);
+
+  function toFile(rec) {
+    const ts = Date.parse(rec.createdAt);
+    return new File([rec.buf], rec.name, {
+      type: "application/vnd.ant.fit",
+      lastModified: Number.isNaN(ts) ? Date.now() : ts,
+    });
   }
 
+  /* ---------- Fahrten laden ---------- */
+  async function listActivities(token, startDate) {
+    const all = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const q = new URLSearchParams({
+        page: String(page),
+        perPage: String(CONFIG.perPage),
+        startDate,
+      });
+      const res = await fetch(CONFIG.worker + "/activities?" + q.toString(), {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!res.ok) throw new Error("Activities " + res.status + " " + (await res.text()));
+      const data = await res.json();
+      if (page === 1) console.debug("Hammerhead-Antwort (Struktur):", data);
+      all.push(...extractList(data));
+      totalPages = Number(data.totalPages ?? (data.pagination && data.pagination.totalPages) ?? 1) || 1;
+      page += 1;
+    } while (page <= totalPages && page <= 50);
+    return all;
+  }
+
+  /* ---------- An die App übergeben ---------- */
+  const delivered = new Set();
+
+  function feedApp(files) {
+    if (!files.length) return;
+    notify({ count: files.length, files });
+    if (!CONFIG.fileInputSelector) return;
+    const input = document.querySelector(CONFIG.fileInputSelector);
+    if (!input) {
+      console.warn("Kein Datei-Eingabefeld gefunden:", CONFIG.fileInputSelector);
+      return;
+    }
+    const dt = new DataTransfer();
+    files.forEach((f) => dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event("change", { bubbles: true })); // wie ein manueller Upload
+  }
+
+  async function deliverStored() {
+    const recs = await tx("fits", "readonly", (s) => s.getAll());
+    const fresh = recs.filter((r) => !delivered.has(r._id));
+    fresh.forEach((r) => delivered.add(r._id));
+    feedApp(fresh.map(toFile));
+  }
+
+  /* ---------- Sync ---------- */
   let syncing = false;
   async function sync() {
     if (syncing) return;
     syncing = true;
     try {
-      const token = await getAccessToken();
+      let token = await getAccessToken();
       if (!token) return;
 
       const last = await kvGet("lastSync");
-      const params = new URLSearchParams();
-      if (last) params.set("startDate", new Date(last - 24 * 3600 * 1000).toISOString());
+      const startDate = last
+        ? ymd(last - 24 * 3600 * 1000) // 1 Tag Überlappung
+        : ymd(Date.now() - CONFIG.backfillDays * 24 * 3600 * 1000);
 
-      setStatus("Lade Fahrten …");
-      const res = await fetch(CONFIG.worker + "/activities?" + params.toString(), {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (!res.ok) {
-        console.error("Activities-Abruf fehlgeschlagen:", res.status, await res.text());
-        setStatus("Fahrten konnten nicht geladen werden (Details in der Konsole).");
-        return;
-      }
-      const data = await res.json();
-      console.debug("Hammerhead-Antwort (Struktur):", data);
+      setStatus("Suche Fahrten …");
+      const list = await listActivities(token, startDate);
+      const have = new Set(await tx("fits", "readonly", (s) => s.getAllKeys()));
+      const todo = list.filter((a) => idOf(a) && !have.has(idOf(a)));
 
-      const list = extractList(data);
       await tx("activities", "readwrite", (s) => {
-        list.forEach((a) => {
-          const id = String(a.id ?? a.activityId ?? a.startedAt ?? a.startDate);
-          s.put({ ...a, _id: id });
-        });
+        list.forEach((a) => idOf(a) && s.put({ ...a, _id: idOf(a) }));
       });
 
-      if (hasMorePages(data)) {
-        console.warn("Es gibt weitere Seiten, Paginierung ist noch nicht eingebaut.");
-        setStatus(list.length + " Fahrten geladen (weitere Seiten folgen).");
-      } else {
-        await kvSet("lastSync", Date.now());
-        const all = await getActivities();
-        setStatus(all.length + " Fahrten gespeichert.");
+      let failed = 0;
+      for (let i = 0; i < todo.length; i++) {
+        const a = todo[i];
+        const id = idOf(a);
+        setStatus("Lade Fahrt " + (i + 1) + " von " + todo.length + " …");
+        token = await getAccessToken();
+        if (!token) {
+          failed += todo.length - i;
+          break;
+        }
+        try {
+          const res = await fetch(
+            CONFIG.worker + "/activity-file?id=" + encodeURIComponent(id),
+            { headers: { Authorization: "Bearer " + token } }
+          );
+          if (!res.ok) {
+            console.warn("FIT-Download fehlgeschlagen:", id, res.status);
+            failed++;
+            continue;
+          }
+          const buf = await res.arrayBuffer();
+          await tx("fits", "readwrite", (s) =>
+            s.put({ _id: id, name: "hammerhead-" + id + ".fit", createdAt: a.createdAt || null, buf })
+          );
+        } catch (e) {
+          console.error(e);
+          failed++;
+        }
       }
-      notify({ count: list.length });
+
+      if (failed === 0) await kvSet("lastSync", Date.now());
+      await deliverStored();
+
+      const total = (await tx("fits", "readonly", (s) => s.getAllKeys())).length;
+      setStatus(
+        total + " Fahrten gespeichert" + (failed ? " (" + failed + " fehlgeschlagen, neuer Versuch folgt)" : ".")
+      );
     } catch (e) {
-      console.error(e);
-      setStatus("Fehler beim Laden der Fahrten.");
+      console.error("Sync-Fehler:", e);
+      setStatus("Fahrten konnten nicht geladen werden (Details in der Konsole).");
     } finally {
       syncing = false;
     }
   }
 
   const getActivities = () => tx("activities", "readonly", (s) => s.getAll());
+  const getFitFiles = async () =>
+    (await tx("fits", "readonly", (s) => s.getAll())).map(toFile);
 
   /* ---------- Logout ---------- */
   async function logout() {
     await clearAll();
+    delivered.clear();
     updateUI(false);
-    notify({ count: 0 });
+    notify({ count: 0, files: [] });
   }
 
   /* ---------- Start ---------- */
@@ -248,6 +335,7 @@
     const t = await kvGet("tokens");
     updateUI(Boolean(t));
     if (t) {
+      await deliverStored(); // gespeicherte Fahrten sofort anzeigen (auch offline)
       await sync();
       setInterval(sync, CONFIG.pollMs);
       document.addEventListener("visibilitychange", () => {
@@ -256,7 +344,7 @@
     }
   }
 
-  window.HammerheadSync = { login, logout, sync, getActivities };
+  window.HammerheadSync = { login, logout, sync, getActivities, getFitFiles };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
