@@ -157,6 +157,13 @@ body.vwo #vwr{display:flex}
 <div class="at">Karte © OpenStreetMap-Mitwirkende © CARTO</div>
 <div id="tip"></div><div id="msg"></div><div id="dz">.FIT-DATEIEN HIER ABLEGEN</div>
 <script>
+/* ---------- Speicher: IndexedDB statt localStorage (viel mehr Platz) ---------- */
+const idb=new Promise((res,rej)=>{const r=indexedDB.open('gravel-guide-app',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const kv={
+ get:k=>idb.then(db=>new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})),
+ set:(k,v)=>idb.then(db=>new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})),
+ del:k=>idb.then(db=>new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)}))
+};
 const cv=document.getElementById('c'),g=cv.getContext('2d'),tip=document.getElementById('tip'),msg=document.getElementById('msg'),stEl=document.getElementById('st'),bs=document.getElementById('bs'),bp=document.getElementById('bp'),hint=document.getElementById('hint');
 let W,H,dpr,S0=1,zoom=1,S=1,CX,CY,bgG,vgG,yaw=.12,pit=1,mx=.5,my=.5,mxp=-1,myp=-1,hov=null,nS=0,play=true,ff=false,nextT=1,lt=0,rides=[],raws=[],demo=true,cwx=.5,cwy=.5,kpu=1,rad=20,aBase=0,aRange=300,cnt=new Map(),cntN=-1,lhov=null,hlast=null,items=[],sel=null,rm=[],scc={};
 function size(){dpr=Math.min(devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;g.setTransform(dpr,0,0,dpr,0,0);CX=W/2;CY=H*.57;S0=Math.min(.44*W,.36*H/.85)/rad;
@@ -250,7 +257,7 @@ function setRaws(list,isDemo){
  hint.textContent=raws.length?'':'Keine Fahrten · .fit hierher ziehen';
  days=new Map();for(const o of raws){const k=dk(new Date(o.t)),d=days.get(k)||{km:0,v:0,n:0};for(let i=1;i<o.lat.length;i++)d.km+=hv(o.lat[i-1],o.lon[i-1],o.lat[i],o.lon[i]);d.v+=o.v.reduce((a,b)=>a+b,0)/o.v.length;d.n++;days.set(k,d)}
  tot={n:raws.length,km:0,kcal:0,up:0};rm=[];scc={};raws.forEach(o=>{const p=prep(o);tot.km+=p.km;tot.kcal+=p.kcal;tot.up+=p.up;rm.push({t:o.t,km:p.km,kcal:p.kcal,up:p.up})});mode='all';fc=raws.length?new Date(raws[raws.length-1].t):new Date();vm=new Date(fc.getFullYear(),fc.getMonth(),1);apply();
- try{if(raws.length)localStorage.setItem('axon1',JSON.stringify(raws,(k,v)=>typeof v==='number'?Math.round(v*1e5)/1e5:v));else localStorage.removeItem('axon1')}catch(e){}}
+ (raws.length?kv.set('axon1',raws):kv.del('axon1')).catch(()=>{})}
 function say(t){msg.textContent=t;msg.style.display='block';clearTimeout(say.t);say.t=setTimeout(()=>msg.style.display='none',4000)}
 async function readFiles(fl){let ok=0,bad=0;const list=demo?[]:raws.slice(),seen=new Set(list.map(o=>o.n+o.t));
  for(const f of fl){try{const o=fit2raw(await f.arrayBuffer(),f.name.replace(/\.fit$/i,''));if(seen.has(o.n+o.t)){bad++;continue}seen.add(o.n+o.t);list.push(o);ok++}catch(e){bad++}}
@@ -511,8 +518,16 @@ document.getElementById('vw').onclick=e=>{const bt=e.target.closest('button');if
  else if(bt.dataset.v){setView(bt.dataset.v);if(mob.matches)B.classList.remove('vwo')}};
 window.GravelGuide={importFiles:readFiles};
 /* ---------- Start ---------- */
-size();let saved=null;try{saved=JSON.parse(localStorage.getItem('axon1'))}catch(e){}
-setRaws(saved&&saved.length?saved:[],false);if(typeof maplibregl!=='undefined')mInit();
-requestAnimationFrame(frame);
-</script><script src="hammerhead-sync.js?v=3"></script>
+size();
+window.appRideCount=()=>raws.length;
+window.appReady=(async()=>{
+ let saved=null,old=false;
+ try{saved=await kv.get('axon1')}catch(e){}
+ if(!saved){try{saved=JSON.parse(localStorage.getItem('axon1'));old=!!saved}catch(e){}} /* alte Daten übernehmen */
+ setRaws(saved&&saved.length?saved:[],false);
+ if(old&&saved&&saved.length)kv.set('axon1',raws).then(()=>{try{localStorage.removeItem('axon1')}catch(e){}}).catch(()=>{});
+ if(typeof maplibregl!=='undefined')mInit();
+ requestAnimationFrame(frame);
+})();
+</script><script src="hammerhead-sync.js?v=6"></script>
 </body></html>

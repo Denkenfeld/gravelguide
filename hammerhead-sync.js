@@ -24,7 +24,7 @@
     authorizeUrl: "https://api.hammerhead.io/v1/auth/oauth/authorize",
     scope: "activity:read",
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
-    backfillDays: 365, // beim ersten Login so viele Tage zurück laden
+    earliestDate: "2026-10-01", // nichts laden, was vor diesem Datum liegt (JJJJ-MM-TT)
     perPage: 100, // Maximum der API
     // Datei-Eingabefeld deiner App; "" = nichts automatisch übergeben.
     // Besser eine eindeutige Auswahl, z. B. "#fitUpload"
@@ -255,8 +255,9 @@
   // Deine App speichert ihre Fahrten selbst im localStorage (Schlüssel "axon1").
   // Nur wenn dort nichts liegt, geben wir alle zwischengespeicherten FIT-Dateien erneut ab.
   function appHasRides() {
+    if (typeof window.appRideCount === "function") return window.appRideCount() > 0;
     try {
-      return Boolean(localStorage.getItem("axon1"));
+      return Boolean(localStorage.getItem("axon1")); // ältere Version der App
     } catch (e) {
       return false;
     }
@@ -264,17 +265,23 @@
 
   /* ---------- Sync ---------- */
   let syncing = false;
-  async function sync() {
+  // override: optionales Startdatum "JJJJ-MM-TT", um ältere Fahrten gezielt nachzuladen
+  async function sync(override) {
     if (syncing) return;
     syncing = true;
+    const manualStart = typeof override === "string" && /^\d{4}-\d{2}-\d{2}$/.test(override) ? override : null;
     try {
       let token = await getAccessToken();
       if (!token) return;
 
       const last = await kvGet("lastSync");
-      const startDate = last
-        ? ymd(last - 24 * 3600 * 1000) // 1 Tag Überlappung
-        : ymd(Date.now() - CONFIG.backfillDays * 24 * 3600 * 1000);
+      const wanted =
+        manualStart ||
+        (last
+          ? ymd(last - 24 * 3600 * 1000) // 1 Tag Überlappung
+          : CONFIG.earliestDate);
+      // nie weiter zurück als earliestDate (Datumsformat JJJJ-MM-TT lässt sich als Text vergleichen)
+      const startDate = wanted < CONFIG.earliestDate ? CONFIG.earliestDate : wanted;
 
       setStatus("Suche Fahrten …");
       const list = await listActivities(token, startDate);
@@ -325,7 +332,7 @@
         }
       }
 
-      if (failed === 0) await kvSet("lastSync", Date.now());
+      if (failed === 0 && !manualStart) await kvSet("lastSync", Date.now());
       await deliver(got);
 
       const total = (await tx("fits", "readonly", (s) => s.getAllKeys())).length;
@@ -358,10 +365,19 @@
     if ($("hh-login")) $("hh-login").addEventListener("click", login);
     if ($("hh-logout")) $("hh-logout").addEventListener("click", logout);
 
+    // Browser bitten, den Speicher nicht von sich aus aufzuräumen (er entscheidet selbst)
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+
     await handleCallback();
     const t = await kvGet("tokens");
     updateUI(Boolean(t));
     if (t) {
+      // warten, bis die App ihre gespeicherten Fahrten geladen hat
+      try {
+        await (window.appReady || Promise.resolve());
+      } catch (e) {}
       if (!appHasRides()) await deliver(null); // Cache in die App laden, falls sie leer ist
       await sync();
       setInterval(sync, CONFIG.pollMs);
@@ -371,7 +387,14 @@
     }
   }
 
-  window.HammerheadSync = { login, logout, sync, getActivities, getFitFiles };
+  window.HammerheadSync = {
+    login,
+    logout,
+    sync,
+    loadSince: (date) => sync(date), // z. B. HammerheadSync.loadSince("2023-01-01")
+    getActivities,
+    getFitFiles,
+  };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
