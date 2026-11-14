@@ -24,7 +24,7 @@
     authorizeUrl: "https://api.hammerhead.io/v1/auth/oauth/authorize",
     scope: "activity:read",
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
-    backfillDays: 90, // beim ersten Login so viele Tage zurück laden
+    backfillDays: 365, // beim ersten Login so viele Tage zurück laden
     perPage: 100, // Maximum der API
     // Datei-Eingabefeld deiner App; "" = nichts automatisch übergeben.
     // Besser eine eindeutige Auswahl, z. B. "#fitUpload"
@@ -213,8 +213,13 @@
       });
       if (!res.ok) throw new Error("Activities " + res.status + " " + (await res.text()));
       const data = await res.json();
-      if (page === 1) console.debug("Hammerhead-Antwort (Struktur):", data);
-      all.push(...extractList(data));
+      const items = extractList(data);
+      if (page === 1) {
+        listActivities.keys = Array.isArray(data) ? ["(Array)"] : Object.keys(data);
+        console.log("Hammerhead-Antwort, Felder:", listActivities.keys);
+        console.log("Felder einer Aktivität:", items[0] ? Object.keys(items[0]) : "keine Aktivität");
+      }
+      all.push(...items);
       totalPages = Number(data.totalPages ?? (data.pagination && data.pagination.totalPages) ?? 1) || 1;
       page += 1;
     } while (page <= totalPages && page <= 50);
@@ -239,11 +244,22 @@
     input.dispatchEvent(new Event("change", { bubbles: true })); // wie ein manueller Upload
   }
 
-  async function deliverStored() {
+  // ids: Set der neu geladenen Fahrten, oder null = alle noch nicht übergebenen
+  async function deliver(ids) {
     const recs = await tx("fits", "readonly", (s) => s.getAll());
-    const fresh = recs.filter((r) => !delivered.has(r._id));
+    const fresh = recs.filter((r) => !delivered.has(r._id) && (!ids || ids.has(r._id)));
     fresh.forEach((r) => delivered.add(r._id));
     feedApp(fresh.map(toFile));
+  }
+
+  // Deine App speichert ihre Fahrten selbst im localStorage (Schlüssel "axon1").
+  // Nur wenn dort nichts liegt, geben wir alle zwischengespeicherten FIT-Dateien erneut ab.
+  function appHasRides() {
+    try {
+      return Boolean(localStorage.getItem("axon1"));
+    } catch (e) {
+      return false;
+    }
   }
 
   /* ---------- Sync ---------- */
@@ -262,6 +278,15 @@
 
       setStatus("Suche Fahrten …");
       const list = await listActivities(token, startDate);
+      if (list.length === 0 && !last) {
+        // lastSync bewusst NICHT setzen, damit ein späterer Versuch alles nachholt
+        setStatus(
+          "Keine Fahrten seit " + startDate + " gefunden. Antwortfelder: " +
+            (listActivities.keys || []).join(", ")
+        );
+        return;
+      }
+      const got = new Set(); // neu heruntergeladene Fahrten
       const have = new Set(await tx("fits", "readonly", (s) => s.getAllKeys()));
       const todo = list.filter((a) => idOf(a) && !have.has(idOf(a)));
 
@@ -293,6 +318,7 @@
           await tx("fits", "readwrite", (s) =>
             s.put({ _id: id, name: "hammerhead-" + id + ".fit", createdAt: a.createdAt || null, buf })
           );
+          got.add(id);
         } catch (e) {
           console.error(e);
           failed++;
@@ -300,11 +326,12 @@
       }
 
       if (failed === 0) await kvSet("lastSync", Date.now());
-      await deliverStored();
+      await deliver(got);
 
       const total = (await tx("fits", "readonly", (s) => s.getAllKeys())).length;
       setStatus(
-        total + " Fahrten gespeichert" + (failed ? " (" + failed + " fehlgeschlagen, neuer Versuch folgt)" : ".")
+        list.length + " gefunden, " + got.size + " neu geladen, " + total + " gespeichert" +
+          (failed ? " – " + failed + " fehlgeschlagen, neuer Versuch folgt" : "")
       );
     } catch (e) {
       console.error("Sync-Fehler:", e);
@@ -335,7 +362,7 @@
     const t = await kvGet("tokens");
     updateUI(Boolean(t));
     if (t) {
-      await deliverStored(); // gespeicherte Fahrten sofort anzeigen (auch offline)
+      if (!appHasRides()) await deliver(null); // Cache in die App laden, falls sie leer ist
       await sync();
       setInterval(sync, CONFIG.pollMs);
       document.addEventListener("visibilitychange", () => {
