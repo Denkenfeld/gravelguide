@@ -108,7 +108,7 @@ body.hasr #ep{display:block}
 @media(max-width:760px){
 body.hasr #ep{display:none}body.hasr.stk #ep{display:block}
 #st #ep{position:absolute;left:16px;top:4px;bottom:auto;width:calc(100% - 70px);height:calc(100% - 8px);z-index:1}
-body.hasr.stk #st>:not(#ep){visibility:hidden}
+body.hasr.stk:not(.hsel) #st>:not(#ep){visibility:hidden}
 #ch,.cc{display:none}
 #call{display:inline-block;margin-left:6px;padding:0 9px;font-size:12px;line-height:18px;vertical-align:middle}
 #pcb{display:block;position:fixed;z-index:3;right:16px;top:calc(100% - var(--ph) + 13px);width:28px;height:20px;padding:0;border-radius:10px;font-size:15px;line-height:18px;text-align:center;transform:rotate(90deg);transition:transform .2s}
@@ -178,6 +178,11 @@ body.vwo #vwr{display:flex}
 .maplibregl-ctrl-attrib.maplibregl-compact-show{padding:6px 44px 6px 10px}
 .maplibregl-ctrl-attrib a{color:#9db0c8}
 }
+@media(max-width:760px){
+.maplibregl-ctrl-scale{display:none!important}
+body.hsel #ep{display:block;left:12px;right:12px;width:auto;bottom:calc(var(--ph) + 12px);height:96px;box-sizing:border-box;background:rgba(6,12,24,.84);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--ln);border-radius:14px}
+body.hsel .maplibregl-ctrl-bottom-right{bottom:112px}
+}
 </style></head><body>
 <canvas id="c"></canvas><div id="mp"></div>
 <div id="vw"><div id="vwr"><button data-v="live" class="on">Live</button><button data-v="2d">2D</button><button data-v="3d">3D</button><button id="lyb">Satellit</button><button id="lgi" type="button" aria-label="Legende">i</button></div><button id="vwt" type="button" aria-label="Kartenansicht"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button></div>
@@ -204,6 +209,13 @@ body.vwo #vwr{display:flex}
 /* ---------- Speicher: IndexedDB statt localStorage (viel mehr Platz) ---------- */
 const idb=new Promise((res,rej)=>{const r=indexedDB.open('gravel-guide-app',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 const delSet=new Set();
+const dkey=o=>Math.round(o.t/1000)+'|'+o.lat[0].toFixed(3)+'|'+o.lon[0].toFixed(3);
+const sameRide=(a,b)=>Math.abs(a.t-b.t)<90000&&hv(a.lat[0],a.lon[0],b.lat[0],b.lon[0])<.15;
+const isDel=o=>delSet.has(o.n+o.t)||delSet.has(dkey(o));
+function dedupe(list){const out=[];for(const o of list.slice().sort((a,b)=>a.t-b.t)){let j=-1;for(let k=out.length-1;k>=0&&o.t-out[k].t<90000;k--)if(sameRide(out[k],o)){j=k;break}
+  if(j<0){out.push(o);continue}const x=out[j];
+  if((o.info&&!x.info)||(!!o.info===!!x.info&&o.lat.length>x.lat.length)){if(!o.info&&x.info)o.info=x.info;out[j]=o}else if(!x.info&&o.info)x.info=o.info}
+ return out}
 const kv={
  get:k=>idb.then(db=>new Promise((res,rej)=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})),
  set:(k,v)=>idb.then(db=>new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})),
@@ -306,16 +318,18 @@ function stats(){const f=n=>Math.round(n).toLocaleString('de-DE'),R=lhov||sel,al
   SR[i].m.style.display=m!=null?'':'none';if(m!=null)SR[i].m.style.left=Math.min(100,100*m/T)+'%'});mRides();drawEP()}
 const mark=()=>items.forEach((el,i)=>el&&el.classList.toggle('s',rides[i]===sel));
 function setRaws(list,isDemo){
- raws=list.slice().sort((a,b)=>a.t-b.t);demo=isDemo;
+ raws=dedupe(list);demo=isDemo;
  hint.textContent=raws.length?'':'Keine Fahrten · .fit hierher ziehen';
  days=new Map();for(const o of raws){const k=dk(new Date(o.t)),d=days.get(k)||{km:0,v:0,n:0};for(let i=1;i<o.lat.length;i++)d.km+=hv(o.lat[i-1],o.lon[i-1],o.lat[i],o.lon[i]);d.v+=o.v.reduce((a,b)=>a+b,0)/o.v.length;d.n++;days.set(k,d)}
  tot={n:raws.length,km:0,kcal:0,up:0};rm=[];scc={};raws.forEach(o=>{const p=prep(o);tot.km+=p.km;tot.kcal+=p.kcal;tot.up+=p.up;rm.push({t:o.t,km:p.km,kcal:p.kcal,up:p.up})});mode='all';fc=raws.length?new Date(raws[raws.length-1].t):new Date();vm=new Date(fc.getFullYear(),fc.getMonth(),1);apply();
  (raws.length?kv.set('axon1',raws):kv.del('axon1')).catch(()=>{})}
 function say(t){msg.textContent=t;msg.style.display='block';clearTimeout(say.t);say.t=setTimeout(()=>msg.style.display='none',4000)}
-async function readFiles(fl,manual){let ok=0,bad=0,upd=0;const list=demo?[]:raws.slice(),seen=new Map(list.map(o=>[o.n+o.t,o]));
- for(const f of fl){try{const o=fit2raw(await f.arrayBuffer(),f.name.replace(/\.fit$/i,'')),k=o.n+o.t;
-  if(delSet.has(k)){if(manual===true){delSet.delete(k);kv.set('axon1-del',[...delSet]).catch(()=>{})}else{bad++;continue}}
-  const ex=seen.get(k);if(ex){if(!ex.info&&o.info){ex.info=o.info;upd++}else bad++;continue}seen.set(k,o);list.push(o);ok++}catch(e){bad++}}
+let rq=Promise.resolve();
+function readFiles(fl,manual){return rq=rq.then(()=>readFilesI(fl,manual)).catch(()=>{})}
+async function readFilesI(fl,manual){let ok=0,bad=0,upd=0;const list=demo?[]:raws.slice();
+ for(const f of fl){try{const o=fit2raw(await f.arrayBuffer(),f.name.replace(/\.fit$/i,''));
+  if(isDel(o)){if(manual===true){delSet.delete(o.n+o.t);delSet.delete(dkey(o));kv.set('axon1-del',[...delSet]).catch(()=>{})}else{bad++;continue}}
+  const ex=list.find(x=>sameRide(x,o));if(ex){if(!ex.info&&o.info){ex.info=o.info;upd++}else bad++;continue}list.push(o);ok++}catch(e){bad++}}
  if(ok||upd)setRaws(list,false);say(`${ok} Fahrten geladen`+(upd?` · ${upd} aktualisiert`:'')+(bad?` · ${bad} übersprungen`:''))}
 /* ---------- Karten-Kacheln ---------- */
 const TC=new Map();
@@ -466,7 +480,7 @@ function delAsk(ask){dfo.innerHTML=ask?'<button type="button" class="c" id="dno"
  if(ask){document.getElementById('dno').onclick=()=>delAsk(false);document.getElementById('dyes').onclick=delRide}else document.getElementById('ddel').onclick=()=>delAsk(true)}
 function closeDetails(){dm.classList.remove('on');dRide=null}
 function delRide(){const r=dRide;if(!r||!r.raw)return closeDetails();const o=r.raw,m0=mode,f0=fc,v0=vm;
- delSet.add(o.n+o.t);kv.set('axon1-del',[...delSet]).catch(()=>{});closeDetails();
+ delSet.add(o.n+o.t);delSet.add(dkey(o));kv.set('axon1-del',[...delSet]).catch(()=>{});closeDetails();
  setRaws(raws.filter(x=>x!==o),demo);mode=m0;fc=f0;vm=v0;apply();say('Fahrt gelöscht')}
 document.getElementById('dx').onclick=closeDetails;dm.addEventListener('pointerdown',e=>{if(e.target===dm)closeDetails()});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&dm.classList.contains('on'))closeDetails()});
@@ -515,7 +529,7 @@ document.getElementById('call').onclick=()=>{mode='all';vm=new Date(fc.getFullYe
 document.getElementById('bprev').onclick=()=>shift(-1);document.getElementById('bnext').onclick=()=>shift(1);
 cmo.onclick=()=>{mode='month';fc=new Date(vm);apply()};cyr.onclick=()=>{mode='year';fc=new Date(vm);apply()};
 /* ---------- Höhenprofil ---------- */
-const ep=document.getElementById('ep'),epg=ep.getContext('2d');let epRk='',epR=null,epF=null,epW=0,epH=0,epK=0,epU=0,epV=[0,0];
+const ep=document.getElementById('ep'),epg=ep.getContext('2d'),coarse=matchMedia('(pointer:coarse)'),epPad=()=>coarse.matches?16:12,epWant=()=>mob.matches&&!sel?stEl:document.body;let epRk='',epR=null,epF=null,epW=0,epH=0,epK=0,epU=0,epV=[0,0];
 function cdist(r){if(r.cd)return;r.cd=new Float64Array(r.n);for(let i=1;i<r.n;i++)r.cd[i]=r.cd[i-1]+hv(r.lat[i-1],r.lon[i-1],r.lat[i],r.lon[i])}
 /* Ausschnitt (Schieberegler) der gewählten Fahrt: Anteile 0..1 der Strecke */
 function rgSync(){if(rng.r!==sel)rng={r:sel,a:0,b:1}}
@@ -528,6 +542,7 @@ function rgStats(r,i0,i1){cdist(r);let up=0,dn=0,hs=0,raw=0,mx=-99;
  if(!r.raw0){let t=0;for(let i=1;i<r.n;i++)t+=r.w[i]*r.dt[i]/1004;r.raw0=t||1}
  const km=r.cd[i1]-r.cd[i0];return{km,up,dn,kcal:r.kcal*raw/r.raw0,av:km/(hs||1),gr:(r.alt[i1]-r.alt[i0])/((km||.001)*10),mx:mx<-90?0:mx}}
 function drawEP(){document.body.classList.toggle('hasr',rides.length>0);if(!rides.length)return;
+ {const want=epWant();document.body.classList.toggle('hsel',!!sel&&mob.matches);if(ep.parentNode!==want){want.appendChild(ep);epR=null}}
  const w=ep.clientWidth,h=ep.clientHeight;if(!w||!h)return;const F=lhov||sel,hs=!!F&&F===sel;rgSync();
  ep.style.pointerEvents=hs?'auto':'none';if(!hs)ep.style.cursor='';
  const rk=hs?rgKey():'';
@@ -537,7 +552,7 @@ function drawEP(){document.body.classList.toggle('hasr',rides.length>0);if(!ride
  g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);
  let lo=1e9,hi=-1e9,mk=0;for(const r of vis){cdist(r);mk=Math.max(mk,r.cd[r.n-1]);for(const a of r.alt){lo=Math.min(lo,a);hi=Math.max(hi,a)}}
  if(hi-lo<20){const c=(hi+lo)/2;lo=c-10;hi=c+10}mk=mk||1;
- const pl=hs?12:6,pr=pl,tp=12,bt=14,X=(r,i)=>pl+r.cd[i]/mk*(w-pl-pr),Y=a=>tp+(1-(a-lo)/(hi-lo))*(h-tp-bt),base=h-bt+3;
+ const pl=hs?epPad():6,pr=pl,tp=12,bt=14,X=(r,i)=>pl+r.cd[i]/mk*(w-pl-pr),Y=a=>tp+(1-(a-lo)/(hi-lo))*(h-tp-bt),base=h-bt+3;
  const act=hs&&(rng.a>0||rng.b<1),xa=pl+(hs?rng.a:0)*(w-pl-pr),xb=pl+(hs?rng.b:1)*(w-pl-pr);
  g.lineCap=g.lineJoin='round';g.strokeStyle='rgba(140,190,255,.16)';g.lineWidth=1;g.beginPath();g.moveTo(pl,base);g.lineTo(w-pr,base);g.stroke();
  const plot=()=>{for(const r of vis){
@@ -551,7 +566,7 @@ function drawEP(){document.body.classList.toggle('hasr',rides.length>0);if(!ride
  if(hs){
   if(act){Q=rgStats(F,...rgGet(F));g.fillStyle='rgba(127,252,236,.06)';g.fillRect(xa,tp-6,xb-xa,base-tp+6)}
   for(const x of[xa,xb]){g.strokeStyle='rgba(127,252,236,.7)';g.lineWidth=1;g.beginPath();g.moveTo(x,tp-5);g.lineTo(x,base);g.stroke();
-   const gy=(tp+base)/2;g.fillStyle='rgba(6,12,24,.94)';g.strokeStyle='rgba(127,252,236,.85)';g.beginPath();g.roundRect?g.roundRect(x-5.5,gy-11,11,22,5.5):g.rect(x-5.5,gy-11,11,22);g.fill();g.stroke();
+   const gy=(tp+base)/2;g.fillStyle='rgba(6,12,24,.94)';g.strokeStyle='rgba(127,252,236,.85)';const hw=coarse.matches?7.5:5.5,hh=coarse.matches?15:11;g.beginPath();g.roundRect?g.roundRect(x-hw,gy-hh,hw*2,hh*2,hw):g.rect(x-hw,gy-hh,hw*2,hh*2);g.fill();g.stroke();
    g.strokeStyle='rgba(127,252,236,.9)';g.beginPath();g.moveTo(x-1.5,gy-4);g.lineTo(x-1.5,gy+4);g.moveTo(x+1.5,gy-4);g.lineTo(x+1.5,gy+4);g.stroke()}}
  g.font=`9px ${fam}`;g.fillStyle='rgba(150,170,200,.8)';g.textAlign='left';g.fillText(Math.round(hi)+' m',tx,8);g.fillText(Math.round(lo)+' m',tx,h-2);
  if(Q){const room=w-tx-pr-8-g.measureText(Math.round(hi)+' m').width-10,V=[`↑ ${fi(Q.up)} ↓ ${fi(Q.dn)} hm  ·  Ø ${nf(Q.gr)} %  ·  max ${nf(Q.mx)} %  ·  Ø ${nf(Q.av)} km/h`,`↑ ${fi(Q.up)} ↓ ${fi(Q.dn)} hm  ·  Ø ${nf(Q.gr)} %`,`↑ ${fi(Q.up)} ↓ ${fi(Q.dn)} hm`];
@@ -559,20 +574,20 @@ function drawEP(){document.body.classList.toggle('hasr',rides.length>0);if(!ride
  g.textAlign='right';
  const kt=Q?(inSt?`${nf(Q.km)} km`:`km ${nf(rng.a*mk)}–${nf(rng.b*mk)}  ·  ${nf(Q.km)} km`):nf(mk)+' km';
  g.fillText(inSt?`${kt}  ·  ${fi(epV[0])} kcal  ·  ${fi(epV[1])} hm`:kt,rx,h-2)}
-function epPlace(){(mob.matches?stEl:document.body).appendChild(ep);epR=null;drawEP()}
+function epPlace(){epWant().appendChild(ep);epR=null;drawEP()}
 epPlace();
 addEventListener('resize',drawEP);
-(function(){let drag=null,off=0,raf=0;const PL=12,GAP=.02,cl=(v,a,b)=>Math.max(a,Math.min(b,v));
- const pos=e=>{const r=ep.getBoundingClientRect(),sp=Math.max(1,r.width-2*PL);return{x:e.clientX-r.left,f:cl((e.clientX-r.left-PL)/sp,0,1),sp}};
+(function(){let drag=null,off=0,raf=0,tp0=null,lastTap=0,PL=12;const GAP=.02,cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const pos=e=>{PL=epPad();const r=ep.getBoundingClientRect(),sp=Math.max(1,r.width-2*PL);return{x:e.clientX-r.left,f:cl((e.clientX-r.left-PL)/sp,0,1),sp}};
  const upd=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;stats()})};
- ep.style.touchAction='pan-y';
- ep.addEventListener('pointerdown',e=>{if(!sel||e.button>0)return;rgSync();const{x,f,sp}=pos(e),xa=PL+rng.a*sp,xb=PL+rng.b*sp,da=Math.abs(x-xa),db=Math.abs(x-xb),act=rng.a>0||rng.b<1;
-  if(da<=14&&da<=db)drag='a';else if(db<=14)drag='b';else if(act&&x>xa&&x<xb){drag='m';off=f-rng.a}else{drag=da<db?'a':'b';mv(f)}
+ ep.style.touchAction='none';
+ ep.addEventListener('pointerdown',e=>{if(!sel||e.button>0)return;rgSync();tp0={x:e.clientX,y:e.clientY,t:performance.now()};const T=coarse.matches?26:14,{x,f,sp}=pos(e),xa=PL+rng.a*sp,xb=PL+rng.b*sp,da=Math.abs(x-xa),db=Math.abs(x-xb),act=rng.a>0||rng.b<1;
+  if(da<=T&&da<=db)drag='a';else if(db<=T)drag='b';else if(act&&x>xa&&x<xb){drag='m';off=f-rng.a}else{drag=da<db?'a':'b';mv(f)}
   ep.setPointerCapture(e.pointerId);e.preventDefault()});
  function mv(f){if(drag==='a')rng.a=Math.min(f,rng.b-GAP);else if(drag==='b')rng.b=Math.max(f,rng.a+GAP);else if(drag==='m'){const w=rng.b-rng.a,a=cl(f-off,0,1-w);rng.a=a;rng.b=a+w}rng.a=cl(rng.a,0,1);rng.b=cl(rng.b,0,1);upd()}
  ep.addEventListener('pointermove',e=>{if(!sel)return;const{x,f,sp}=pos(e);if(drag){mv(f);return}rgSync();
   const near=Math.min(Math.abs(x-PL-rng.a*sp),Math.abs(x-PL-rng.b*sp))<=14;ep.style.cursor=near?'ew-resize':(rng.a>0||rng.b<1)&&f>rng.a&&f<rng.b?'grab':'col-resize'});
- const end=()=>{if(!drag)return;drag=null;mFitRange()};
+ const end=e=>{if(!drag)return;drag=null;const t=tp0;if(t&&e&&e.type==='pointerup'&&Math.hypot(e.clientX-t.x,e.clientY-t.y)<8&&performance.now()-t.t<300){const n=performance.now();if(n-lastTap<400){lastTap=0;rng={r:sel,a:0,b:1};stats()}else lastTap=n}mFitRange()};
  ep.addEventListener('pointerup',end);ep.addEventListener('pointercancel',end);
  ep.addEventListener('dblclick',()=>{if(!sel)return;rng={r:sel,a:0,b:1};stats();mFitRange()});
 })();
@@ -602,12 +617,14 @@ function mApplyLayer(){const m=mmap;if(!m||mFb)return;try{
 function mApplyTerrain(){const m=mmap;if(!m||mFb)return;try{
  if(mview!=='2d'){if(!m.getSource('dem'))m.addSource('dem',{type:'raster-dem',url:`https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${mKey}`,tileSize:256});m.setTerrain({source:'dem',exaggeration:1.5})}
  else m.setTerrain(null)}catch(e){console.warn('Terrain:',e)}}
-function mFit(an){let a=181,b=-181,c=91,d=-91;
+function mFit(an,tight){let a=181,b=-181,c=91,d=-91;
  for(const r of rides)for(let i=0;i<r.lat.length;i++){a=Math.min(a,r.lon[i]);b=Math.max(b,r.lon[i]);c=Math.min(c,r.lat[i]);d=Math.max(d,r.lat[i])}
- if(a<=b)mmap.fitBounds([[a,c],[b,d]],{padding:70,maxZoom:15,pitch:mview==='2d'?0:55,bearing:mview==='2d'?0:-10,duration:an?800:0})}
+ if(a<=b){const pt=mview==='2d'?0:55,br=mview==='2d'?0:-10;
+  if(tight){try{const cam=mmap.cameraForBounds([[a,c],[b,d]],{padding:30,maxZoom:15});if(cam){mmap.jumpTo({center:cam.center,zoom:Math.min(16,cam.zoom+.9),pitch:pt,bearing:br});return}}catch(e){}}
+  mmap.fitBounds([[a,c],[b,d]],{padding:70,maxZoom:15,pitch:pt,bearing:br,duration:an?800:0})}}
 function mFitRange(){if(!mmap||!sel)return;const q=rgGet(sel),i0=q?q[0]:0,i1=q?q[1]:sel.n-1;let a=181,b=-181,c=91,d=-91;
  for(let i=i0;i<=i1;i++){a=Math.min(a,sel.lon[i]);b=Math.max(b,sel.lon[i]);c=Math.min(c,sel.lat[i]);d=Math.max(d,sel.lat[i])}
- if(a<=b)mmap.fitBounds([[a,c],[b,d]],{padding:70,maxZoom:17,pitch:mmap.getPitch(),bearing:mmap.getBearing(),duration:600})}
+ if(a<=b)mmap.fitBounds([[a,c],[b,d]],{padding:{top:70,left:50,right:50,bottom:document.body.classList.contains('hsel')?150:70},maxZoom:17,pitch:mmap.getPitch(),bearing:mmap.getBearing(),duration:600})}
 function mRidesInit(){const m=mmap,lay={'line-cap':'round','line-join':'round'};
  if(!m.getSource('vn-rides'))m.addSource('vn-rides',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
  if(!m.getLayer('vn-rides-glow'))m.addLayer({id:'vn-rides-glow',type:'line',source:'vn-rides',layout:lay,paint:{'line-color':['get','c'],'line-width':['+',['get','w'],6],'line-blur':5,'line-opacity':['*',['get','o'],.3]}});
@@ -643,11 +660,11 @@ function mLimit(){if(limHit||kSw||!mmap)return;
  limHit=mFb=true;try{mmap.setTerrain(null);mmap.once('style.load',()=>{mRidesInit();mRides(true);mReady=true;document.body.classList.add('mm')});mmap.setStyle(mFallback(),{diff:false})}catch(e){}say('MapTiler-Limit erreicht · einfache Karte aktiv')}
 function mInit(){
  if(maplibregl.config)maplibregl.config.MAX_PARALLEL_IMAGE_REQUESTS=32;
- mmap=new maplibregl.Map({container:'mp',style:mStyleUrl(),center:[8.856553,48.247994],zoom:13,pitch:mview==='2d'?0:55,bearing:mview==='2d'?0:-10,maxPitch:85,antialias:true,maxTileCacheSize:1200,fadeDuration:150});
+ mmap=new maplibregl.Map({container:'mp',style:mStyleUrl(),center:[8.856553,48.247994],zoom:14,pitch:mview==='2d'?0:55,bearing:mview==='2d'?0:-10,maxPitch:85,antialias:true,maxTileCacheSize:1200,fadeDuration:150});
  const nav=new maplibregl.NavigationControl({visualizePitch:true});mmap.addControl(nav,'bottom-right');
  const navPlace=()=>{const el=nav._container;if(!el)return;if(mob.matches){const br=document.querySelector('#mp .maplibregl-ctrl-bottom-right');if(br)br.prepend(el)}else document.getElementById('tl').appendChild(el)};navPlace();mob.addEventListener('change',navPlace);
  mmap.addControl(new maplibregl.ScaleControl({unit:'metric'}),mob.matches?'bottom-right':'bottom-left');
- mmap.once('style.load',()=>{mStyleLoaded();mFit()});
+ mmap.once('style.load',()=>{mStyleLoaded();mFit(false,true)});
  setTimeout(()=>{if(!mReady&&mmap&&!limHit){try{mmap.remove()}catch(e){}mmap=null;say('Karte konnte nicht geladen werden')}},9000);
  for(const ev of['move','sourcedata','idle','resize'])mmap.on(ev,()=>{mVer++});
  mmap.on('error',e=>{const st=e&&e.error&&(e.error.status||e.error.statusCode)||((e&&e.error&&e.error.message)||'').match(/\b(402|403)\b/)?.[0];if(st==402||st==403)mLimit()})}
