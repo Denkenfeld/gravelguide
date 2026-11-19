@@ -320,6 +320,7 @@ body.sx #mc{display:none}
 #hud .card,#plan .card,.sheet .card,#hbody .card{background:rgba(var(--fg-rgb),.05)}
 </style></head>
 <body data-tab="map" class="nodata">
+<input type="file" id="fi" accept=".fit,.gpx,.json" multiple hidden>
 <div id="map"></div>
 <header id="top">
  <div id="fp" class="glass"><button id="fprev" class="ib s" aria-label="Früher" data-ic="l"></button><button id="flab"><b id="ft">Alle Fahrten</b><small id="fs"></small></button><button id="fnext" class="ib s" aria-label="Später" data-ic="r"></button></div>
@@ -452,7 +453,7 @@ body.sx #mc{display:none}
 <div id="attr" class="maplibregl-ctrl-bottom-right"></div><div id="scl"></div>
 <div id="shpop" class="glass" hidden></div>
 <div id="toast"></div>
-<input type="file" id="fi" accept=".fit,.gpx,.json" multiple hidden>
+
 <p id="hint" hidden></p>
 <script>
 /* ============================================================
@@ -550,17 +551,10 @@ function cmp2raw(t){const n=t.c&&t.c.length;if(!n||n<2||!t.d)return null;
  if(t.name&&t.name!=='Fahrt')o.title=t.name;
  const I={up:t.hm,down:t.dn,vmax:t.vM?t.vM/3.6:null,timer:t.mt||null,elapsed:t.dur||null,wavg:t.pw||null,wmax:t.pwM,np:t.np,hravg:t.hrA,hrmax:t.hrM,cavg:t.cdA,tavg:t.tmp,kcal:t.kcd};
  for(const k in I)if(I[k]==null)delete I[k];o.info=I;return o}
-const jsonRaws=j=>(Array.isArray(j)?j:[j]).filter(o=>o&&Array.isArray(o.lat)&&Array.isArray(o.lon)&&o.t&&o.lat.length>1);
-async function fileToRaws(f){const fn=String(f&&f.name||''),n=fn.toLowerCase(),nm=fn.replace(/\.(fit|gpx|json)$/i,'')||'fahrt';
+async function fileToRaws(f){const n=f.name.toLowerCase(),nm=f.name.replace(/\.(fit|gpx|json)$/i,'');
  if(n.endsWith('.fit'))return[fit2raw(await f.arrayBuffer(),nm)];
  if(n.endsWith('.gpx'))return[gpx2raw(await f.text(),nm,f.lastModified)];
- if(n.endsWith('.json'))return jsonRaws(JSON.parse(await f.text()));
- /* Dateiname ohne bekannte Endung (z. B. vom Karoo-Sync): Format am Inhalt erkennen */
- const buf=await f.arrayBuffer(),u=new Uint8Array(buf);
- if(u.length>12&&String.fromCharCode(u[8],u[9],u[10],u[11])==='.FIT')return[fit2raw(buf,nm)];
- const tx=new TextDecoder().decode(u).replace(/^\uFEFF/,''),c=tx.trimStart()[0];
- if(c==='<')return[gpx2raw(tx,nm,f.lastModified)];
- if(c==='{'||c==='[')return jsonRaws(JSON.parse(tx));
+ if(n.endsWith('.json')){const j=JSON.parse(await f.text());const a=Array.isArray(j)?j:[j];return a.filter(o=>o&&Array.isArray(o.lat)&&Array.isArray(o.lon)&&o.t&&o.lat.length>1)}
  throw 0}
 /* ============================================================
    STATE, HELFER
@@ -1503,7 +1497,7 @@ function sheetCtl(c){
   const f=now=>{const dt=Math.min(.032,(now-t0)/1000);t0=now;v+=(-k*(x-target)-cc*v)*dt;x+=v*dt;if(x<0){x=0;if(v<0)v=0}set(x);
    if(Math.abs(x-target)<.5&&Math.abs(v)<12){set(target);raf=0;done&&done();return}raf=requestAnimationFrame(f)};raf=requestAnimationFrame(f)}
  const nearest=p=>{const S=c.states();let b=0;S.forEach((s,i)=>{if(Math.abs(s-p)<Math.abs(S[b]-p))b=i});return b};
- function begin(px,py,t){if(c.skip&&t&&t.closest&&t.closest(c.skip))return;G={x:px,y:py,base:y,d:0,s:[]}}
+ function begin(px,py,t){if(c.block&&c.block())return;if(c.skip&&t&&t.closest&&t.closest(c.skip))return;G={x:px,y:py,base:y,d:0,s:[]}}
  function move(px,py,ev){if(!G)return;
   if(!G.d){const dy=py-G.y,dx=px-G.x;if(Math.abs(dy)<6||Math.abs(dy)<Math.abs(dx)*1.2)return;
    if(dy<0&&y<=.5){G=null;return}
@@ -1742,6 +1736,36 @@ body.pl-bz #pl-busy{display:inline}
 #pl-ring circle{fill:rgba(255,176,32,.15);stroke:var(--ac);stroke-width:4;stroke-dasharray:151;stroke-dashoffset:151;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center}
 #pl-ring.go circle{stroke-dashoffset:0;transition:stroke-dashoffset .38s linear}
 body.pl-on #map canvas{cursor:crosshair}
+#plan.ex #pl-cvw{flex:none;height:70px}
+#pl-body{display:none;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;margin:6px -12px calc(-24px - var(--sab));padding:2px 12px calc(30px + var(--sab));touch-action:pan-y}
+#plan.ex #pl-body,#plan.dragx #pl-body{display:block}
+#plan.ex,#plan.dragx{overflow:hidden}
+#pl-body h4{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);font-weight:700;margin:18px 0 8px}
+#pl-body h4:first-child{margin-top:4px}
+.plg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.plg div{background:rgba(var(--fg-rgb),.06);border-radius:13px;padding:9px 6px;text-align:center;min-width:0}
+.plg b{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.plg small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+.plsun{margin-top:8px;font-size:12.5px;color:var(--dim);line-height:1.35}.plsun.w{color:var(--act)}
+.plrow{display:flex;align-items:center;gap:10px;margin:6px 0}.plrow>span{font-size:13px;color:var(--dim);flex:none;min-width:64px}
+.plrow input[type=time],.plrow input[type=text],#pl-q,#pl-nm{flex:1;min-width:0;height:38px;border-radius:12px;background:rgba(var(--fg-rgb),.07);border:1px solid transparent;color:var(--fg);padding:0 12px;font-size:14px}
+.plrow input[type=range]{flex:1;accent-color:var(--ac)}
+.plrow output{font-weight:700;font-size:14px;min-width:60px;text-align:right;font-variant-numeric:tabular-nums}
+.plbtns{display:flex;flex-wrap:wrap;gap:7px}
+.plbtns .chip{height:36px}
+.plhint{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.35}
+.pldist{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(var(--fg-rgb),.06)}
+.pldist i{display:block;height:100%}
+.pllg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:11.5px;color:var(--dim)}
+.pllg span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:5px}
+.plli{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(var(--fg-rgb),.05);margin-bottom:6px;font-size:13.5px}
+.plli .n{width:24px;height:24px;border-radius:50%;background:var(--ac);color:var(--onac);font-weight:800;font-size:11.5px;display:grid;place-items:center;flex:none}
+.plli .n.s{background:#22c55e;color:#fff}.plli .n.e{background:#ef4444;color:#fff}
+.plli .t{flex:1;min-width:0}.plli .t small{display:block;color:var(--dim);font-size:11.5px}
+.plli button{width:30px;height:30px;border-radius:9px;background:rgba(var(--fg-rgb),.07);color:var(--fg);font-size:13px;flex:none}
+.plli button.tx{width:auto;padding:0 10px;font-weight:700;font-size:12px}
+.plli.tap{cursor:pointer}
+#pl-res:empty{display:none}
 </style>
 <div id="plan" class="glass">
  <div id="pl-grab" role="button" aria-label="Panel minimieren"></div>
@@ -1750,6 +1774,26 @@ body.pl-on #map canvas{cursor:crosshair}
  <div id="pl-cvw"><canvas id="pl-cv"></canvas><div id="pl-hv"></div></div>
  <div class="chips" id="pl-ctl"><div id="pl-pf"></div>
  <button class="chip" id="pl-undo">↶ Zurück</button><button class="chip" id="pl-rev">⇄ Umkehren</button><button class="chip" id="pl-clr">Leeren</button><button class="chip" id="pl-gx">GPX ↓</button><button class="chip" id="pl-gi">GPX ↑</button><button class="chip" id="pl-sh">Teilen</button></div>
+<div id="pl-body">
+ <h4>Route</h4><div class="plg" id="pl-xs"></div><div class="plsun" id="pl-sun"></div>
+ <h4>Start &amp; Tempo</h4>
+ <div class="plrow"><span>Abfahrt</span><input type="time" id="pl-t0"></div>
+ <div class="plrow"><span>Ø Tempo</span><input type="range" id="pl-spd" min="12" max="30" step="1"><output id="pl-spdv"></output></div>
+ <h4>Routing-Profil</h4><div class="plbtns" id="pl-pf2"></div><div class="plhint" id="pl-pfd"></div>
+ <h4>Ort suchen</h4>
+ <div class="plrow"><input type="text" id="pl-q" placeholder="Ort oder Adresse …" autocomplete="off"><button class="chip on" id="pl-qb">Suchen</button></div><div id="pl-res"></div>
+ <h4>Rundkurs erzeugen</h4>
+ <div class="plbtns" id="pl-lk"></div><div class="plhint">Startet am ersten Punkt (oder Kartenmitte). Nochmal tippen = neue Variante.</div>
+ <h4>Werkzeuge</h4>
+ <div class="plbtns"><button class="chip" id="pl-t-close">⟲ Rundkurs schließen</button><button class="chip" id="pl-t-back">⇄ Hin &amp; zurück</button><button class="chip" id="pl-t-fit">⌖ Route zeigen</button><button class="chip" id="pl-t-last">✕ Letzten Punkt</button></div>
+ <h4>Steigungen</h4><div class="pldist" id="pl-dist"></div><div class="pllg" id="pl-dlg"></div>
+ <h4>Anstiege</h4><div id="pl-cl"></div>
+ <h4>Wegpunkte</h4><div id="pl-wp"></div>
+ <h4>Meine Routen</h4>
+ <div class="plrow"><input type="text" id="pl-nm" placeholder="Name der Route" maxlength="40"><button class="chip on" id="pl-svb">Speichern</button></div><div id="pl-sv"></div>
+ <h4>Export &amp; Import</h4>
+ <div class="plbtns"><button class="chip" id="pl-x-gx">GPX ↓ speichern</button><button class="chip" id="pl-x-gi">GPX ↑ laden</button><button class="chip" id="pl-x-sh">Link teilen</button></div>
+</div>
 </div>
 <div id="pl-ring"><svg viewBox="0 0 56 56" width="56" height="56"><circle cx="28" cy="28" r="24"/></svg></div>
 <input type="file" id="pl-file" accept=".gpx,application/gpx+xml,text/xml" hidden>
@@ -1757,6 +1801,7 @@ body.pl-on #map canvas{cursor:crosshair}
 /* ===== Routenplaner (Plan-Modus auf der Hauptkarte) ===== */
 var PL={on:0,pts:[],prof:'trekking',cache:new Map(),hist:[],mk:[],tok:0,all:null,fc:{type:'FeatureCollection',features:[]},att:0,dimmed:null,warned:0,cur:null};
 (function(){
+const PFD={trekking:'Ausgewogen: bevorzugt Radwege und ruhige Straßen.',gravel:'Mehr Schotter und Feldwege, weniger Asphalt.',fastbike:'Direkt und schnell, Asphalt bevorzugt (Rennrad).',line:'Luftlinie zwischen den Punkten, ohne Routing.'};
 const PROFS=[['trekking','Trekking'],['gravel','Gravel'],['fastbike','Schnell'],['line','Luftlinie']];
 const r5=v=>Math.round(v*1e5)/1e5,kp=p=>r5(p[0])+','+r5(p[1]);
 const hv=(a,b)=>{const R=6371000,t=Math.PI/180,dl=(b[1]-a[1])*t,dn=(b[0]-a[0])*t,x=Math.sin(dl/2)**2+Math.cos(a[1]*t)*Math.cos(b[1]*t)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
@@ -1826,7 +1871,7 @@ function plStats(){
  for(let i=1;i<n;i++){const L=d[i]-d[i-1];if(L<=0)continue;const g=(z[i]-z[i-1])/L*100;t+=L/(plSpeed(g)/3.6)}
  return{km:d[n-1]/1000,up,dn,h:t/3600}
 }
-function plSpeed(g){const v=g>=0?19-1.15*g:19+1.1*-g;return Math.max(5,Math.min(38,v))}
+function plSpeed(g){const k=(PL.spd||19)/19,v=k*(g>=0?19-1.15*g:19+1.1*-g);return Math.max(5,Math.min(42,v))}
 function plGrades(){
  const A=PL.all,n=A.c.length,g=new Array(n).fill(0),W=60;let a=0,b=0;
  for(let i=0;i<n;i++){while(a<i&&A.d[i]-A.d[a]>W)a++;while(b<n-1&&A.d[b]-A.d[i]<W)b++;const L=A.d[b]-A.d[a];g[i]=L>15?(A.c[b][2]-A.c[a][2])/L*100:0}
@@ -1843,13 +1888,13 @@ function plDraw(part){
  }
  PL.fc={type:'FeatureCollection',features:fs};
  try{const s=map.getSource('pl-src');if(s)s.setData(PL.fc)}catch(e){}
- plUi();plChart()
+ plUi();plChart();if(!part&&PL.ex>0)plBody()
 }
 function plUi(){
  const s=plStats();el('pl-km').textContent=fmt(s.km,1);el('pl-up').textContent=fmt(s.up);el('pl-dn').textContent=fmt(s.dn);
  const h=Math.floor(s.h),m=Math.round((s.h-h)*60);el('pl-tm').textContent=s.km?h+':'+String(m==60?59:m).padStart(2,'0'):'–';
  el('pl-undo').disabled=!PL.hist.length;
- qa('#pl-pf .chip').forEach(b=>b.classList.toggle('on',b.dataset.p==PL.prof));
+ qa('#pl-pf .chip,#pl-pf2 .chip').forEach(b=>b.classList.toggle('on',b.dataset.p==PL.prof));const pd=el('pl-pfd');if(pd)pd.textContent=PFD[PL.prof]||''
 }
 /* ---- Höhenprofil ---- */
 function plChart(){
@@ -1941,7 +1986,7 @@ function plToggle(v){
  if(PL.on&&document.body.dataset.tab!='map'){try{document.body.dataset.tab='map'}catch(e){}}
  ensurePlan();['pl-case','pl-line'].forEach(id=>{try{if(map.getLayer(id))map.setLayoutProperty(id,'visibility',PL.on?'visible':'none')}catch(e){}});
  plDim(!!PL.on);plMarkers();
- if(PL.on){PL.hist.length||0;plBuild()}else{plHoverEnd();hudPnl()}
+ if(PL.on){PL.hist.length||0;plBuild();if(!PL.t0u&&el('pl-t0'))el('pl-t0').value=plNowT()}else{plHoverEnd();hudPnl();plExApply(0)}
  setTimeout(plChart,60);
  if(PL.on&&!wasOn)plIn();else if(!PL.on&&wasOn)plOut();
  if(PL.on&&!PL.pts.length)warn('Karte antippen, um den Start zu setzen');
@@ -2007,6 +2052,115 @@ async function plShare(){
   await navigator.clipboard.writeText(url);warn('Link kopiert')}catch(e){warn('Teilen nicht möglich')}
 }
 
+
+/* ---- Erweitertes Planer-Panel (nach oben ziehen) ---- */
+PL.ex=0;PL.t0u=0;try{PL.spd=+localStorage.getItem('gg_pl_spd')||19}catch(e){PL.spd=19}
+const PLX={raf:0,h0:0,hm:0,dragged:0},XG={g:null},cl01=(v,a,b)=>Math.max(a,Math.min(b,v));
+const plNowT=()=>{const d=new Date();d.setMinutes(Math.ceil(d.getMinutes()/5)*5);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const hmm=h=>{if(!isFinite(h)||h<=0)return'–';let H=Math.floor(h),M=Math.round((h-H)*60);if(M==60){H++;M=0}return H+':'+String(M).padStart(2,'0')};
+const clk=d=>d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+function plMetrics(){const p=el('plan');if(!p.style.height)PLX.h0=p.offsetHeight||PLX.h0||170;const tp=el('top'),t=tp?tp.getBoundingClientRect().bottom+8:90;PLX.hm=Math.max(PLX.h0+140,window.innerHeight-t)}
+function plExApply(e){const p=el('plan');PL.ex=e;
+ if(e<=.001){PL.ex=0;p.style.height='';p.classList.remove('ex','dragx');pnlSet(null)}
+ else{plMetrics();const h=PLX.h0+(PLX.hm-PLX.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex','dragx');pnlSet(h)}
+ if(!PLX.cq)PLX.cq=requestAnimationFrame(()=>{PLX.cq=0;plChart()})}
+function plExTo(t,done){cancelAnimationFrame(PLX.raf);if(t>0&&PL.ex<.001)plBody();const e0=PL.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
+ const f=n=>{const q=Math.min(1,(n-t0)/D),k=1-Math.pow(1-q,3);plExApply(e0+(t-e0)*k);if(q<1)PLX.raf=requestAnimationFrame(f);else{plExApply(t);done&&done()}};PLX.raf=requestAnimationFrame(f)}
+function xBegin(px,py,t){const p=el('plan');if(!PL.on||p.classList.contains('min')||(PLC&&PLC.y>.5))return;
+ if(t&&t.closest&&t.closest('#pl-cv,input,select,textarea,#pl-ctl'))return;
+ XG.g={x:px,y:py,e0:PL.ex,d:0,inb:!!(t&&t.closest&&t.closest('#pl-body')),s:[]}}
+function xMove(px,py,ev){const g=XG.g;if(!g)return;
+ if(!g.d){const dy=py-g.y,dx=px-g.x;if(Math.abs(dy)<6||Math.abs(dy)<Math.abs(dx)*1.2)return;
+  if(dy<0){if(PL.ex>=.999){XG.g=null;return}}
+  else{if(PL.ex<.001){XG.g=null;return}if(g.inb&&el('pl-body').scrollTop>0){XG.g=null;return}}
+  cancelAnimationFrame(PLX.raf);if(PL.ex<.001){plMetrics();plBody()}else plMetrics();g.d=1;g.y=py;g.e0=PL.ex;g.s=[]}
+ if(ev&&ev.cancelable)ev.preventDefault();
+ const span=Math.max(80,PLX.hm-PLX.h0),e=cl01(g.e0+(g.y-py)/span,0,1),n=performance.now();
+ g.s.push([n,e]);while(g.s.length>2&&n-g.s[0][0]>100)g.s.shift();plExApply(e)}
+function xEnd(){const g=XG.g;XG.g=null;if(!g||!g.d)return;const q=g.s,a=q[0],b=q[q.length-1],v=q.length>1&&b[0]>a[0]&&performance.now()-b[0]<90?(b[1]-a[1])/(b[0]-a[0])*1000:0;
+ PLX.dragged=1;setTimeout(()=>PLX.dragged=0,60);plExTo(PL.ex+v*.15>.45?1:0)}
+function plXInit(){const p=el('plan');
+ p.addEventListener('touchstart',e=>xBegin(e.touches[0].clientX,e.touches[0].clientY,e.target),{passive:true});
+ p.addEventListener('touchmove',e=>xMove(e.touches[0].clientX,e.touches[0].clientY,e),{passive:false});
+ p.addEventListener('touchend',xEnd);p.addEventListener('touchcancel',xEnd);
+ p.addEventListener('mousedown',e=>{if(e.button||!e.target.closest('#pl-grab,#pl-h')||e.target.closest('button,input'))return;xBegin(e.clientX,e.clientY,null);
+  const mv=ev=>xMove(ev.clientX,ev.clientY,ev),up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);xEnd()};addEventListener('mousemove',mv);addEventListener('mouseup',up)});
+ window.addEventListener('resize',()=>{if(PL.ex>0)plExApply(PL.ex)})}
+
+/* ---- Auswertung ---- */
+function plSun(dt,lat,lon){const r=Math.PI/180,N=Math.floor((Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate())-Date.UTC(dt.getFullYear(),0,0))/864e5),B=2*Math.PI*(N-81)/364,
+ eot=9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B),dec=23.45*Math.sin(2*Math.PI*(284+N)/365)*r,c=-Math.tan(lat*r)*Math.tan(dec);if(c>=1||c<=-1)return null;
+ const u=12-lon/15-eot/60+Math.acos(c)/r/15;return new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate())+u*36e5)}
+function plClimbs(){const A=PL.all;if(!A)return[];const c=A.c,d=A.d,n=c.length,z=c.map((p,i)=>{let s=0,k=0;for(let j=Math.max(0,i-2);j<=Math.min(n-1,i+2);j++){s+=c[j][2];k++}return s/k}),TH=12,pv=[];
+ let mn=0,mx=0,dir=0;
+ for(let i=1;i<n;i++){if(z[i]>z[mx])mx=i;if(z[i]<z[mn])mn=i;
+  if(dir<=0&&z[i]-z[mn]>=TH){pv.push(mn);dir=1;mx=i}else if(dir>=0&&z[mx]-z[i]>=TH){pv.push(mx);dir=-1;mn=i}}
+ pv.push(dir>0?mx:mn);const out=[];
+ for(let k=0;k<pv.length-1;k++){const a=pv[k],b=pv[k+1],gain=z[b]-z[a],len=d[b]-d[a];if(gain>=25&&len>200)out.push({a,b,gain,len,gr:gain/len*100,km:d[a]/1000})}
+ return out}
+function plBody(){const bd=el('pl-body');if(!bd)return;const A=PL.all,s=plStats(),has=!!(A&&s.km>0);
+ const kcal=has?(()=>{const m=(typeof WT=='number'?WT:75)+(typeof BW=='number'?BW:12),v=s.km/Math.max(.1,s.h)/3.6,W=m*9.81*s.up+.006*m*9.81*s.km*1000+.5*1.2*.4*v*v*s.km*1000;return W/.24/4184})():0;
+ let gmax=0;if(has&&PL.g)PL.g.forEach(v=>{if(v>gmax)gmax=v});
+ let arr='–',sun='';
+ if(has){const tv=(el('pl-t0').value||plNowT()).split(':'),d0=new Date();d0.setHours(+tv[0]||0,+tv[1]||0,0,0);const d1=new Date(d0.getTime()+s.h*36e5);arr=clk(d1);
+  const ss=plSun(d0,A.c[0][1],A.c[0][0]);if(ss){const mg=Math.round((ss-d1)/6e4);sun=mg<0?'Ankunft '+Math.abs(mg)+' Min nach Sonnenuntergang ('+clk(ss)+') – Licht mitnehmen':'Sonnenuntergang '+clk(ss)+' · Puffer nach Ankunft '+(mg>=60?Math.floor(mg/60)+' h '+(mg%60)+' Min':mg+' Min');el('pl-sun').classList.toggle('w',mg<30)}else el('pl-sun').classList.remove('w')}
+ el('pl-sun').textContent=sun;
+ const X=(v,l)=>'<div><b>'+v+'</b><small>'+l+'</small></div>';
+ el('pl-xs').innerHTML=X(has?fmt(s.km,1):'–','km')+X(has?hmm(s.h):'–','Fahrzeit')+X(has?fmt(s.up):'–','m Aufstieg')+X(has?fmt(s.dn):'–','m Abstieg')+X(has?fmt(s.up/s.km):'–','hm / km')+X(has?fmt(gmax,0)+' %':'–','steilstes Stück')+X(has?fmt(kcal):'–','kcal ca.')+X(arr,'Ankunft');
+ /* Steigungsverteilung */
+ const BN=[['≤ −6 %',-99,-6,-9],['−6…−2 %',-6,-2,-4],['flach',-2,2,0],['2…6 %',2,6,4],['6…10 %',6,10,8],['> 10 %',10,99,13]],km=BN.map(()=>0);
+ if(has&&PL.g)for(let i=1;i<A.c.length;i++){const L=A.d[i]-A.d[i-1],g=(PL.g[i-1]+PL.g[i])/2;for(let k=0;k<BN.length;k++)if(g>=BN[k][1]&&g<BN[k][2]){km[k]+=L/1000;break}}
+ const tot=km.reduce((a,b)=>a+b,0)||1;
+ el('pl-dist').innerHTML=has?BN.map((b,k)=>km[k]>0?'<i style="width:'+(km[k]/tot*100).toFixed(1)+'%;background:'+gcol(b[3])+'" title="'+b[0]+'"></i>':'').join(''):'';
+ el('pl-dlg').innerHTML=has?BN.map((b,k)=>km[k]>.05?'<span style="--c:'+gcol(b[3])+'">'+b[0]+' · '+fmt(km[k],1)+' km</span>':'').join(''):'<span style="--c:#888">Noch keine Route</span>';
+ /* Anstiege */
+ const C=has?plClimbs():[],top=C.slice().sort((a,b)=>b.gain-a.gain).slice(0,6).sort((a,b)=>a.a-b.a);
+ el('pl-cl').innerHTML=top.length?top.map((c,i)=>'<div class="plli tap" data-a="cl" data-ca="'+c.a+'" data-cb="'+c.b+'"><span class="n" style="background:'+gcol(c.gr)+';color:#111">'+(i+1)+'</span><div class="t">+'+fmt(c.gain)+' m auf '+fmt(c.len/1000,1)+' km<small>ab km '+fmt(c.km,1)+' · Ø '+fmt(c.gr,1)+' %</small></div></div>').join(''):'<div class="plhint">'+(has?'Keine nennenswerten Anstiege – flache Route.':'Plane eine Route, dann erscheinen hier die Anstiege.')+'</div>';
+ /* Wegpunkte */
+ const n=PL.pts.length;
+ el('pl-wp').innerHTML=n?PL.pts.map((p,i)=>{const dk=A&&A.wi&&i<A.wi.length?A.d[A.wi[i]]/1000:(A&&i==n-1&&n>1?A.d[A.d.length-1]/1000:0),lb=i==0?'Start':i==n-1&&n>1?'Ziel':'Punkt '+(i+1),cls=i==0?' s':i==n-1&&n>1?' e':'';
+  return'<div class="plli"><span class="n'+cls+'">'+(i+1)+'</span><div class="t tap" data-a="wf" data-i="'+i+'">'+lb+'<small>'+(n>1?'km '+fmt(dk,1)+' · ':'')+p[1].toFixed(4)+', '+p[0].toFixed(4)+'</small></div>'+(i>0?'<button data-a="wu" data-i="'+i+'">▲</button>':'')+(i<n-1?'<button data-a="wd" data-i="'+i+'">▼</button>':'')+'<button data-a="wx" data-i="'+i+'">✕</button></div>'}).join(''):'<div class="plhint">Karte antippen, um Punkte zu setzen.</div>';
+ plSavedRender()}
+const svGet=()=>{try{return JSON.parse(localStorage.getItem('gg_plans')||'[]')}catch(e){return[]}};
+const svPut=a=>{try{localStorage.setItem('gg_plans',JSON.stringify(a))}catch(e){warn('Speichern nicht möglich')}};
+function plSavedRender(){const a=svGet();el('pl-sv').innerHTML=a.length?a.map(r=>'<div class="plli"><div class="t">'+esc(r.n)+'<small>'+fmt(r.km,1)+' km · '+fmt(r.up)+' m ↑</small></div><button class="tx" data-a="sl" data-id="'+r.id+'">Laden</button><button data-a="sd" data-id="'+r.id+'">✕</button></div>').join(''):'<div class="plhint">Noch keine gespeicherten Routen.</div>'}
+function plSaveCur(){if(PL.pts.length<2){warn('Erst eine Route planen');return}const st=plStats(),inp=el('pl-nm'),nm=inp.value.trim()||('Route '+new Date().toLocaleDateString('de-DE')),a=svGet();
+ a.unshift({id:Date.now(),n:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,km:st.km,up:st.up});svPut(a.slice(0,40));inp.value='';plSavedRender();warn('Route gespeichert')}
+function plLoadSaved(id){const r=svGet().find(x=>String(x.id)==String(id));if(!r)return;plPush();PL.pts=r.p.map(p=>p.slice());PL.prof=r.f||'trekking';plMarkers();plBuild().then(plFit);plExTo(0)}
+function plDest(p,brg,d){const r=Math.PI/180;return[p[0]+d*Math.sin(brg)/(111320*Math.cos(p[1]*r)),p[1]+d*Math.cos(brg)/111320]}
+function plLoop(km){let st=PL.pts[0];if(!st){const c=map.getCenter();st=[c.lng,c.lat]}
+ const R=km*1000/(2*Math.PI*1.35),b=Math.random()*2*Math.PI,ctr=plDest(st,b,R),a0=b+Math.PI,sg=Math.random()<.5?1:-1,pts=[st];
+ for(let k=1;k<=4;k++)pts.push(plDest(ctr,a0+sg*k*2*Math.PI/5,R));pts.push(st);
+ plPush();PL.pts=pts.map(p=>[p[0],p[1]]);plMarkers();plBuild().then(plFit);plExTo(0)}
+async function plSearch(){const q=el('pl-q').value.trim();if(!q)return;const bx=el('pl-res');bx.innerHTML='<div class="plhint">Suche …</div>';
+ try{const j=await(await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=de&format=json')).json(),r=j.results||[];PL.res=r;
+  bx.innerHTML=r.length?r.map((o,i)=>'<div class="plli"><div class="t">'+esc(o.name)+'<small>'+esc([o.admin1,o.country].filter(Boolean).join(', '))+'</small></div><button class="tx" data-a="qs" data-i="'+i+'">Start</button><button class="tx" data-a="qe" data-i="'+i+'">Ziel</button></div>').join(''):'<div class="plhint">Nichts gefunden.</div>'}
+ catch(e){bx.innerHTML='<div class="plhint">Suche nicht erreichbar.</div>'}}
+function plBodyClick(e){const b=e.target.closest('[data-a]');if(!b||!el('pl-body').contains(b))return;const a=b.dataset.a,i=+b.dataset.i;
+ if(a=='qs'||a=='qe'){const o=(PL.res||[])[i];if(!o)return;const ll={lng:o.longitude,lat:o.latitude};if(a=='qs')plAdd(ll,PL.pts.length?0:null);else plAdd(ll);
+  if(PL.pts.length>1)plFit();else map.flyTo({center:[ll.lng,ll.lat],zoom:11.5});plExTo(0)}
+ else if(a=='wf'){const p=PL.pts[i];if(p){map.flyTo({center:p,zoom:Math.max(map.getZoom(),13)});plExTo(0)}}
+ else if(a=='wu'||a=='wd'){const j=a=='wu'?i-1:i+1;if(j<0||j>=PL.pts.length)return;plPush();const t=PL.pts[i];PL.pts[i]=PL.pts[j];PL.pts[j]=t;plMarkers();plBuild()}
+ else if(a=='wx'){plDel(i)}
+ else if(a=='cl'){const A=PL.all;if(!A)return;const bb=new maplibregl.LngLatBounds();for(let k=+b.dataset.ca;k<=+b.dataset.cb;k++)bb.extend([A.c[k][0],A.c[k][1]]);map.fitBounds(bb,{padding:{top:120,bottom:300,left:50,right:50},maxZoom:15});plExTo(0)}
+ else if(a=='sl')plLoadSaved(b.dataset.id);
+ else if(a=='sd'){svPut(svGet().filter(x=>String(x.id)!=String(b.dataset.id)));plSavedRender()}}
+function plToolsInit(){
+ el('pl-pf2').innerHTML=PROFS.map(p=>'<button class="chip" data-p="'+p[0]+'">'+p[1]+'</button>').join('');
+ qa('#pl-pf2 .chip').forEach(c=>c.onclick=()=>{if(PL.prof==c.dataset.p)return;PL.prof=c.dataset.p;PL.warned=0;plUi();plBuild()});
+ el('pl-lk').innerHTML=[20,40,60,80,100].map(k=>'<button class="chip" data-k="'+k+'">'+k+' km</button>').join('');
+ qa('#pl-lk .chip').forEach(c=>c.onclick=()=>plLoop(+c.dataset.k));
+ el('pl-t0').value=plNowT();el('pl-t0').oninput=()=>{PL.t0u=1;plBody()};
+ const sp=el('pl-spd');sp.value=PL.spd;el('pl-spdv').textContent=PL.spd+' km/h';
+ sp.oninput=()=>{PL.spd=+sp.value;el('pl-spdv').textContent=PL.spd+' km/h';try{localStorage.setItem('gg_pl_spd',PL.spd)}catch(e){}plUi();plBody()};
+ el('pl-t-close').onclick=()=>{if(PL.pts.length<2){warn('Erst eine Route planen');return}if(kp(PL.pts[0])==kp(PL.pts[PL.pts.length-1])){warn('Schon ein Rundkurs');return}plPush();PL.pts.push(PL.pts[0].slice());plMarkers();plBuild()};
+ el('pl-t-back').onclick=()=>{if(PL.pts.length<2){warn('Erst eine Route planen');return}plPush();PL.pts=PL.pts.concat(PL.pts.slice(0,-1).reverse());plMarkers();plBuild()};
+ el('pl-t-fit').onclick=()=>{plFit();plExTo(0)};
+ el('pl-t-last').onclick=()=>{if(!PL.pts.length)return;plPush();PL.pts.pop();plMarkers();plBuild()};
+ el('pl-x-gx').onclick=plGpx;el('pl-x-gi').onclick=()=>el('pl-file').click();el('pl-x-sh').onclick=plShare;
+ el('pl-qb').onclick=plSearch;el('pl-q').onkeydown=e=>{if(e.key=='Enter')plSearch()};
+ el('pl-svb').onclick=plSaveCur;
+ el('pl-body').addEventListener('click',plBodyClick);plSavedRender()}
 /* ---- UI ---- */
 let PLC=null;
 function plCollapseY(){return Math.max(0,el('plan').offsetHeight-28)}
@@ -2017,8 +2171,8 @@ function plOut(){if(!PLC)return;const p=el('plan');p.classList.add('out');PLC.to
 function plGrab(){
  const p=el('plan');let mn=false;try{mn=localStorage.getItem('gg_plan_min')=='1'}catch(e){}
  p.classList.toggle('min',mn);
- PLC=sheetCtl({el:p,skip:'#pl-cv,.chips,input,select,textarea,canvas',handle:'#pl-grab,#pl-h',states:()=>[0,plCollapseY()],prog:v=>{if(!PL.on)return;pnlSet(v>.2?Math.max(0,p.offsetHeight-v):null)},settle:i=>plMinSet(i==1)});
- el('pl-grab').addEventListener('click',()=>{if(PLC.dragged)return;plMin(!p.classList.contains('min'))});
+ PLC=sheetCtl({el:p,skip:'#pl-cv,.chips,input,select,textarea,canvas',handle:'#pl-grab,#pl-h',block:()=>PL.ex>0.01,states:()=>[0,plCollapseY()],prog:v=>{if(!PL.on)return;pnlSet(v>.2?Math.max(0,p.offsetHeight-v):null)},settle:i=>plMinSet(i==1)});
+ el('pl-grab').addEventListener('click',()=>{if(PLC.dragged||PLX.dragged)return;if(PL.ex>.01){plExTo(0);return}plMin(!p.classList.contains('min'))});
  el('pl-h').addEventListener('click',e=>{if(PLC.dragged||e.target.closest('button'))return;if(p.classList.contains('min'))plMin(0)});
 }
 function plInit(){
@@ -2037,7 +2191,7 @@ function plInit(){
  el('pl-sh').onclick=plShare;
  const cv=el('pl-cv');cv.addEventListener('pointermove',plHover);cv.addEventListener('pointerdown',plHover);cv.addEventListener('pointerleave',plHoverEnd);cv.addEventListener('pointerup',plHoverEnd);
  window.addEventListener('resize',()=>PL.on&&plChart());
- plGrab();plUi();
+ plGrab();plXInit();plToolsInit();plUi();
  if(map)plAttach();
  else if(typeof initMap=='function'){const _i=initMap;initMap=function(){const r=_i.apply(this,arguments);plAttach();return r}}
 }
