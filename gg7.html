@@ -550,10 +550,17 @@ function cmp2raw(t){const n=t.c&&t.c.length;if(!n||n<2||!t.d)return null;
  if(t.name&&t.name!=='Fahrt')o.title=t.name;
  const I={up:t.hm,down:t.dn,vmax:t.vM?t.vM/3.6:null,timer:t.mt||null,elapsed:t.dur||null,wavg:t.pw||null,wmax:t.pwM,np:t.np,hravg:t.hrA,hrmax:t.hrM,cavg:t.cdA,tavg:t.tmp,kcal:t.kcd};
  for(const k in I)if(I[k]==null)delete I[k];o.info=I;return o}
-async function fileToRaws(f){const n=f.name.toLowerCase(),nm=f.name.replace(/\.(fit|gpx|json)$/i,'');
+const jsonRaws=j=>(Array.isArray(j)?j:[j]).filter(o=>o&&Array.isArray(o.lat)&&Array.isArray(o.lon)&&o.t&&o.lat.length>1);
+async function fileToRaws(f){const fn=String(f&&f.name||''),n=fn.toLowerCase(),nm=fn.replace(/\.(fit|gpx|json)$/i,'')||'fahrt';
  if(n.endsWith('.fit'))return[fit2raw(await f.arrayBuffer(),nm)];
  if(n.endsWith('.gpx'))return[gpx2raw(await f.text(),nm,f.lastModified)];
- if(n.endsWith('.json')){const j=JSON.parse(await f.text());const a=Array.isArray(j)?j:[j];return a.filter(o=>o&&Array.isArray(o.lat)&&Array.isArray(o.lon)&&o.t&&o.lat.length>1)}
+ if(n.endsWith('.json'))return jsonRaws(JSON.parse(await f.text()));
+ /* Dateiname ohne bekannte Endung (z. B. vom Karoo-Sync): Format am Inhalt erkennen */
+ const buf=await f.arrayBuffer(),u=new Uint8Array(buf);
+ if(u.length>12&&String.fromCharCode(u[8],u[9],u[10],u[11])==='.FIT')return[fit2raw(buf,nm)];
+ const tx=new TextDecoder().decode(u).replace(/^\uFEFF/,''),c=tx.trimStart()[0];
+ if(c==='<')return[gpx2raw(tx,nm,f.lastModified)];
+ if(c==='{'||c==='[')return jsonRaws(JSON.parse(tx));
  throw 0}
 /* ============================================================
    STATE, HELFER
