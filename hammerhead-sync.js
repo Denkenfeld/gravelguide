@@ -530,6 +530,7 @@
     sendRoute,
     listRoutes,
     getRoute,
+    decodePolyline,
     isConnected,
   };
   if (document.readyState === "loading") {

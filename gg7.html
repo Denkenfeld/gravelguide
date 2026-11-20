@@ -2267,7 +2267,7 @@ function rtThumb(c){
 
 /* Routen = Dashboard-Routen + lokale Daten (Streckenpunkte kennt nur die App, was sie selbst erzeugt/gesendet hat) */
 function rtItems(){const hh=(PL.hr&&PL.hr.l)||[],recs=rtRecs(),o=[];
- hh.forEach(h=>{const rec=recs.find(r=>r.sent===h.id)||null;o.push({key:h.id,name:h.name||(rec&&rec.name)||'Route',km:(h.distance||0)/1000,up:h.gain||0,date:h.createdAt?Date.parse(h.createdAt):(rec?rec.t:0),hh:h.id,rec,c:rec&&rec.c||null})});
+ hh.forEach(h=>{const rec=recs.find(r=>r.sent===h.id)||null;o.push({key:h.id,name:h.name||(rec&&rec.name)||'Route',km:(h.distance||0)/1000,up:h.gain||0,date:h.createdAt?Date.parse(h.createdAt):(rec?rec.t:0),hh:h.id,rec,poly:h.polyline||null,c:rec&&rec.c||null})});
  recs.forEach(r=>{if(r.sent&&hh.some(h=>h.id===r.sent))return;o.push({key:r.id,name:r.name,km:r.km||0,up:r.up||0,date:r.t||0,hh:null,rec:r,c:r.c||null})});
  return o.sort((a,b)=>b.date-a.date)}
 const rtFind=(L,key,rid)=>L.findIndex(x=>(key&&x.key==key)||(rid&&x.rec&&x.rec.id==rid));
@@ -2342,14 +2342,14 @@ const RTG={busy:new Set(),fail:new Set()};
 async function rtLoadGeo(it,loud){const H=window.HammerheadSync;
  if(!it||it.c||!it.hh||!H||!H.getRoute||RTG.busy.has(it.hh)||RTG.fail.has(it.hh))return false;
  RTG.busy.add(it.hh);
- try{const r=await H.getRoute(it.hh),c=(r.coords||[]).map(p=>[p[0],p[1],0]);if(c.length<2)throw 0;
+ try{if(RTG.off&&!it.poly)return false;const co=it.poly&&H.decodePolyline?H.decodePolyline(it.poly):(await H.getRoute(it.hh)).coords,c=(co||[]).map(p=>[p[0],p[1],0]);if(c.length<2)throw 0;
   await plElev(c);
   const rc=rtResample(c,400),s=statsOf(rtA(rc)),a=rtRecs();
   let rec=a.find(x=>x.sent===it.hh)||{id:'H'+it.hh,name:it.name,p:null,f:'trekking',t:it.date||Date.now()};
   rec.name=it.name;rec.c=rc;rec.km=it.km||s.km;rec.up=it.up||s.up;rec.dn=s.dn;rec.sent=it.hh;rtUpsert(rec);
   const cur=rtCur();if(cur&&cur.key===it.key)RT.fk=null;
   return true}
- catch(e){RTG.fail.add(it.hh);if(loud)warn(e&&e.status==404?'Route nicht gefunden':'Strecke konnte nicht geladen werden');return false}
+ catch(e){RTG.fail.add(it.hh);if(e&&e.status==404)RTG.off=1;if(loud)warn(e&&e.status==404?'Route nicht gefunden':'Strecke konnte nicht geladen werden');return false}
  finally{RTG.busy.delete(it.hh)}}
 async function rtPrefetch(){const todo=rtItems().filter(x=>!x.c&&x.hh&&!RTG.fail.has(x.hh)).slice(0,40);let n=0;
  for(let i=0;i<todo.length;i+=3){const r=await Promise.all(todo.slice(i,i+3).map(x=>rtLoadGeo(x)));n+=r.filter(Boolean).length}
