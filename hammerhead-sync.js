@@ -22,7 +22,7 @@
     worker: "https://gravel-guide-auth.denkenfeld.workers.dev",
     redirectUri: "https://gravel-guide.de/gg7.html", // muss exakt im Hammerhead-Dashboard stehen
     authorizeUrl: "https://api.hammerhead.io/v1/auth/oauth/authorize",
-    scope: "activity:read",
+    scope: "activity:read route:read route:write", // route:write = Routen an den Karoo senden (nach der Änderung einmal neu anmelden)
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
     earliestDate: "2026-10-01", // nichts laden, was vor diesem Datum liegt (JJJJ-MM-TT)
     minMinutes: 3, // Fahrten unter dieser Dauer (Minuten) werden nicht geladen
@@ -30,7 +30,7 @@
     perPage: 100, // Maximum der API
     // Datei-Eingabefeld deiner App; "" = nichts automatisch übergeben.
     // Besser eine eindeutige Auswahl, z. B. "#fitUpload"
-    fileInputSelector: "input[type=file]",
+    fileInputSelector: "#fi",
   };
 
   /* ---------- IndexedDB ---------- */
@@ -375,6 +375,65 @@
     }
   }
 
+  /* ---------- Route an den Karoo senden ---------- */
+  // gpx: GPX-Text, name: Routenname. Braucht den Worker-Pfad POST /route-file (siehe worker-route-snippet.js)
+  async function sendRoute(gpx, name, routeId) {
+    const token = await getAccessToken();
+    if (!token) {
+      const e = new Error("not-connected");
+      e.status = 401;
+      throw e;
+    }
+    const safe = String(name || "route").replace(/[^\w\-. äöüÄÖÜß]/g, "_").slice(0, 60);
+    const fd = new FormData();
+    fd.append("file", new Blob([gpx], { type: "application/gpx+xml" }), safe + ".gpx");
+    // mit routeId: bestehende Route ersetzen (PUT), sonst neu anlegen (POST)
+    const res = await fetch(
+      CONFIG.worker + "/route-file" + (routeId ? "?id=" + encodeURIComponent(routeId) : ""),
+      {
+      method: routeId ? "PUT" : "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: fd,
+      }
+    );
+    if (res.status === 404 && routeId) return sendRoute(gpx, name); // Route im Dashboard gelöscht: neu anlegen
+    if (!res.ok) {
+      const e = new Error("HTTP " + res.status);
+      e.status = res.status;
+      e.body = await res.text().catch(() => "");
+      throw e;
+    }
+    return res.json().catch(() => ({}));
+  }
+  // Alle Routen aus dem Hammerhead-Dashboard (nur lesen; gelöscht wird bewusst nur im Dashboard)
+  async function listRoutes() {
+    const token = await getAccessToken();
+    if (!token) {
+      const e = new Error("not-connected");
+      e.status = 401;
+      throw e;
+    }
+    const all = [];
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const res = await fetch(CONFIG.worker + "/routes?page=" + page + "&perPage=100", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!res.ok) {
+        const e = new Error("HTTP " + res.status);
+        e.status = res.status;
+        throw e;
+      }
+      const data = await res.json();
+      all.push(...extractList(data));
+      totalPages = Number(data.totalPages) || 1;
+      page += 1;
+    } while (page <= totalPages && page <= 20);
+    return all;
+  }
+  const isConnected = async () => Boolean(await kvGet("tokens"));
+
   const getActivities = () => tx("activities", "readonly", (s) => s.getAll());
   const getFitFiles = async () =>
     (await tx("fits", "readonly", (s) => s.getAll())).map(toFile);
@@ -421,6 +480,9 @@
     loadSince: (date) => sync(date), // z. B. HammerheadSync.loadSince("2023-01-01")
     getActivities,
     getFitFiles,
+    sendRoute,
+    listRoutes,
+    isConnected,
   };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

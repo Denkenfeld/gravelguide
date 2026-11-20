@@ -428,7 +428,7 @@ body.sx #mc{display:none}
   <div id="dstats"></div><div id="dzone" class="sgp" hidden></div><div id="dgrade" class="sgp" hidden></div><div id="dclimb" class="sgp" hidden></div>
   <div class="sgp"><h3>Notiz</h3><textarea class="nt" id="dnote" rows="2" placeholder="Wie war die Fahrt? Wetter, Gefühl, Material …"></textarea></div>
   <div id="ddev" class="sgp" hidden></div>
-  <div class="acts"><button class="btn" id="dshare">Teilen</button><button class="btn" id="dstory">Story</button><button class="btn g" id="dgpx">GPX</button><button class="btn g" id="dren">Umbenennen</button><button class="btn r" id="ddel">Löschen</button></div></div>
+  <div class="acts"><button class="btn" id="dshare">Teilen</button><button class="btn" id="dstory">Story</button><button class="btn g" id="dgpx">GPX</button><button class="btn" id="dkaroo">Als Route speichern</button><button class="btn g" id="dren">Umbenennen</button><button class="btn r" id="ddel">Löschen</button></div></div>
 </div>
 
 <div id="bd"></div>
@@ -1071,6 +1071,22 @@ let dRaf=0;const dUpd=()=>{if(dRaf)return;dRaf=requestAnimationFrame(()=>{dRaf=0
 function dExport(rr){const r=rr||D.r,o=r.raw;let t=o.t/1000,s='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Gravel Guide" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+esc(rname(r))+'</name><trkseg>\n';
  for(let i=0;i<r.n;i++){t+=o.dt[i]||0;s+=`<trkpt lat="${o.lat[i].toFixed(6)}" lon="${o.lon[i].toFixed(6)}"><ele>${r.alt[i].toFixed(1)}</ele><time>${new Date(t*1000).toISOString()}</time></trkpt>\n`}
  s+='</trkseg></trk></gpx>';dl(new Blob([s],{type:'application/gpx+xml'}),'gravel-'+new Date(r.date).toISOString().slice(0,10)+'.gpx')}
+/* Fahrt als Route an Hammerhead senden (Track ohne Zeitstempel, auf ca. 8 m Abstand ausgedünnt) */
+function dRouteGpx(r){const o=r.raw,R=6371000,rad=Math.PI/180;let s='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Gravel Guide" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+esc(rname(r))+'</name><trkseg>\n',la=null,lo=null,k=0;
+ for(let i=0;i<r.n;i++){const a=o.lat[i],b=o.lon[i];if(!isFinite(a)||!isFinite(b))continue;
+  if(la!=null&&i<r.n-1){const x=(b-lo)*rad*Math.cos((a+la)/2*rad),y=(a-la)*rad;if(Math.sqrt(x*x+y*y)*R<8)continue}
+  la=a;lo=b;k++;s+='<trkpt lat="'+a.toFixed(6)+'" lon="'+b.toFixed(6)+'"><ele>'+(+r.alt[i]||0).toFixed(1)+'</ele></trkpt>\n'}
+ return k>1?s+'</trkseg></trk></gpx>':null}
+async function dToKaroo(){const r=D.r,H=window.HammerheadSync;
+ if(!H||!H.sendRoute){say('Hammerhead-Sync nicht geladen');return}
+ if(!(await H.isConnected())){say('Erst mit Hammerhead anmelden');return}
+ const g=dRouteGpx(r);if(!g){say('Keine Streckendaten vorhanden');return}
+ const key=dkey(r.raw);let mp={};try{mp=JSON.parse(localStorage.getItem('gg_ride_rt')||'{}')}catch(e){}
+ const old=mp[key]||null;say('Sende an Hammerhead …');
+ try{const res=await H.sendRoute(g,rname(r),old);
+  if(res&&res.id){mp[key]=res.id;try{localStorage.setItem('gg_ride_rt',JSON.stringify(mp))}catch(e){}if(window.ggRouteSent)window.ggRouteSent(res.id)}
+  say(old?'Route im Dashboard aktualisiert':'Als Route gespeichert – im Dashboard und unter „Routen“')}
+ catch(e){say(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')')}}
 function dl(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}
 function dRename(){const r=D.r,v=prompt('Name der Fahrt',rname(r));if(v==null)return;const t=v.trim();if(!t)return;r.raw.title=t;$('dname').textContent=t;persist();if(tab=='rides')renderRides();say('Name gespeichert')}
 function dDelete(){const r=D.r,o=r.raw;delSet.add(o.n+o.t);delSet.add(dkey(o));kv.set('axon1-del',[...delSet]).catch(()=>{});raws=raws.filter(x=>x!==o);
@@ -1130,7 +1146,7 @@ $('sg').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const s=b.dat
 $('q').oninput=e=>{qry=e.target.value;shown=40;renderRides()};$('more').onclick=()=>{shown+=60;renderRides()};
 $('cards').onclick=e=>{const b=e.target.closest('.rd');if(b)openDetail(b.dataset.id)};
 /* Detail */
-$('dback').onclick=closeDetail;$('dtt').onclick=()=>D&&dRename();$('dren').onclick=()=>D&&dRename();$('dgpx').onclick=()=>D&&dExport();
+$('dback').onclick=closeDetail;$('dtt').onclick=()=>D&&dRename();$('dren').onclick=()=>D&&dRename();$('dgpx').onclick=()=>D&&dExport();$('dkaroo').onclick=()=>D&&dToKaroo();
 const dstep=d=>{if(!D)return;const L=listData(),i=L.indexOf(D.r),n=L[i+d];if(n){buzz();dSwitch(n)}};$('dprev').onclick=()=>dstep(-1);$('dnext').onclick=()=>dstep(1);
 $('ddel').onclick=()=>{const b=$('ddel');if(b.classList.contains('arm')){clearTimeout(b._t);b.classList.remove('arm');b.textContent='Löschen';dDelete();return}b.classList.add('arm');b.textContent='Sicher?';b._t=setTimeout(()=>{b.classList.remove('arm');b.textContent='Löschen'},3200)};
 $('dch').onclick=e=>{const b=e.target.closest('.chip');if(!b||!D)return;D.chan=b.dataset.c;dChips();dProf();dMapData()};
@@ -1773,7 +1789,7 @@ body.pl-on #map canvas{cursor:crosshair}
  <div id="pl-st"><span><b id="pl-km">0</b> <small>km</small></span><span><b id="pl-up">0</b> <small>m ↑</small></span><span><b id="pl-dn">0</b> <small>m ↓</small></span><span><b id="pl-tm">–</b> <small>h</small></span><span id="pl-busy">berechne…</span></div><button class="chip" id="pl-x">Fertig</button></div>
  <div id="pl-cvw"><canvas id="pl-cv"></canvas><div id="pl-hv"></div></div>
  <div class="chips" id="pl-ctl"><div id="pl-pf"></div>
- <button class="chip" id="pl-undo">↶ Zurück</button><button class="chip" id="pl-rev">⇄ Umkehren</button><button class="chip" id="pl-clr">Leeren</button><button class="chip" id="pl-gx">GPX ↓</button><button class="chip" id="pl-gi">GPX ↑</button><button class="chip" id="pl-sh">Teilen</button></div>
+ <button class="chip" id="pl-undo">↶ Zurück</button><button class="chip" id="pl-rev">⇄ Umkehren</button><button class="chip" id="pl-clr">Leeren</button><button class="chip" id="pl-gx">GPX ↓</button><button class="chip" id="pl-ka">→ Karoo</button><button class="chip" id="pl-gi">GPX ↑</button><button class="chip" id="pl-sh">Teilen</button></div>
 <div id="pl-body">
  <h4>Route</h4><div class="plg" id="pl-xs"></div><div class="plsun" id="pl-sun"></div>
  <h4>Start &amp; Tempo</h4>
@@ -1792,7 +1808,10 @@ body.pl-on #map canvas{cursor:crosshair}
  <h4>Meine Routen</h4>
  <div class="plrow"><input type="text" id="pl-nm" placeholder="Name der Route" maxlength="40"><button class="chip on" id="pl-svb">Speichern</button></div><div id="pl-sv"></div>
  <h4>Export &amp; Import</h4>
- <div class="plbtns"><button class="chip" id="pl-x-gx">GPX ↓ speichern</button><button class="chip" id="pl-x-gi">GPX ↑ laden</button><button class="chip" id="pl-x-sh">Link teilen</button></div>
+ <div class="plbtns"><button class="chip" id="pl-x-gx">GPX ↓ speichern</button><button class="chip" id="pl-x-gi">GPX ↑ laden</button><button class="chip" id="pl-x-sh">Link teilen</button><button class="chip on" id="pl-x-ka">→ An Karoo senden</button><button class="chip" id="pl-x-kn">Als neue Route senden</button></div>
+ <h4>Routen</h4><div class="plhint" id="pl-hrs"></div><div id="pl-hr"></div>
+ <div class="plbtns" style="margin-top:8px"><button class="chip" id="pl-hr-r">↻ Aktualisieren</button><button class="chip" id="pl-hr-d">Hammerhead Dashboard öffnen</button></div>
+ <div class="plhint">Hier siehst du alle Routen aus deinem Hammerhead Dashboard. Gelöscht werden Routen (und Fahrten) bewusst nur dort.</div>
 </div>
 </div>
 <div id="pl-ring"><svg viewBox="0 0 56 56" width="56" height="56"><circle cx="28" cy="28" r="24"/></svg></div>
@@ -2005,18 +2024,29 @@ function plLoad(){
 }
 
 /* ---- GPX ---- */
-function plGpx(){
- if(!PL.all){warn('Noch keine Route');return}
+function plGpxText(wpt,nm){
  const A=PL.all,x=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
  let g='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Gravel Guide" xmlns="http://www.topografix.com/GPX/1/1">\n';
- PL.pts.forEach((p,i)=>{g+='<wpt lat="'+p[1].toFixed(6)+'" lon="'+p[0].toFixed(6)+'"><name>'+(i+1)+'</name></wpt>\n'});
- g+='<trk><name>'+x('Gravel Guide Route '+new Date().toLocaleDateString('de-DE'))+'</name><trkseg>\n';
+ if(wpt)PL.pts.forEach((p,i)=>{g+='<wpt lat="'+p[1].toFixed(6)+'" lon="'+p[0].toFixed(6)+'"><name>'+(i+1)+'</name></wpt>\n'});
+ g+='<trk><name>'+x(nm||('Gravel Guide Route '+new Date().toLocaleDateString('de-DE')))+'</name><trkseg>\n';
  A.c.forEach(p=>{g+='<trkpt lat="'+p[1].toFixed(6)+'" lon="'+p[0].toFixed(6)+'"><ele>'+p[2].toFixed(1)+'</ele></trkpt>\n'});
- g+='</trkseg></trk></gpx>';
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([g],{type:'application/gpx+xml'}));a.download='gravel-route.gpx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+ g+='</trkseg></trk></gpx>';return g}
+function plGpx(){
+ if(!PL.all){warn('Noch keine Route');return}
+ const g=plGpxText(true),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([g],{type:'application/gpx+xml'}));a.download='gravel-route.gpx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+async function plKaroo(forceNew){
+ if(!PL.all){warn('Noch keine Route');return}
+ const H=window.HammerheadSync;if(!H||!H.sendRoute){warn('Hammerhead-Sync nicht geladen');return}
+ if(!(await H.isConnected())){warn('Erst mit Hammerhead anmelden');return}
+ const nm='Gravel Guide '+new Date().toLocaleDateString('de-DE')+' '+Math.round(plStats().km)+'km';
+ warn('Sende an Hammerhead …');
+ const old=forceNew?null:PL.kid||null;
+ try{const r=await H.sendRoute(plGpxText(false,nm),nm,old);if(r&&r.id){PL.kid=r.id;try{localStorage.setItem('gg_pl_kid',r.id);const sn=hrSent();if(sn.indexOf(r.id)<0){sn.push(r.id);localStorage.setItem('gg_pl_sent',JSON.stringify(sn.slice(-200)))}}catch(e){}}setTimeout(()=>plHrLoad(true),1500);setTimeout(()=>plHrLoad(true),6000);warn(old?'Route aktualisiert – Karoo synchronisieren':'Route im Dashboard – Karoo synchronisieren')}
+ catch(e){warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')')}
 }
 async function plImport(file){
- try{const doc=new DOMParser().parseFromString(await file.text(),'application/xml');
+ PL.kreset();try{const doc=new DOMParser().parseFromString(await file.text(),'application/xml');
   let n=[...doc.getElementsByTagName('trkpt')];if(n.length<2)n=[...doc.getElementsByTagName('rtept')];
   if(n.length<2){warn('Kein Track in der GPX gefunden');return}
   const c=n.map(e=>{const z=e.getElementsByTagName('ele')[0];return[+e.getAttribute('lon'),+e.getAttribute('lat'),z?+z.textContent:NaN]}).filter(p=>isFinite(p[0])&&isFinite(p[1]));
@@ -2054,7 +2084,8 @@ async function plShare(){
 
 
 /* ---- Erweitertes Planer-Panel (nach oben ziehen) ---- */
-PL.ex=0;PL.t0u=0;try{PL.spd=+localStorage.getItem('gg_pl_spd')||19}catch(e){PL.spd=19}
+PL.ex=0;PL.t0u=0;try{PL.kid=localStorage.getItem('gg_pl_kid')||null}catch(e){PL.kid=null}
+PL.kreset=()=>{PL.kid=null;try{localStorage.removeItem('gg_pl_kid')}catch(e){}};try{PL.spd=+localStorage.getItem('gg_pl_spd')||19}catch(e){PL.spd=19}
 const PLX={raf:0,h0:0,hm:0,dragged:0},XG={g:null},cl01=(v,a,b)=>Math.max(a,Math.min(b,v));
 const plNowT=()=>{const d=new Date();d.setMinutes(Math.ceil(d.getMinutes()/5)*5);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 const hmm=h=>{if(!isFinite(h)||h<=0)return'–';let H=Math.floor(h),M=Math.round((h-H)*60);if(M==60){H++;M=0}return H+':'+String(M).padStart(2,'0')};
@@ -2064,7 +2095,7 @@ function plExApply(e){const p=el('plan');PL.ex=e;
  if(e<=.001){PL.ex=0;p.style.height='';p.classList.remove('ex','dragx');pnlSet(null)}
  else{plMetrics();const h=PLX.h0+(PLX.hm-PLX.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex','dragx');pnlSet(h)}
  if(!PLX.cq)PLX.cq=requestAnimationFrame(()=>{PLX.cq=0;plChart()})}
-function plExTo(t,done){cancelAnimationFrame(PLX.raf);if(t>0&&PL.ex<.001)plBody();const e0=PL.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
+function plExTo(t,done){cancelAnimationFrame(PLX.raf);if(t>0&&PL.ex<.001){plBody();plHrLoad()}const e0=PL.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
  const f=n=>{const q=Math.min(1,(n-t0)/D),k=1-Math.pow(1-q,3);plExApply(e0+(t-e0)*k);if(q<1)PLX.raf=requestAnimationFrame(f);else{plExApply(t);done&&done()}};PLX.raf=requestAnimationFrame(f)}
 function xBegin(px,py,t){const p=el('plan');if(!PL.on||p.classList.contains('min')||(PLC&&PLC.y>.5))return;
  if(t&&t.closest&&t.closest('#pl-cv,input,select,textarea,#pl-ctl'))return;
@@ -2126,12 +2157,12 @@ const svPut=a=>{try{localStorage.setItem('gg_plans',JSON.stringify(a))}catch(e){
 function plSavedRender(){const a=svGet();el('pl-sv').innerHTML=a.length?a.map(r=>'<div class="plli"><div class="t">'+esc(r.n)+'<small>'+fmt(r.km,1)+' km · '+fmt(r.up)+' m ↑</small></div><button class="tx" data-a="sl" data-id="'+r.id+'">Laden</button><button data-a="sd" data-id="'+r.id+'">✕</button></div>').join(''):'<div class="plhint">Noch keine gespeicherten Routen.</div>'}
 function plSaveCur(){if(PL.pts.length<2){warn('Erst eine Route planen');return}const st=plStats(),inp=el('pl-nm'),nm=inp.value.trim()||('Route '+new Date().toLocaleDateString('de-DE')),a=svGet();
  a.unshift({id:Date.now(),n:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,km:st.km,up:st.up});svPut(a.slice(0,40));inp.value='';plSavedRender();warn('Route gespeichert')}
-function plLoadSaved(id){const r=svGet().find(x=>String(x.id)==String(id));if(!r)return;plPush();PL.pts=r.p.map(p=>p.slice());PL.prof=r.f||'trekking';plMarkers();plBuild().then(plFit);plExTo(0)}
+function plLoadSaved(id){const r=svGet().find(x=>String(x.id)==String(id));if(!r)return;PL.kreset();plPush();PL.pts=r.p.map(p=>p.slice());PL.prof=r.f||'trekking';plMarkers();plBuild().then(plFit);plExTo(0)}
 function plDest(p,brg,d){const r=Math.PI/180;return[p[0]+d*Math.sin(brg)/(111320*Math.cos(p[1]*r)),p[1]+d*Math.cos(brg)/111320]}
 function plLoop(km){let st=PL.pts[0];if(!st){const c=map.getCenter();st=[c.lng,c.lat]}
  const R=km*1000/(2*Math.PI*1.35),b=Math.random()*2*Math.PI,ctr=plDest(st,b,R),a0=b+Math.PI,sg=Math.random()<.5?1:-1,pts=[st];
  for(let k=1;k<=4;k++)pts.push(plDest(ctr,a0+sg*k*2*Math.PI/5,R));pts.push(st);
- plPush();PL.pts=pts.map(p=>[p[0],p[1]]);plMarkers();plBuild().then(plFit);plExTo(0)}
+ PL.kreset();plPush();PL.pts=pts.map(p=>[p[0],p[1]]);plMarkers();plBuild().then(plFit);plExTo(0)}
 async function plSearch(){const q=el('pl-q').value.trim();if(!q)return;const bx=el('pl-res');bx.innerHTML='<div class="plhint">Suche …</div>';
  try{const j=await(await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=de&format=json')).json(),r=j.results||[];PL.res=r;
   bx.innerHTML=r.length?r.map((o,i)=>'<div class="plli"><div class="t">'+esc(o.name)+'<small>'+esc([o.admin1,o.country].filter(Boolean).join(', '))+'</small></div><button class="tx" data-a="qs" data-i="'+i+'">Start</button><button class="tx" data-a="qe" data-i="'+i+'">Ziel</button></div>').join(''):'<div class="plhint">Nichts gefunden.</div>'}
@@ -2157,10 +2188,26 @@ function plToolsInit(){
  el('pl-t-back').onclick=()=>{if(PL.pts.length<2){warn('Erst eine Route planen');return}plPush();PL.pts=PL.pts.concat(PL.pts.slice(0,-1).reverse());plMarkers();plBuild()};
  el('pl-t-fit').onclick=()=>{plFit();plExTo(0)};
  el('pl-t-last').onclick=()=>{if(!PL.pts.length)return;plPush();PL.pts.pop();plMarkers();plBuild()};
- el('pl-x-gx').onclick=plGpx;el('pl-x-gi').onclick=()=>el('pl-file').click();el('pl-x-sh').onclick=plShare;
+ el('pl-x-gx').onclick=plGpx;el('pl-x-gi').onclick=()=>el('pl-file').click();el('pl-x-sh').onclick=plShare;el('pl-x-ka').onclick=()=>plKaroo();el('pl-x-kn').onclick=()=>plKaroo(true);el('pl-hr-r').onclick=()=>plHrLoad(true);el('pl-hr-d').onclick=()=>window.open('https://dashboard.hammerhead.io/routes','_blank','noopener');
  el('pl-qb').onclick=plSearch;el('pl-q').onkeydown=e=>{if(e.key=='Enter')plSearch()};
  el('pl-svb').onclick=plSaveCur;
  el('pl-body').addEventListener('click',plBodyClick);plSavedRender()}
+
+/* ---- Routen aus dem Hammerhead Dashboard (nur anzeigen) ---- */
+const hrSent=()=>{try{return JSON.parse(localStorage.getItem('gg_pl_sent')||'[]')}catch(e){return[]}};
+async function plHrLoad(force){const bx=el('pl-hr'),st=el('pl-hrs');if(!bx)return;
+ const H=window.HammerheadSync;
+ if(!H||!H.listRoutes){st.textContent='Hammerhead-Sync nicht geladen.';return}
+ if(!(await H.isConnected())){bx.innerHTML='';st.textContent='Mit Hammerhead anmelden, um deine Routen zu sehen.';return}
+ if(!force&&PL.hr&&Date.now()-PL.hr.t<60000){plHrRender();return}
+ if(PL.hrBusy)return;PL.hrBusy=1;st.textContent=PL.hr?'Aktualisiere …':'Lade Routen …';
+ try{const l=await H.listRoutes();PL.hr={t:Date.now(),l};plHrRender()}
+ catch(e){st.textContent=e.status==403||e.status==401?'Recht „Routen lesen“ fehlt – bitte neu bei Hammerhead anmelden.':'Routen konnten nicht geladen werden ('+(e.status||'Netz')+').'}
+ finally{PL.hrBusy=0}}
+window.ggRouteSent=id=>{try{const sn=hrSent();if(sn.indexOf(id)<0){sn.push(id);localStorage.setItem('gg_pl_sent',JSON.stringify(sn.slice(-200)))}}catch(e){}setTimeout(()=>plHrLoad(true),1500);setTimeout(()=>plHrLoad(true),6000)};
+function plHrRender(){const bx=el('pl-hr'),st=el('pl-hrs'),l=((PL.hr&&PL.hr.l)||[]).slice().sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))),mine=hrSent();
+ st.textContent=l.length?l.length+(l.length==1?' Route':' Routen')+' im Dashboard':'Noch keine Routen im Dashboard.';
+ bx.innerHTML=l.map(r=>{const d=r.createdAt?new Date(r.createdAt).toLocaleDateString('de-DE'):'';return'<div class="plli"><div class="t">'+esc(r.name||'Route')+'<small>'+fmt((r.distance||0)/1000,1)+' km · '+fmt(r.gain||0)+' m ↑'+(d?' · '+d:'')+(mine.indexOf(r.id)>=0?' · von hier':'')+'</small></div></div>'}).join('')}
 /* ---- UI ---- */
 let PLC=null;
 function plCollapseY(){return Math.max(0,el('plan').offsetHeight-28)}
@@ -2185,8 +2232,8 @@ function plInit(){
  el('pl-x').onclick=()=>plToggle(0);
  el('pl-undo').onclick=()=>{if(!PL.hist.length)return;PL.pts=JSON.parse(PL.hist.pop());plMarkers();plBuild()};
  el('pl-rev').onclick=()=>{if(PL.pts.length<2)return;plPush();PL.pts.reverse();plMarkers();plBuild()};
- el('pl-clr').onclick=()=>{if(!PL.pts.length)return;plPush();PL.pts=[];PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});plMarkers();plBuild()};
- el('pl-gx').onclick=plGpx;el('pl-gi').onclick=()=>el('pl-file').click();
+ el('pl-clr').onclick=()=>{if(!PL.pts.length)return;PL.kreset();plPush();PL.pts=[];PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});plMarkers();plBuild()};
+ el('pl-gx').onclick=plGpx;el('pl-ka').onclick=()=>plKaroo();el('pl-gi').onclick=()=>el('pl-file').click();
  el('pl-file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)plImport(f)};
  el('pl-sh').onclick=plShare;
  const cv=el('pl-cv');cv.addEventListener('pointermove',plHover);cv.addEventListener('pointerdown',plHover);cv.addEventListener('pointerleave',plHoverEnd);cv.addEventListener('pointerup',plHoverEnd);
