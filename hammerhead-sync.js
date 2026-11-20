@@ -1,5 +1,5 @@
 /*
- * Hammerhead-Anbindung für gravel-guide.de  (Version 2)
+ * Hammerhead-Anbindung für gravel-guide.de  (Version 4)
  * Einbinden in gg7.html:  <script src="hammerhead-sync.js"></script>
  *
  * Elemente (optional, id genau so):
@@ -187,7 +187,7 @@
 
   function extractList(data) {
     if (Array.isArray(data)) return data;
-    return data.activities || data.data || data.items || data.results || [];
+    return data.activities || data.routes || data.data || data.items || data.results || [];
   }
   const idOf = (a) => (a.id ?? a.activityId) == null ? null : String(a.id ?? a.activityId);
 
@@ -432,6 +432,51 @@
     } while (page <= totalPages && page <= 20);
     return all;
   }
+  // Google-Polyline (Genauigkeit 5) -> [[lon, lat], ...]
+  function decodePolyline(str) {
+    const out = [];
+    let i = 0, lat = 0, lon = 0;
+    while (i < str.length) {
+      for (let k = 0; k < 2; k++) {
+        let shift = 0, res = 0, b;
+        do {
+          b = str.charCodeAt(i++) - 63;
+          res |= (b & 31) << shift;
+          shift += 5;
+        } while (b >= 32 && i < str.length + 1);
+        const d = res & 1 ? ~(res >> 1) : res >> 1;
+        if (k === 0) lat += d; else lon += d;
+      }
+      out.push([lon / 1e5, lat / 1e5]);
+    }
+    return out;
+  }
+  // Strecke einer Dashboard-Route holen (Polyline, ohne Höhen); braucht GET /route im Worker
+  async function getRoute(routeId) {
+    const token = await getAccessToken();
+    if (!token) {
+      const e = new Error("not-connected");
+      e.status = 401;
+      throw e;
+    }
+    const res = await fetch(CONFIG.worker + "/route?id=" + encodeURIComponent(routeId), {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (!res.ok) {
+      const e = new Error("HTTP " + res.status);
+      e.status = res.status;
+      throw e;
+    }
+    const j = await res.json();
+    const r = j.data && !Array.isArray(j.data) ? j.data : j;
+    const line = r.polyline || (r.route && r.route.polyline) || "";
+    if (!line) {
+      const e = new Error("no-polyline");
+      e.status = 0;
+      throw e;
+    }
+    return { id: r.id, name: r.name, distance: r.distance, gain: r.gain, coords: decodePolyline(line) };
+  }
   const isConnected = async () => Boolean(await kvGet("tokens"));
 
   const getActivities = () => tx("activities", "readonly", (s) => s.getAll());
@@ -482,6 +527,7 @@
     getFitFiles,
     sendRoute,
     listRoutes,
+    getRoute,
     isConnected,
   };
   if (document.readyState === "loading") {
