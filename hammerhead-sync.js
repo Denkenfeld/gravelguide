@@ -465,6 +465,8 @@
     if (!res.ok) {
       const e = new Error("HTTP " + res.status);
       e.status = res.status;
+      e.body = await res.text().catch(() => "");
+      console.warn("getRoute fehlgeschlagen:", routeId, res.status, e.body);
       throw e;
     }
     const j = await res.json();
