@@ -488,6 +488,12 @@ var r=document.documentElement;r.classList.add('gg-sa');
 function set(){var lg=Math.max(screen.width,screen.height),sh=Math.min(screen.width,screen.height),full=innerWidth<innerHeight?lg:sh,d=full-innerHeight;
  if(d>=0&&d<90){r.style.setProperty('--app-h',full+'px');r.classList.add('gg-gap')}else{r.classList.remove('gg-gap');r.style.removeProperty('--app-h')}}
 set();addEventListener('resize',set);addEventListener('orientationchange',function(){setTimeout(set,300)})})();</script>
+<style id="gg-up-css">
+#ggup{position:fixed;left:50%;bottom:calc(var(--pnlv,0px) + 8px);transform:translate(-50%,8px);z-index:15;width:88px;height:30px;padding:0;border-radius:15px;display:grid;place-items:center;color:var(--act);background:var(--glass);border:1px solid var(--ln2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 4px 14px rgba(0,0,0,.28);opacity:0;visibility:hidden;pointer-events:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer;transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1),visibility 0s .25s}
+#ggup.on{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);transition:opacity .2s .08s,transform .25s cubic-bezier(.2,.8,.2,1) .08s,visibility 0s}
+#ggup:active{transform:translate(-50%,0) scale(.96)}
+#ggup svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+</style>
 </head>
 <body data-tab="map" class="nodata">
 <input type="file" id="fi" multiple hidden>
@@ -4150,4 +4156,19 @@ st.parentNode.insertBefore(box,st);var inp=box.querySelector('input');
 inp.addEventListener('input',function(){box.classList.remove('err');if(ok(inp.value)){try{localStorage.setItem(KEY,VER+'|'+inp.value.trim().toLowerCase())}catch(e){}st.classList.remove('gg-lock');st.inert=false;box.remove()}});
 inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!ok(inp.value)){box.classList.add('err');setTimeout(function(){box.classList.remove('err')},1400)}});
 })();</script>
+<script>(function(){
+const b=document.createElement('button');b.id='ggup';b.type='button';b.setAttribute('aria-label','Panel aufziehen');
+b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>';document.body.appendChild(b);
+const root=document.documentElement;
+function upd(){const v=parseFloat(root.style.getPropertyValue('--pnlv'));
+ const on=document.body.dataset.tab==='map'&&v>=0&&v<=34&&!document.querySelector('.sheet.on');
+ b.classList.toggle('on',!!on)}
+new MutationObserver(upd).observe(root,{attributes:true,attributeFilter:['style']});
+new MutationObserver(upd).observe(document.body,{attributes:true,attributeFilter:['data-tab','class']});
+document.querySelectorAll('.sheet').forEach(x=>new MutationObserver(upd).observe(x,{attributes:true,attributeFilter:['class']}));
+b.addEventListener('click',e=>{e.preventDefault();
+ const bd=document.body,g=document.getElementById(bd.classList.contains('wx-on')?'wx-grab':bd.classList.contains('pl-on')?'pl-grab':'hgrab');
+ if(g)g.click();
+ try{if(navigator.vibrate)navigator.vibrate(8)}catch(x){}});
+upd()})();</script>
 </body></html>
