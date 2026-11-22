@@ -3601,39 +3601,54 @@ async function radarBuild(){
   map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0,'raster-opacity-transition':{duration:0,delay:0},'raster-resampling':'linear'}},sym);try{map.setPaintProperty(id,'raster-opacity-transition',{duration:0,delay:0})}catch(e3){}radarIds.push(id);radarOp.push(0)}catch(e){}})}
 
 /* ---- Radar: exakte Überblendung in einem einzigen Bild (kein Flackern) ---- */
-const RB={ok:false,fr:[],cv:null,cx:null,bb:null,zw:0,busy:0,pt:0,ct:0};
+const RB={ok:false,ids:[],op:[],urls:[],bb:null,zw:0,busy:0,ct:0,gen:0};
+const OPR=.55,HID=.001;
 const rbLat=(y,N)=>Math.atan(Math.sinh(Math.PI*(1-2*y/N)))*180/Math.PI;
-function rbClear(){clearTimeout(RB.pt);RB.ok=false;RB.fr=[];RB.busy++;if(!map)return;try{if(map.getLayer('wxrb'))map.removeLayer('wxrb');if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e){}}
-function rbBlend(i0,i1,e){const c=RB.cx,cv=RB.cv;if(!c||!RB.fr[i0])return;
- c.globalCompositeOperation='source-over';c.globalAlpha=1;c.clearRect(0,0,cv.width,cv.height);
- if(i1===i0||e<=.001||!RB.fr[i1])c.drawImage(RB.fr[i0],0,0);
- else{c.globalAlpha=1-e;c.drawImage(RB.fr[i0],0,0);c.globalCompositeOperation='lighter';c.globalAlpha=e;c.drawImage(RB.fr[i1],0,0);c.globalCompositeOperation='source-over';c.globalAlpha=1}
- const s=map.getSource('wxrb');if(s&&s.play){try{s.play()}catch(x){}clearTimeout(RB.pt);RB.pt=setTimeout(()=>{try{s.pause()}catch(x){}},220)}}
+function rbDrop(){if(map){RB.ids.forEach(id=>{try{if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id)}catch(e){}})}RB.urls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});RB.ids=[];RB.op=[];RB.urls=[]}
+function rbClear(){clearTimeout(RB.ct);RB.ok=false;RB.busy++;rbDrop()}
+/* Exakte Überblendung mit zwei Ebenen: oben Bild i1 mit Deckkraft OPR*e, darunter Bild i0 so, dass die Summe immer OPR ergibt (kein Helligkeits-Dip = kein Stroboskop) */
+function rbOps(n,i0,i1,e){const v=new Array(n).fill(HID);
+ if(i1===i0||e<=.001)v[i0]=OPR;
+ else{const t=OPR*e;v[i1]=t;v[i0]=Math.max(HID,OPR*(1-e)/(1-t))}
+ return v}
+function rbBlend(i0,i1,e){const n=RB.ids.length;if(!n||!map)return;const v=rbOps(n,i0,i1,e);
+ for(let k=0;k<n;k++){const x=Math.round(v[k]*1000)/1000;if(RB.op[k]!==x){RB.op[k]=x;try{map.setPaintProperty(RB.ids[k],'raster-opacity',x)}catch(err){}}}}
+const toBlobP=cv=>new Promise(r=>cv.toBlob(b=>r(b),'image/png'));
 async function rbBuild(quiet){
  if(!map||!radarFrames||!window.maplibregl)return false;
  const my=++RB.busy,zw=clamp(Math.round(map.getZoom()),1,7);let z=zw,N,x0,y0,nx,ny;
  const b=map.getBounds(),W=b.getWest(),E=b.getEast(),S=b.getSouth(),Nn=b.getNorth(),dw=(E-W)*.2,dh=(Nn-S)*.2,
   lon2x=(l,n)=>(l+180)/360*n,lat2y=(l,n)=>{const r=clamp(l,-85.05,85.05)*Math.PI/180;return(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n};
  for(;;){N=Math.pow(2,z);x0=clamp(Math.floor(lon2x(W-dw,N)),0,N-1);const x1=clamp(Math.floor(lon2x(E+dw,N)),0,N-1);
-  y0=clamp(Math.floor(lat2y(Nn+dh,N)),0,N-1);const y1=clamp(Math.floor(lat2y(S-dh,N)),0,N-1);nx=x1-x0+1;ny=y1-y0+1;if(nx*ny<=24||z<=1)break;z--}
- const frames=radarFrames,host=radarFrames.host,TS=192,fr=frames.map(()=>{const c=document.createElement('canvas');c.width=nx*TS;c.height=ny*TS;const x=c.getContext('2d');x.imageSmoothingQuality='high';return c}),jobs=[];
- frames.forEach((f,k)=>{for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)jobs.push([k,i,j])});
+  y0=clamp(Math.floor(lat2y(Nn+dh,N)),0,N-1);const y1=clamp(Math.floor(lat2y(S-dh,N)),0,N-1);nx=x1-x0+1;ny=y1-y0+1;if(nx*ny<=16||z<=1)break;z--}
+ const frames=radarFrames,host=radarFrames.host,TS=160,fr=frames.map(()=>{const c=document.createElement('canvas');c.width=nx*TS;c.height=ny*TS;const x=c.getContext('2d');x.imageSmoothingQuality='high';return c}),jobs=[];
+ /* neueste Bilder zuerst laden, damit sofort etwas zu sehen ist */
+ for(let k=frames.length-1;k>=0;k--)for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)jobs.push([k,i,j]);
  let done=0,fail=0,ix=0;const total=jobs.length;
  const load=([k,i,j])=>new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';const to=setTimeout(()=>{fail++;res()},10000);
   im.onload=()=>{clearTimeout(to);try{fr[k].getContext('2d').drawImage(im,i*TS,j*TS,TS,TS)}catch(e){fail++}done++;res()};
   im.onerror=()=>{clearTimeout(to);fail++;res()};im.src=host+frames[k].path+'/256/'+z+'/'+(x0+i)+'/'+(y0+j)+'/2/1_1.png'});
  const worker=async()=>{while(ix<jobs.length){if(my!==RB.busy)return;await load(jobs[ix++]);if(!quiet&&layer==='radar')setStatus('Lade Radarbilder … '+Math.round(100*(done+fail)/total)+' %')}};
- await Promise.all([0,1,2,3,4,5,6,7].map(worker));
+ await Promise.all([0,1,2,3,4,5].map(worker));
  if(my!==RB.busy||layer!=='radar'||!map)return false;
  if(fail>total*.2)return false;
- try{fr[0].getContext('2d').getImageData(0,0,1,1)}catch(e){return false}
- clearTimeout(RB.pt);try{if(map.getLayer('wxrb'))map.removeLayer('wxrb');if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e){}
+ const blobs=[];
+ try{for(const c of fr){const bl=await toBlobP(c);if(!bl)return false;blobs.push(bl);c.width=c.height=1}}catch(e){return false}
+ if(my!==RB.busy)return false;
  await styleReady();if(my!==RB.busy)return false;
- const cv=document.createElement('canvas');cv.width=nx*TS;cv.height=ny*TS;
  const west=x0/N*360-180,east=(x0+nx)/N*360-180,north=rbLat(y0,N),south=rbLat(y0+ny,N),sym=(map.getStyle().layers.find(l=>l.type==='symbol')||{}).id;
- try{map.addSource('wxrb',{type:'canvas',canvas:cv,coordinates:[[west,north],[east,north],[east,south],[west,south]],animate:true});
-  map.addLayer({id:'wxrb',type:'raster',source:'wxrb',paint:{'raster-opacity':.82,'raster-fade-duration':0,'raster-resampling':'linear'}},sym)}catch(e){try{if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e2){}return false}
- RB.fr=fr;RB.cv=cv;RB.cx=cv.getContext('2d');RB.bb=[west,south,east,north];RB.zw=zw;RB.ok=true;return true}
+ const gen=++RB.gen,ids=[],urls=[],ops=[];
+ try{blobs.forEach((bl,k)=>{const id='wxrb'+gen+'_'+k,u=URL.createObjectURL(bl);urls.push(u);
+  map.addSource(id,{type:'image',url:u,coordinates:[[west,north],[east,north],[east,south],[west,south]]});
+  /* alle Ebenen bleiben minimal sichtbar (0.001), damit die Texturen schon vorab auf der GPU liegen -> kein Ruckeln beim ersten Durchlauf */
+  map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':HID,'raster-fade-duration':0,'raster-resampling':'linear'}},sym);ids.push(id);ops.push(HID)})}
+ catch(e){ids.forEach(id=>{try{if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id)}catch(e2){}});urls.forEach(u=>URL.revokeObjectURL(u));return false}
+ /* alte Ebenen erst jetzt entfernen (nahtloser Wechsel) */
+ const oldIds=RB.ids,oldUrls=RB.urls;RB.ids=ids;RB.urls=urls;RB.op=ops;
+ oldIds.forEach(id=>{try{if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id)}catch(e){}});oldUrls.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+ RB.bb=[west,south,east,north];RB.zw=zw;RB.ok=true;
+ let t=0;while(t++<40&&!ids.every(id=>{try{return map.isSourceLoaded(id)}catch(e){return true}}))await sleep(50);
+ return true}
 function rbCheck(){if(!WX.on||layer!=='radar'||!RB.ok||!map)return;const b=map.getBounds(),z=clamp(Math.round(map.getZoom()),1,7),bb=RB.bb;
  const ok=Math.max(-180,b.getWest())>=bb[0]-1e-6&&Math.min(180,b.getEast())<=bb[2]+1e-6&&Math.max(-85,b.getSouth())>=bb[1]-1e-6&&Math.min(85,b.getNorth())<=bb[3]+1e-6;
  if(ok&&z===RB.zw)return;clearTimeout(RB.ct);RB.ct=setTimeout(async()=>{if(layer!=='radar'||!WX.on)return;const old=RB.ok;if(await rbBuild(true))setPos(pos)},400)}
@@ -3676,12 +3691,12 @@ async function applyLayer(refresh){
 function setPos(p){const n=nSteps();if(!n)return;pos=clamp(p,0,n-1);Q('#wxsl').value=pos;
  const i0=Math.floor(pos),f=pos-i0,i1=Math.min(n-1,i0+1),tl=Q('#wxtime');
  if(layer==='radar'){
-  const OPR=.82,e=f;
+  const e=f;
   if(RB.ok)rbBlend(i0,i1,e);
   else radarIds.forEach((id,k)=>{let v=0;
    if(i1===i0||e<=.001){v=k===i0?OPR:0}
    else if(k===i1){v=OPR*e}
-   else if(k===i0){const a=OPR*e;v=Math.max(0,(OPR-a)/(1-a/2))}
+   else if(k===i0){v=Math.max(0,OPR*(1-e)/(1-OPR*e))}
    v=Math.round(v*1000)/1000;if(radarOp[k]!==v){radarOp[k]=v;try{map.setPaintProperty(id,'raster-opacity',v)}catch(e2){}}});
   const t=(radarFrames[i0].time+(radarFrames[i1].time-radarFrames[i0].time)*f)*1000,mins=Math.round((t-Date.now())/60000);
   tl.innerHTML=`<b>${new Date(t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</b><span>${Math.abs(mins)<=4?'Jetzt':mins<0?'vor '+(-mins)+' Min.':'in '+mins+' Min.'}</span>`;
@@ -3734,7 +3749,7 @@ let gTm=0;
 function mapBind(){if(WX.bound||!map)return;WX.bound=1;
  map.on('move',fxSoon);map.on('resize',fxSoon);map.on('moveend',rbCheck);
  map.on('moveend',()=>{if(!WX.on)return;fxSoon();clearTimeout(gTm);gTm=setTimeout(()=>{if(WX.on&&layer!=='radar')ensureGrid()},450)});
- map.on('style.load',()=>{if(WX.on&&layer==='radar'&&radarFrames&&!map.getSource('wxr0')&&!map.getSource('wxrb')){radarBuild().then(()=>setPos(pos))}});}
+ map.on('style.load',()=>{if(WX.on&&layer==='radar'&&radarFrames&&!map.getSource('wxr0')&&!(RB.ids.length&&map.getSource(RB.ids[0]))){radarBuild().then(()=>setPos(pos))}});}
 function placePin(){if(!map||!window.maplibregl||!WX.on)return;const p=state.place||DEFAULT_PLACE;
  if(!WX.pin){const e=document.createElement('div');e.className='wxpin';WX.pin=new maplibregl.Marker({element:e}).setLngLat([p.lon,p.lat]).addTo(map)}else WX.pin.setLngLat([p.lon,p.lat])}
 function flyToPlace(first){if(!map)return;const p=state.place||DEFAULT_PLACE,h=(Q('#wx')?Q('#wx').offsetHeight:176);
