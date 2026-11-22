@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#05070d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c0d10"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Gravel Guide</title>
 <link rel="icon" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGFyaWEtbGFiZWw9IkdyYXZlbCBHdWlkZSBJY29uIiBoZWlnaHQ9IjEwMDAiIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDEwMDAgMTAwMCIgd2lkdGg9IjEwMDAiPgo8dGl0bGU+R3JhdmVsIEd1aWRlIEljb248L3RpdGxlPgo8cmVjdCBmaWxsPSIjMTExMTExIiBoZWlnaHQ9IjEwMDAiIHJ4PSIyMjAiIHdpZHRoPSIxMDAwIi8+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAwIDUwMCkgc2NhbGUoMS4wKSB0cmFuc2xhdGUoLTYzMCAtNDQ1KSI+CiAgICA8ZyBpZD0iZ3JhZmlrIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiM5QjlCOUIiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIHN0cm9rZS13aWR0aD0iMTMiPgogICAgPHBhdGggZD0iTTIwMCw0NzAgTDMxOCw0MTEgTDMzNiw0MTkgTDQ2MCwzMjkgTDUyMiwzNjAiLz4KICAgIDxwYXRoIGQ9Ik03OTUsNDAyIEw4NTgsMzY4IEw5MzgsNDIzIEw5NjIsNDIxIEwxMDYyLDQ3MCIvPgogIDwvZz4KICA8cGF0aCBkPSJNMzU3LDU3NSBDMzYwLDUzOCA1MjAsNTE2IDcwMCw1MDMgQzgwMCw0OTUgOTAwLDQ5MCA5MDUsNDc5IEM5MDIsNDY0IDg0MCw0NTYgNzgwLDQ1NSBDODQ1LDQ2MSA4ODUsNDcxIDg2OCw0ODcgQzg0NSw1MDMgNzAwLDUxMiA2MTAsNTMwIEM1NDUsNTQzIDU0MCw1NjggNjAwLDU3OCBDNzAwLDU5NCA4ODAsNjA2IDk1OCw2NDEgQzkwMCw2MjQgNzgwLDYyMiA2NTAsNjIwIEM1MDAsNjE4IDM2MCw2MDAgMzU3LDU3NSBaIiBmaWxsPSIjRkRCMDIyIi8+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkRCMDIyIiBzdHJva2Utd2lkdGg9IjE3Ij4KICAgIDxlbGxpcHNlIGN4PSI1NDUiIGN5PSI0MzMiIHJ4PSI1OCIgcnk9IjYzIiB0cmFuc2Zvcm09InJvdGF0ZSgtMTIgNTQ1IDQzMykiLz4KICAgIDxlbGxpcHNlIGN4PSI3MTIiIGN5PSI0MjUiIHJ4PSI1NCIgcnk9IjU3IiB0cmFuc2Zvcm09InJvdGF0ZSgtOCA3MTIgNDI1KSIvPgogIDwvZz4KICA8ZyBmaWxsPSIjRkRCMDIyIj4KICAgIDxjaXJjbGUgY3g9IjY5MyIgY3k9IjI3MiIgcj0iMjQiLz4KICAgIDxwYXRoIGQ9Ik01NjMsMzQxIEw1ODcsMzEyIFE2MTIsMjkwIDY1MCwyOTkgTDY2OCwzMjIgTDY4NCwzNDUgTDcxNSwzNTIgTDcyMywzNjMgTDY5MCwzNjAgTDY2MCwzNDkgTDY0MSwzMjQgTDYxNiwzNDIgTDU4MCwzNjMgUTU2NCwzNTYgNTYzLDM0MSBaIi8+CiAgICA8cGF0aCBkPSJNNjI4LDM2NCBMNjUwLDM3MiBMNjM2LDQ0MiBMNjIwLDQzOCBaIi8+CiAgPC9nPgo8L2c+CiAgPC9nPgo8L3N2Zz4=" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -3572,7 +3572,7 @@ function renderAll(){const wx=state.wx,c=wx.current,h=wx.hourly,d=wx.daily,i0=st
  Q('#wxbody').innerHTML=html;renderLegend();setStatus(stText);if(X.ex>0)renderChart();{const hs=Q('#wxhs');if(hs){hs.onclick=()=>popOpen();const r=hs.querySelector('.wxgrot');if(r&&GA)requestAnimationFrame(()=>requestAnimationFrame(()=>{r.style.transform='rotate('+((100-GA.score)*1.8).toFixed(1)+'deg)'}))}}}
 
 /* ---------- Karte: Radar (MapTiler-Karte der App + RainViewer) & Modell-Overlay ---------- */
-const nSteps=()=>layer==='radar'?(radarFrames?radarIds.length:0):(grid?grid.T:0);
+const nSteps=()=>layer==='radar'?(radarFrames?radarFrames.length:0):(grid?grid.T:0);
 let stText='';function setStatus(t){stText=t||'';const e=Q('#wxst');if(e&&e.textContent!==stText)e.textContent=stText}
 const effH=()=>layer==='radar'?2:rangeH;
 const rangeText=()=>'Modellvorhersage, '+effH()+' Std.';
@@ -3591,20 +3591,59 @@ function rangeMenu(){const rp=Q('#wxrpop'),rb=Q('#wxrb');rp.innerHTML='<p>'+(lay
  const rc=rb.getBoundingClientRect();rp.style.top=(rc.bottom+8)+'px';rp.style.left=Math.max(8,rc.left)+'px';rp.hidden=false}
 function setRange(h){if(!RHS.includes(h)||h===rangeH&&layer!=='radar')return;rangeH=h;store.set('gg_wx_rangeh',rangeH);rangeBtn();if(layer!=='radar'){grid=null;vc={key:''};applyLayer(true)}}
 function clearFx(){if(fxx)fxx.clearRect(0,0,fxc.width,fxc.height)}
-function radarClear(){if(!map)return;radarIds.forEach(id=>{try{if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id)}catch(e){}});radarIds=[];radarOp=[]}
+function radarClear(){if(!map)return;rbClear();radarIds.forEach(id=>{try{if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id)}catch(e){}});radarIds=[];radarOp=[]}
 async function styleReady(){let n=0;while(map&&!map.isStyleLoaded()&&n++<40)await sleep(100)}
 async function radarBuild(){
  if(!map||!radarFrames)return;await styleReady();radarClear();
+ if(await rbBuild(false))return;
  const sym=(map.getStyle().layers.find(l=>l.type==='symbol')||{}).id;
  radarFrames.forEach((fr,k)=>{const id='wxr'+k;try{map.addSource(id,{type:'raster',tiles:[radarFrames.host+fr.path+'/256/{z}/{x}/{y}/2/1_1.png'],tileSize:256,maxzoom:7});
-  map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0,'raster-opacity-transition':{duration:0}}},sym);radarIds.push(id);radarOp.push(0)}catch(e){}})}
+  map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0,'raster-opacity-transition':{duration:0,delay:0},'raster-resampling':'linear'}},sym);try{map.setPaintProperty(id,'raster-opacity-transition',{duration:0,delay:0})}catch(e3){}radarIds.push(id);radarOp.push(0)}catch(e){}})}
+
+/* ---- Radar: exakte Überblendung in einem einzigen Bild (kein Flackern) ---- */
+const RB={ok:false,fr:[],cv:null,cx:null,bb:null,zw:0,busy:0,pt:0,ct:0};
+const rbLat=(y,N)=>Math.atan(Math.sinh(Math.PI*(1-2*y/N)))*180/Math.PI;
+function rbClear(){clearTimeout(RB.pt);RB.ok=false;RB.fr=[];RB.busy++;if(!map)return;try{if(map.getLayer('wxrb'))map.removeLayer('wxrb');if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e){}}
+function rbBlend(i0,i1,e){const c=RB.cx,cv=RB.cv;if(!c||!RB.fr[i0])return;
+ c.globalCompositeOperation='source-over';c.globalAlpha=1;c.clearRect(0,0,cv.width,cv.height);
+ if(i1===i0||e<=.001||!RB.fr[i1])c.drawImage(RB.fr[i0],0,0);
+ else{c.globalAlpha=1-e;c.drawImage(RB.fr[i0],0,0);c.globalCompositeOperation='lighter';c.globalAlpha=e;c.drawImage(RB.fr[i1],0,0);c.globalCompositeOperation='source-over';c.globalAlpha=1}
+ const s=map.getSource('wxrb');if(s&&s.play){try{s.play()}catch(x){}clearTimeout(RB.pt);RB.pt=setTimeout(()=>{try{s.pause()}catch(x){}},220)}}
+async function rbBuild(quiet){
+ if(!map||!radarFrames||!window.maplibregl)return false;
+ const my=++RB.busy,zw=clamp(Math.round(map.getZoom()),1,7);let z=zw,N,x0,y0,nx,ny;
+ const b=map.getBounds(),W=b.getWest(),E=b.getEast(),S=b.getSouth(),Nn=b.getNorth(),dw=(E-W)*.2,dh=(Nn-S)*.2,
+  lon2x=(l,n)=>(l+180)/360*n,lat2y=(l,n)=>{const r=clamp(l,-85.05,85.05)*Math.PI/180;return(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n};
+ for(;;){N=Math.pow(2,z);x0=clamp(Math.floor(lon2x(W-dw,N)),0,N-1);const x1=clamp(Math.floor(lon2x(E+dw,N)),0,N-1);
+  y0=clamp(Math.floor(lat2y(Nn+dh,N)),0,N-1);const y1=clamp(Math.floor(lat2y(S-dh,N)),0,N-1);nx=x1-x0+1;ny=y1-y0+1;if(nx*ny<=24||z<=1)break;z--}
+ const frames=radarFrames,host=radarFrames.host,TS=192,fr=frames.map(()=>{const c=document.createElement('canvas');c.width=nx*TS;c.height=ny*TS;const x=c.getContext('2d');x.imageSmoothingQuality='high';return c}),jobs=[];
+ frames.forEach((f,k)=>{for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)jobs.push([k,i,j])});
+ let done=0,fail=0,ix=0;const total=jobs.length;
+ const load=([k,i,j])=>new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';const to=setTimeout(()=>{fail++;res()},10000);
+  im.onload=()=>{clearTimeout(to);try{fr[k].getContext('2d').drawImage(im,i*TS,j*TS,TS,TS)}catch(e){fail++}done++;res()};
+  im.onerror=()=>{clearTimeout(to);fail++;res()};im.src=host+frames[k].path+'/256/'+z+'/'+(x0+i)+'/'+(y0+j)+'/2/1_1.png'});
+ const worker=async()=>{while(ix<jobs.length){if(my!==RB.busy)return;await load(jobs[ix++]);if(!quiet&&layer==='radar')setStatus('Lade Radarbilder … '+Math.round(100*(done+fail)/total)+' %')}};
+ await Promise.all([0,1,2,3,4,5,6,7].map(worker));
+ if(my!==RB.busy||layer!=='radar'||!map)return false;
+ if(fail>total*.2)return false;
+ try{fr[0].getContext('2d').getImageData(0,0,1,1)}catch(e){return false}
+ clearTimeout(RB.pt);try{if(map.getLayer('wxrb'))map.removeLayer('wxrb');if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e){}
+ await styleReady();if(my!==RB.busy)return false;
+ const cv=document.createElement('canvas');cv.width=nx*TS;cv.height=ny*TS;
+ const west=x0/N*360-180,east=(x0+nx)/N*360-180,north=rbLat(y0,N),south=rbLat(y0+ny,N),sym=(map.getStyle().layers.find(l=>l.type==='symbol')||{}).id;
+ try{map.addSource('wxrb',{type:'canvas',canvas:cv,coordinates:[[west,north],[east,north],[east,south],[west,south]],animate:true});
+  map.addLayer({id:'wxrb',type:'raster',source:'wxrb',paint:{'raster-opacity':.82,'raster-fade-duration':0,'raster-resampling':'linear'}},sym)}catch(e){try{if(map.getSource('wxrb'))map.removeSource('wxrb')}catch(e2){}return false}
+ RB.fr=fr;RB.cv=cv;RB.cx=cv.getContext('2d');RB.bb=[west,south,east,north];RB.zw=zw;RB.ok=true;return true}
+function rbCheck(){if(!WX.on||layer!=='radar'||!RB.ok||!map)return;const b=map.getBounds(),z=clamp(Math.round(map.getZoom()),1,7),bb=RB.bb;
+ const ok=Math.max(-180,b.getWest())>=bb[0]-1e-6&&Math.min(180,b.getEast())<=bb[2]+1e-6&&Math.max(-85,b.getSouth())>=bb[1]-1e-6&&Math.min(85,b.getNorth())<=bb[3]+1e-6;
+ if(ok&&z===RB.zw)return;clearTimeout(RB.ct);RB.ct=setTimeout(async()=>{if(layer!=='radar'||!WX.on)return;const old=RB.ok;if(await rbBuild(true))setPos(pos)},400)}
 async function loadRadar(force,my){
  setStatus('Lade Radar …');
  try{
   if(!radarFrames||force||Date.now()-radarFrames.at>9*60e3){const r=await getJSON('https://api.rainviewer.com/public/weather-maps.json');const f=[...(r.radar.past||[]),...(r.radar.nowcast||[])];f.host=r.host;f.at=Date.now();radarFrames=f}
   if(layer!=='radar'||my!==layerReq)return;
   await radarBuild();if(layer!=='radar'||my!==layerReq)return;
-  const n=radarIds.length,sl=Q('#wxsl');sl.min=0;sl.max=Math.max(1,n-1);sl.step='any';setPos(n-1);
+  const n=radarFrames.length,sl=Q('#wxsl');sl.min=0;sl.max=Math.max(1,n-1);sl.step='any';setPos(n-1);
   let t=0;while(t++<60&&!map.areTilesLoaded()){setStatus('Lade Radarbilder …');await sleep(120);if(layer!=='radar'||my!==layerReq)return}
   const span=(radarFrames[radarFrames.length-1].time-radarFrames[0].time)/3600;
   setStatus('Gemessener Radar der letzten '+nf(span,1)+' Std. · RainViewer');
@@ -3637,7 +3676,13 @@ async function applyLayer(refresh){
 function setPos(p){const n=nSteps();if(!n)return;pos=clamp(p,0,n-1);Q('#wxsl').value=pos;
  const i0=Math.floor(pos),f=pos-i0,i1=Math.min(n-1,i0+1),tl=Q('#wxtime');
  if(layer==='radar'){
-  radarIds.forEach((id,k)=>{const v=k===i0?.82:(k===i1&&f>.001)?.82*f:0;if(radarOp[k]!==v){radarOp[k]=v;try{map.setPaintProperty(id,'raster-opacity',v)}catch(e){}}});
+  const OPR=.82,e=f;
+  if(RB.ok)rbBlend(i0,i1,e);
+  else radarIds.forEach((id,k)=>{let v=0;
+   if(i1===i0||e<=.001){v=k===i0?OPR:0}
+   else if(k===i1){v=OPR*e}
+   else if(k===i0){const a=OPR*e;v=Math.max(0,(OPR-a)/(1-a/2))}
+   v=Math.round(v*1000)/1000;if(radarOp[k]!==v){radarOp[k]=v;try{map.setPaintProperty(id,'raster-opacity',v)}catch(e2){}}});
   const t=(radarFrames[i0].time+(radarFrames[i1].time-radarFrames[i0].time)*f)*1000,mins=Math.round((t-Date.now())/60000);
   tl.innerHTML=`<b>${new Date(t).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</b><span>${Math.abs(mins)<=4?'Jetzt':mins<0?'vor '+(-mins)+' Min.':'in '+mins+' Min.'}</span>`;
  }else if(grid){
@@ -3687,9 +3732,9 @@ function drawFx(){
 let fxRaf=0;const fxSoon=()=>{if(!WX.on||fxRaf)return;fxRaf=requestAnimationFrame(()=>{fxRaf=0;drawFx()})};
 let gTm=0;
 function mapBind(){if(WX.bound||!map)return;WX.bound=1;
- map.on('move',fxSoon);map.on('resize',fxSoon);
+ map.on('move',fxSoon);map.on('resize',fxSoon);map.on('moveend',rbCheck);
  map.on('moveend',()=>{if(!WX.on)return;fxSoon();clearTimeout(gTm);gTm=setTimeout(()=>{if(WX.on&&layer!=='radar')ensureGrid()},450)});
- map.on('style.load',()=>{if(WX.on&&layer==='radar'&&radarFrames&&!map.getSource('wxr0')){radarBuild().then(()=>setPos(pos))}});}
+ map.on('style.load',()=>{if(WX.on&&layer==='radar'&&radarFrames&&!map.getSource('wxr0')&&!map.getSource('wxrb')){radarBuild().then(()=>setPos(pos))}});}
 function placePin(){if(!map||!window.maplibregl||!WX.on)return;const p=state.place||DEFAULT_PLACE;
  if(!WX.pin){const e=document.createElement('div');e.className='wxpin';WX.pin=new maplibregl.Marker({element:e}).setLngLat([p.lon,p.lat]).addTo(map)}else WX.pin.setLngLat([p.lon,p.lat])}
 function flyToPlace(first){if(!map)return;const p=state.place||DEFAULT_PLACE,h=(Q('#wx')?Q('#wx').offsetHeight:176);
