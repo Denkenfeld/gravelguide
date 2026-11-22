@@ -1,6 +1,6 @@
 /*
  * Hammerhead-Anbindung für gravel-guide.de  (Version 4)
- * Einbinden in gg7.html:  <script src="hammerhead-sync.js"></script>
+ * Einbinden in index.html:  <script src="hammerhead-sync.js"></script>
  *
  * Elemente (optional, id genau so):
  *   <button id="hh-login">Mit Hammerhead anmelden</button>
@@ -20,7 +20,7 @@
   const CONFIG = {
     clientId: "d63f191b-e73f-4c60-b413-286d19df8da6",
     worker: "https://gravel-guide-auth.denkenfeld.workers.dev",
-    redirectUri: "https://gravel-guide.de/gg7.html", // muss exakt im Hammerhead-Dashboard stehen
+    redirectUri: "https://gravel-guide.de/", // muss exakt im Hammerhead-Dashboard stehen
     authorizeUrl: "https://api.hammerhead.io/v1/auth/oauth/authorize",
     scope: "activity:read route:read route:write", // route:write = Routen an den Karoo senden (nach der Änderung einmal neu anmelden)
     pollMs: 5 * 60 * 1000, // alle 5 Minuten nach neuen Fahrten schauen
