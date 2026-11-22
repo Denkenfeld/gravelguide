@@ -480,11 +480,13 @@ body[data-tab=map] #bmore,body[data-tab=more] #bmore{display:grid}body.sx #bmore
 html.gg-sa{--sab:calc(env(safe-area-inset-bottom,0px) + 4px)}
 html.gg-gap,html.gg-gap body{height:var(--app-h)}
 html.gg-gap body{position:fixed;top:0;left:0;width:100%;transform:translateZ(0)}
+html.gg-sa,html.gg-sa body{height:100vh;height:-webkit-fill-available;height:max(100lvh,var(--app-h,0px))}
+html.gg-sa body{position:fixed;top:0;left:0;width:100%;bottom:0}
 </style>
 <script>(function(){var sa=navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);if(!sa)return;
 var r=document.documentElement;r.classList.add('gg-sa');
 function set(){var lg=Math.max(screen.width,screen.height),sh=Math.min(screen.width,screen.height),full=innerWidth<innerHeight?lg:sh,d=full-innerHeight;
- if(d>0&&d<90){r.style.setProperty('--app-h',full+'px');r.classList.add('gg-gap')}else{r.classList.remove('gg-gap');r.style.removeProperty('--app-h')}}
+ if(d>=0&&d<90){r.style.setProperty('--app-h',full+'px');r.classList.add('gg-gap')}else{r.classList.remove('gg-gap');r.style.removeProperty('--app-h')}}
 set();addEventListener('resize',set);addEventListener('orientationchange',function(){setTimeout(set,300)})})();</script>
 </head>
 <body data-tab="map" class="nodata">
