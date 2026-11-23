@@ -494,7 +494,7 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
 #ggup:active{transform:translate(-50%,0) scale(.96)}
 #ggup svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 </style>
-</head>
+<script>if(/iPhone/i.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches))document.documentElement.classList.add('gg-iphone-app');</script></head>
 <body data-tab="map" class="nodata">
 <input type="file" id="fi" multiple hidden>
 <div id="map"></div>
@@ -2432,8 +2432,8 @@ function plNewInit(){
  el('pl-osm').onclick=plOsm;el('pl-osm-x').onclick=plOsmClear;el('pl-x-gm').onclick=plGMaps}
 
 window.plToggle=plToggle;
-window.ggPanelWheelSwitch=function(toRoutes){if(PL.on==!!toRoutes||window.ggModeBusy)return;window.ggModeBusy=true;const from=el(PL.on?'plan':'hud'),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const a=from.animate([{opacity:1},{opacity:0}],{duration:reduce?0:120,fill:'forwards'});a.onfinish=()=>{plToggle(toRoutes);if(toRoutes&&!PL.edit){clearTimeout(RT.tm);RT.i=0;RT.c=0;RT.sk=null;RT.sr=null;el('rwh').scrollTop=0;rtTick();rtSel(0)}else if(!toRoutes){whGo(0);requestAnimationFrame(()=>{if(!PL.on)fitAll()})}a.cancel();window.ggModeBusy=false;dispatchEvent(new Event('gg-mode-switched'))}};
+window.ggPanelWheelSwitch=function(toRoutes){window.ggGo3(toRoutes?1:0)};
+window.ggRouteHeight=function(m){const p=el('plan');cancelAnimationFrame(PLX.raf);p.classList.toggle('min',m.min);if(PLC)PLC.jump(m.min?plCollapseY():0);if(!m.min&&m.open){plMetrics();rtBody();plHrLoad();plExApply(clamp((m.h-PLX.h0)/(PLX.hm-PLX.h0),.02,1))}};
 
 
 /* ---- Speichern ---- */
@@ -2928,8 +2928,8 @@ let PLC=null;
 function plCollapseY(){return Math.max(0,el('plan').offsetHeight-ggPeek('plan'))}
 function plMinSet(v){const p=el('plan');p.classList.toggle('min',!!v);if(!v)setTimeout(plChart,30)}
 function plMin(v){plMinSet(v);PLC&&PLC.to(v?plCollapseY():0,0)}
-function plIn(){const p=el('plan');p.classList.remove('out','min');if(PLC)PLC.jump(0);p.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}
-function plOut(){const p=el('plan');p.classList.remove('out');if(PLC)PLC.jump(0);document.getElementById('hud').animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}
+function plIn(){const p=el('plan');p.classList.remove('out','min');if(PLC)PLC.jump(0);if(!window.ggModeBusy)p.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}
+function plOut(){const p=el('plan');p.classList.remove('out');if(PLC)PLC.jump(0);if(!window.ggModeBusy)document.getElementById('hud').animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}
 function plGrab(){
  const p=el('plan');let mn=false;try{mn=localStorage.getItem('gg_plan_min')=='1'}catch(e){}
  p.classList.toggle('min',mn);
@@ -4079,19 +4079,35 @@ function wxOpen(){if(WX.on)return;buildUI();mapBind();
  WX.on=1;document.body.classList.add('wx-on');try{wxEl().classList.remove('min');if(WXC)WXC.jump(0);const nb=Q('#bwx');if(nb)nb.classList.add('on')}catch(e){}
  if(!state.place){state.place={...DEFAULT_PLACE};locate(true)}
  Q('#wxft').textContent=state.place.name;
- const p=wxEl();try{p.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}catch(e){}
- requestAnimationFrame(()=>{document.documentElement.style.setProperty('--wxh',p.offsetHeight+'px');document.documentElement.style.setProperty('--hudh',p.offsetHeight+'px');wSet();flyToPlace(true);applyLayer();
+ const p=wxEl();try{if(!window.ggModeBusy)p.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'})}catch(e){}
+ requestAnimationFrame(()=>{if(!WX.on)return;document.documentElement.style.setProperty('--wxh',Math.round(p.offsetHeight-(WXC?WXC.y:0))+'px');document.documentElement.style.setProperty('--hudh',p.offsetHeight+'px');wSet();flyToPlace(true);applyLayer();
   if(!state.wx||Date.now()-state.at>15*60e3)loadWeather();else renderAll();
   dispatchEvent(new Event('gg-mode-switched'))})}
 function wxClose(quiet){if(!WX.on)return;WX.on=0;popClose();try{shClose()}catch(e){}try{const q=Q('#wxrpop');if(q)q.hidden=true}catch(e){}try{wxEl().classList.remove('min');if(WXC)WXC.jump(0);const nb=Q('#bwx');if(nb)nb.classList.remove('on')}catch(e){}layerReq++;gridReq++;stopPlay();radarClear();clearFx();xApply(0);closePlaces();
  document.body.classList.remove('wx-on','wx-big');if(WX.pin){WX.pin.remove();WX.pin=null}pnl(null)}
+/* Keep the glass surface live; transition only the sheet contents. */
+function modeGhost(p){
+ const r=p.getBoundingClientRect(),g=p.cloneNode(true),src=[p,...p.querySelectorAll('*')],dst=[g,...g.querySelectorAll('*')];
+ const props='display position top right bottom left width height min-width min-height max-width max-height box-sizing padding margin border border-radius background color font line-height letter-spacing text-align white-space overflow flex flex-direction flex-wrap align-items align-self justify-content gap grid-template-columns transform translate transform-origin opacity visibility z-index object-fit fill stroke stroke-width mask-image -webkit-mask-image'.split(' ');
+ src.forEach((el,i)=>{const d=dst[i],cs=getComputedStyle(el);d.removeAttribute('id');d.removeAttribute('style');props.forEach(k=>{const v=cs.getPropertyValue(k);if(v)d.style.setProperty(k,v)});if(el.tagName==='CANVAS')try{d.getContext('2d').drawImage(el,0,0)}catch(e){}});
+ Object.assign(g.style,{display:getComputedStyle(p).display,position:'fixed',left:r.left+'px',top:r.top+'px',right:'auto',bottom:'auto',width:r.width+'px',height:r.height+'px',margin:'0',transform:'none',translate:'none',background:'transparent',borderColor:'transparent',boxShadow:'none',pointerEvents:'none',zIndex:'16'});
+ g.inert=true;g.setAttribute('aria-hidden','true');document.body.appendChild(g);src.forEach((el,i)=>{dst[i].scrollTop=el.scrollTop;dst[i].scrollLeft=el.scrollLeft});return g;
+}
 window.ggGo3=function(n){
- const cur=WX.on?2:((window.PL&&PL.on)?1:0);if(n===cur||window.ggModeBusy)return;
- if(n===2){if(cur===1){const h=()=>{removeEventListener('gg-mode-switched',h);wxOpen()};addEventListener('gg-mode-switched',h);window.ggPanelWheelSwitch(false)}else wxOpen()}
- else{if(cur===2){wxClose();
-   if(n===1)requestAnimationFrame(()=>window.ggPanelWheelSwitch(true));
-   else{try{whGo(0)}catch(e){}requestAnimationFrame(()=>{try{fitAll()}catch(e){}});dispatchEvent(new Event('gg-mode-switched'))}}
-  else window.ggPanelWheelSwitch(n===1)}};
+ const cur=WX.on?2:((window.PL&&PL.on)?1:0);if(n===cur||window.ggModeBusy||n<0||n>2)return;
+ const ids=['hud','plan','wx'],old=document.getElementById(ids[cur]);
+ const m={min:cur===0?!!SH.min:old.classList.contains('min'),open:cur===0?SH.st>0:old.classList.contains('ex'),h:old.getBoundingClientRect().height};
+ const ghost=!matchMedia('(prefers-reduced-motion: reduce)').matches&&old.animate?modeGhost(old):null;
+ window.ggModeBusy=true;
+ try{
+  if(cur===2){cancelAnimationFrame(X.raf);X.g=null;wxClose()}
+  if(cur===1)window.plToggle(false);
+  if(n===1){shReset();window.plToggle(true);window.ggRouteHeight(m)}
+  if(n===2){wxOpen();const p=wxEl();p.classList.toggle('min',m.min);if(m.min&&WXC)WXC.jump(wxCollapseY());else if(m.open){xMetrics();xApply(clamp((m.h-X.h0)/(X.hm-X.h0),.02,1))}}
+  if(n===0){shReset();whGo(0);shMeasure();if(m.min){SH.min=1;shApply(SH.H[0]-shMY());shDone()}else if(m.open){SH.st=m.h>(SH.H[1]+SH.H[2])/2?2:1;shEl.classList.add('ex');shEl.classList.toggle('full',SH.st===2);document.body.classList.add('sx');shFill();shApply(clamp(m.h,SH.H[0],SH.H[2]))}requestAnimationFrame(()=>{if(!WX.on&&!PL.on)fitAll()})}
+  if(ghost){const next=document.getElementById(ids[n]),opt={duration:180,easing:'ease-in-out'};Array.from(next.children).forEach(el=>el.animate([{opacity:0},{opacity:1}],opt));ghost.animate([{opacity:1},{opacity:0}],opt).finished.then(()=>ghost.remove(),()=>ghost.remove())}
+ }catch(e){if(ghost)ghost.remove();throw e}finally{window.ggModeBusy=false;dispatchEvent(new Event('gg-mode-switched'))}
+};
 new MutationObserver(()=>{if(WX.on&&document.body.classList.contains('pl-on'))wxClose(true)}).observe(document.body,{attributes:true,attributeFilter:['class']});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(state.at&&Date.now()-state.at>15*60e3)loadWeather()});
 try{buildUI();wxBtn();wxBoot()}catch(e){console.error('wx',e)}
@@ -4192,4 +4208,17 @@ document.addEventListener('click',e=>{const k=bd.dataset.ggMin;if(!k)return;
  const p=document.getElementById(k=='wx'?'wx':k=='plan'?'plan':'hud');if(e.target!==p)return;
  const g=grabOf(k);if(g)g.click();try{if(navigator.vibrate)navigator.vibrate(8)}catch(x){}},true);
 upd()})();</script>
+<style>
+html.gg-iphone-app #hnr~*,html.gg-iphone-app #rhnr~*,html.gg-iphone-app #wxnr~*,
+html.gg-iphone-app #hbody,html.gg-iphone-app #rbody,html.gg-iphone-app #wxbody{display:none!important}
+.gg-home-guard{position:fixed;inset:auto 0 0;height:8px;z-index:2147483647;background:transparent;touch-action:auto;user-select:none;-webkit-user-select:none}
+</style>
+<script>(function(){
+ if(!/iPhone/i.test(navigator.userAgent)||!(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches))return;
+ document.documentElement.classList.add('gg-iphone-app');
+ const guard=document.createElement('div');guard.className='gg-home-guard';guard.setAttribute('aria-hidden','true');document.body.appendChild(guard);
+ // Isolation without preventDefault: iOS retains the native edge gesture.
+ const events=['touchstart','touchmove','touchend','touchcancel','pointerdown','pointermove','pointerup','pointercancel','mousedown','mouseup','click','dblclick','contextmenu'];
+ events.forEach(type=>window.addEventListener(type,e=>{if(e.target===guard)e.stopImmediatePropagation()},{capture:true,passive:true}));
+})();</script>
 </body></html>
