@@ -1684,7 +1684,7 @@ function shSync(){SH.dirty=1;if(SH.st>0)shFill()}
 function whPick(i){whSel(i);shSync()}
 function whGo(i){const w=$("wh");WH.c=i;w.scrollTop=i*WIT;whThumbs(i);whTick();clearTimeout(WH.tm);whPick(i)}
 let SG=null;
-function sgBegin(x,y){SG={x,y,t:Date.now(),d:0,s:[]}}
+function sgBegin(x,y){if(window.ggMinWheelNear?.(shEl,x,y)){SG=null;return}SG={x,y,t:Date.now(),d:0,s:[]}}
 function sgMove(x,y,tg,ev){if(!SG)return;
  if(!SG.d){const dy=y-SG.y,dx=x-SG.x;if(Math.abs(dy)<6||Math.abs(dy)<Math.abs(dx)*1.2)return;
   if(SH.st==2&&tg&&tg.closest("#hbody")&&!(dy>0&&shBody.scrollTop<=0)){SG=null;return}
@@ -1729,7 +1729,7 @@ function sheetCtl(c){
   const f=now=>{const dt=Math.min(.032,(now-t0)/1000);t0=now;v+=(-k*(x-target)-cc*v)*dt;x+=v*dt;if(x<0){x=0;if(v<0)v=0}set(x);
    if(Math.abs(x-target)<.5&&Math.abs(v)<12){set(target);raf=0;done&&done();return}raf=requestAnimationFrame(f)};raf=requestAnimationFrame(f)}
  const nearest=p=>{const S=c.states();let b=0;S.forEach((s,i)=>{if(Math.abs(s-p)<Math.abs(S[b]-p))b=i});return b};
- function begin(px,py,t){if(c.block&&c.block())return;if(c.skip&&t&&t.closest&&t.closest(c.skip))return;G={x:px,y:py,base:y,d:0,s:[]}}
+ function begin(px,py,t){if(window.ggMinWheelNear?.(el,px,py)){G=null;return}if(c.block&&c.block())return;if(c.skip&&t&&t.closest&&t.closest(c.skip))return;G={x:px,y:py,base:y,d:0,s:[]}}
  function move(px,py,ev){if(!G)return;
   if(!G.d){const dy=py-G.y,dx=px-G.x;if(Math.abs(dy)<6||Math.abs(dy)<Math.abs(dx)*1.2)return;
    if(dy<0&&y<=.5){G=null;return}
@@ -3828,7 +3828,7 @@ function xApply(e){const p=wxEl();X.ex=e;
  if(!X.cq)X.cq=requestAnimationFrame(()=>{X.cq=0;const c=Q('#wxchart');if(X.ex>0&&c&&state.wx&&c.clientWidth&&(c.clientWidth!==X.cw||!c.firstChild)){X.cw=c.clientWidth;renderChart()}})}
 function xTo(t,done){cancelAnimationFrame(X.raf);const e0=X.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
  const f=n=>{const q=Math.min(1,(n-t0)/D),k=1-Math.pow(1-q,3);xApply(e0+(t-e0)*k);if(q<1)X.raf=requestAnimationFrame(f);else{xApply(t);done&&done()}};X.raf=requestAnimationFrame(f)}
-function xBegin(px,py,t){if(!WX.on||(WXC&&WXC.y>.5))return;if(t&&t.closest&&t.closest('#wxwh,#wxsl,#wxchart'))return;
+function xBegin(px,py,t){if(!WX.on||wxEl().classList.contains('min')||(WXC&&WXC.y>.5))return;if(t&&t.closest&&t.closest('#wxwh,#wxsl,#wxchart'))return;
  X.g={x:px,y:py,e0:X.ex,d:0,inb:!!(t&&t.closest&&t.closest('#wxbody')),s:[]}}
 function xMove(px,py,ev){const g=X.g;if(!g)return;
  if(!g.d){const dy=py-g.y,dx=px-g.x;if(Math.abs(dy)<6||Math.abs(dy)<Math.abs(dx)*1.2)return;
@@ -4120,7 +4120,7 @@ function draw(){const p=w.scrollLeft/96;B.forEach((b,i)=>{const d=i-p,a=Math.min
 function reset(){ready=false;clearTimeout(timer);w.scrollLeft=index*96;draw();requestAnimationFrame(()=>ready=true)}
 w.addEventListener('scroll',()=>{draw();if(!ready)return;clearTimeout(timer);timer=setTimeout(()=>{if(!ready||!wrap.getClientRects().length)return;const n=Math.max(0,Math.min(2,Math.round(w.scrollLeft/96)));if(n!=index)window.ggGo3(n)},180)},{passive:true});
 B.forEach((b,i)=>b.onclick=e=>{e.stopPropagation();w.scrollTo({left:i*96,behavior:'smooth'})});
-['mousedown','pointerdown','click'].forEach(ev=>wrap.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
+['touchstart','touchmove','touchend','touchcancel','mousedown','pointerdown','click'].forEach(ev=>wrap.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
 w.addEventListener('pointerdown',e=>{if(e.pointerType!='mouse'||e.button)return;mouse={x:e.clientX,left:w.scrollLeft};w.setPointerCapture(e.pointerId)});w.addEventListener('pointermove',e=>{if(!mouse)return;if(Math.abs(e.clientX-mouse.x)>3){w.style.scrollSnapType='none';w.scrollLeft=mouse.left-(e.clientX-mouse.x)}});const end=()=>{if(!mouse)return;mouse=null;w.style.scrollSnapType='';w.scrollTo({left:Math.round(w.scrollLeft/96)*96,behavior:'smooth'})};w.addEventListener('pointerup',end);w.addEventListener('pointercancel',end);wheels.push({reset});return wrap}
 const a=make(document.getElementById('hnr'),0),b=make(document.getElementById('rhnr'),1),c3=make(document.getElementById('wxnr'),2);
 function visibility(){const ah=!hud.classList.contains('hrd')&&!document.getElementById('hnm').classList.contains('lk'),bh=!plan.classList.contains('rrd')&&!plan.classList.contains('edit'),changed=a.hidden===ah||b.hidden===bh;a.hidden=!ah;b.hidden=!bh;hud.classList.toggle('has-modewheel',ah);plan.classList.toggle('has-modewheel',bh);if(changed)requestAnimationFrame(()=>wheels.forEach(o=>o.reset()))}
@@ -4203,14 +4203,22 @@ function upd(){const v=parseFloat(root.style.getPropertyValue('--pnlv'));
 new MutationObserver(upd).observe(root,{attributes:true,attributeFilter:['style']});
 new MutationObserver(upd).observe(bd,{attributes:true,attributeFilter:['data-tab','class']});
 document.querySelectorAll('.sheet').forEach(x=>new MutationObserver(upd).observe(x,{attributes:true,attributeFilter:['class']}));
+/* Keep a small gutter around the wheel out of the minimized sheet drag area. */
+window.ggMinWheelNear=function(panel,x,y){
+ if(!root.classList.contains('gg-iphone-app')||bd.dataset.ggMin!==panel.id)return false;
+ const wheel=panel.querySelector('.modewheel-wrap');if(!wheel)return false;
+ const r=wheel.getBoundingClientRect();return r.width>0&&x>=r.left-10&&x<=r.right+10&&y>=r.top-6;
+};
 /* Tippen auf die Griffzone (Panel selbst ist Ziel, weil die Kinder pointer-events:none haben) */
 document.addEventListener('click',e=>{const k=bd.dataset.ggMin;if(!k)return;
  const p=document.getElementById(k=='wx'?'wx':k=='plan'?'plan':'hud');if(e.target!==p)return;
+ if(root.classList.contains('gg-iphone-app')){const w=p.querySelector('.modewheel-wrap');if(w&&e.clientY>=w.getBoundingClientRect().top-4)return}
  const g=grabOf(k);if(g)g.click();try{if(navigator.vibrate)navigator.vibrate(8)}catch(x){}},true);
 upd()})();</script>
 <style>
-html.gg-iphone-app #hnr~*,html.gg-iphone-app #rhnr~*,html.gg-iphone-app #wxnr~*,
-html.gg-iphone-app #hbody,html.gg-iphone-app #rbody,html.gg-iphone-app #wxbody{display:none!important}
+html.gg-iphone-app body[data-gg-min=hud] :is(#hnr~*,#hbody),html.gg-iphone-app body[data-gg-min=hud] :is(#hnr~*,#hbody) *{visibility:hidden!important;pointer-events:none!important}
+html.gg-iphone-app body[data-gg-min=plan] :is(#rhnr~*,#rbody),html.gg-iphone-app body[data-gg-min=plan] :is(#rhnr~*,#rbody) *{visibility:hidden!important;pointer-events:none!important}
+html.gg-iphone-app body[data-gg-min=wx] :is(#wxnr~*,#wxbody),html.gg-iphone-app body[data-gg-min=wx] :is(#wxnr~*,#wxbody) *{visibility:hidden!important;pointer-events:none!important}
 .gg-home-guard{position:fixed;inset:auto 0 0;height:8px;z-index:2147483647;background:transparent;touch-action:auto;user-select:none;-webkit-user-select:none}
 </style>
 <script>(function(){
