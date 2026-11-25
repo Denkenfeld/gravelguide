@@ -309,7 +309,20 @@ body.drag::after{content:"Dateien hier ablegen";position:fixed;inset:10px;border
 #hbody #dh{display:none}
 #hbody #dsc{overflow:visible;padding:4px 12px 24px;flex:none}
 body.sx #mc{display:none}
-body.pex #mc,body.pex #bmc,body.pex #bmore{display:none!important}
+body.pex #mc,body.pex #bmc,body.pex #bmore,body.pex #bwx,body.sx #bwx{display:none!important}
+#bplan{display:none!important}
+/* Wetter-Pfeil oben links, Einstellungen in der Button-Spalte rechts */
+#top #bwx{position:absolute;left:10px;top:calc(var(--sat) + 8px);width:46px;height:46px;border-radius:15px;display:none;place-items:center;pointer-events:auto}
+body[data-tab=map] #top #bwx{display:grid}
+#mc #bmore{position:relative;left:auto;top:auto;border-radius:15px}
+/* Wetter-Popup: grosse Zahl neben dem Pfeil, Spruch, 12h-Vorschau */
+.wxtop{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:4px}
+.wxtop .wxbig{margin:0}
+.wxnum{font-size:58px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--gc,var(--act))}
+.wxmot{font-size:13px;font-style:italic;color:var(--act);margin:8px 4px 2px}
+.wx12{margin-top:12px;text-align:left}.wx12t{font-size:11.5px;color:var(--dim);margin-bottom:5px}
+.wx12b{display:flex;align-items:flex-end;gap:3px;height:42px}.wx12b i{flex:1;border-radius:4px;min-height:6px}
+.wx12l{display:flex;gap:3px;margin-top:3px}.wx12l span{flex:1;text-align:center;font-size:9.5px;color:var(--dim);overflow:visible;white-space:nowrap}
 .tagm{flex:none;font-size:10.5px;font-weight:700;border-radius:8px;padding:2px 7px;white-space:nowrap;color:#ffb020;border:1px solid rgba(255,176,32,.6)}
 .rngrow{padding:8px 0 4px;transition:opacity .2s}
 .rngrow.off{opacity:.45}
@@ -3261,9 +3274,9 @@ body.wx-big #wxtime,body.wx-big #wxlg{opacity:0;pointer-events:none}
 .wxpc small{display:block;margin-top:14px;font-size:10.5px;color:var(--dim)}
 #wx #wxlogo{justify-content:flex-start;padding-left:1px}
 #wxgb{gap:25px;padding:0 10px 0 5px}
-#mc #bwx{color:var(--gc,var(--dim))}
+#bwx{color:var(--gc,var(--dim))}
 #bwx svg{width:26px;height:26px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#mc #bwx.al{color:var(--red,#ff5c6c)}
+#bwx.al{color:var(--red,#ff5c6c)}
 #bwx.al .wxgtri,#bwx.al .wxghd{opacity:1}
 #bwx.al .wxgrot,#bwx.al .wxgring{opacity:0}
 #bwx.al .wxgtri{animation:wxpulse 1.4s ease-in-out infinite;transform-origin:12px 13px}
@@ -3937,7 +3950,10 @@ function btnUpdate(a){const nb=Q('#bwx');if(!nb)return;const r=nb.querySelector(
  if(!a){nb.classList.remove('al');nb.style.removeProperty('--gc');if(r)r.style.transform='rotate(90deg)';return}
  nb.style.setProperty('--gc',gcol(a.score));nb.classList.toggle('al',a.storm);requestAnimationFrame(()=>{r.style.transform='rotate('+((100-a.score)*1.8).toFixed(1)+'deg)'})}
 function wxBtn(){const ref=Q('#bplan')||Q('#bly');if(!ref||Q('#bwx'))return;const b=document.createElement('button');b.className='ib';b.id='bwx';b.setAttribute('aria-label','Wetter und Losfahr-Wert');b.innerHTML=gsvg(90);ref.parentNode.insertBefore(b,ref);
- b.onclick=()=>{try{if(document.body.dataset.tab!='map')go('map')}catch(e){}window.ggGo3(WX.on?0:2)}}
+ /* Positionen tauschen: Wetter-Pfeil -> oben links (Header), Einstellungen -> Button-Spalte */
+ try{const top=Q('#top'),bm=Q('#bmore'),mc=Q('#mc');if(top&&bm&&mc){b.classList.add('glass');bm.classList.remove('glass');top.insertBefore(b,bm);mc.insertBefore(bm,mc.firstChild)}}catch(e){console.error(e)}
+ b.onclick=()=>{if(GA){popOpen();return}popWant=1;setTimeout(()=>{popWant=0},20000);toast('Wetter lädt …');try{if(state.place)loadWeather();else locate(false)}catch(e){}}}
+let popWant=0;
 function hashPlace(){const m=/^#wx=(-?[\d.]+),(-?[\d.]+)(?:,(.*))?$/.exec(location.hash);if(!m)return null;let n='Geteilter Ort';try{if(m[3])n=decodeURIComponent(m[3])}catch(e){}return{lat:+m[1],lon:+m[2],name:n}}
 function wxBoot(){const hp=hashPlace();if(hp&&isFinite(hp.lat)&&isFinite(hp.lon)){setPlace(hp,false);setTimeout(()=>{try{window.ggGo3(2)}catch(e){}},700);return}
  if(state.place){loadWeather();return}
@@ -3945,10 +3961,20 @@ function wxBoot(){const hp=hashPlace();if(hp&&isFinite(hp.lat)&&isFinite(hp.lon)
 setInterval(()=>{if(state.place&&!state.loading&&(!state.at||Date.now()-state.at>15*60e3))loadWeather()},5*60e3);
 function gaugeUpdate(){const a=assess();GA=a;btnUpdate(a);const b=Q('#wxgb');if(!b||!a)return;
  b.style.setProperty('--gc',gcol(a.score));b.classList.toggle('al',a.storm);b.querySelector('b').textContent=a.storm?'!':a.score;
- const r=b.querySelector('.wxgrot');requestAnimationFrame(()=>{r.style.transform='rotate('+((100-a.score)*1.8).toFixed(1)+'deg)'})}
+ const r=b.querySelector('.wxgrot');requestAnimationFrame(()=>{r.style.transform='rotate('+((100-a.score)*1.8).toFixed(1)+'deg)'});if(popWant){popWant=0;popOpen()}}
 function popOpen(a2,when,k0){const a=a2||GA;if(!a)return;let p=Q('#wxpop');if(!p){p=document.createElement('div');p.id='wxpop';document.body.appendChild(p);p.addEventListener('click',e=>{if(e.target===p||e.target.closest('[data-x]'))popClose()})}
- p.innerHTML='<div class="wxpc glass"><div class="wxbig'+(a.storm?' al':'')+'" style="--gc:'+gcol(a.score)+'">'+gsvg((100-a.score)*1.8)+'</div><h3>'+esc(a.head)+'</h3><div class="wxpsub">Radwetter-Einschätzung · '+(when?'ab '+when+' Uhr · 2-Std.-Fenster':'nächste 2 Std.')+' · '+a.score+' / 100</div><div class="wxscale"><i style="left:0%"></i></div><div class="wxsl2"><span>0</span><span>50</span><span>100</span></div><p>'+esc(a.txt)+'</p><div class="wxpf">'+a.chips.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>'+tilesHTML(k0||0)+'<small>Aus Open-Meteo-Modelldaten, keine amtliche Warnung.</small></div>';
+ const nowT=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+ p.innerHTML='<div class="wxpc glass"><div class="wxtop" style="--gc:'+gcol(a.score)+'"><div class="wxbig'+(a.storm?' al':'')+'">'+gsvg((100-a.score)*1.8)+'</div><div class="wxnum">'+(a.storm?'!':a.score)+'</div></div><h3>'+esc(a.head)+'</h3><div class="wxpsub">'+(when?'ab '+when+' Uhr · 2-Std.-Fenster':nowT+' Uhr · nächste 2 Std.')+'</div><div class="wxmot">'+esc(motto(a))+'</div><div class="wxscale"><i style="left:0%"></i></div><div class="wxsl2"><span>0</span><span>50</span><span>100</span></div><p>'+esc(a.txt)+'</p><div class="wxpf">'+a.chips.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>'+tilesHTML(k0||0)+wx12(k0)+'<small>Aus Open-Meteo-Modelldaten, keine amtliche Warnung.</small></div>';
  p.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>{const i=Q('.wxscale i',p);if(i)i.style.left=a.score+'%'}))}
+function motto(a){const H=new Date().getHours(),M=a.storm?['Sicherheit zuerst – das Rad läuft dir nicht weg.','Heute lieber Kaffee statt Kuppen.','Gewitter sind kein Mutbeweis. Später ist auch noch Zeit.']
+ :a.score>=85?['Besser wird’s nicht – ab aufs Rad!','Die Strecke ruft. Los geht’s!','Perfekter Tag, um Kilometer zu sammeln.']
+ :a.score>=70?['Gute Bedingungen, gute Beine – rausfahren!','Da geht was. Schuhe an, Kette ölen, los.','Wer jetzt losfährt, freut sich später.']
+ :a.score>=50?['Mit der richtigen Jacke geht fast alles.','Nicht perfekt, aber fahrbar – Gravel-Stimmung!','Kurz überlegen, dann einfach starten.']
+ :a.score>=30?['Wer Schlamm mag, liebt diese Tage.','Harte Tage machen starke Beine.','Ungemütlich? Genau das macht die Geschichten.']
+ :['Heute ist Rollentraining-Wetter.','Auch Ruhetage machen schneller.','Tee, Sofa, Streckenplanung – auch das zählt.'];
+ return M[(H+a.score)%M.length]}
+function wx12(k0){let S;try{S=hourScores()}catch(e){return''}if(!S||S.length<2)return'';const k=k0||0,L=S.slice(k,k+12);if(L.length<2)return'';
+ return'<div class="wx12"><div class="wx12t">Nächste 12 Stunden</div><div class="wx12b">'+L.map(x=>'<i style="height:'+Math.max(6,Math.round(x.sc*.42))+'px;background:'+(x.storm?'#ff5c6c':gcolC(x.sc))+(x.day?'':';opacity:.5')+'"></i>').join('')+'</div><div class="wx12l">'+L.map((x,i)=>'<span>'+((i===0&&!k)?'Jetzt':(i%3===0?x.t.slice(11,13):''))+'</span>').join('')+'</div></div>'}
 function popClose(){const p=Q('#wxpop');if(p)p.classList.remove('on')}
 
 /* ---------- Teilen ---------- */
@@ -4305,7 +4331,8 @@ html:not(.gg-iphone-app) #gnav{height:24px;padding:2px 3px;border-radius:12px}
 html:not(.gg-iphone-app) #gnav .gt{top:2px;bottom:2px;border-radius:10px}
 html:not(.gg-iphone-app) #gnav button{font-size:11px;gap:4px}
 html:not(.gg-iphone-app) #gnav button svg{width:13px;height:13px}
-html:not(.gg-iphone-app) #hud,html:not(.gg-iphone-app) #plan,html:not(.gg-iphone-app) #wx{padding-bottom:calc(26px + var(--sab))!important}
+html:not(.gg-iphone-app) #hud,html:not(.gg-iphone-app) #plan,html:not(.gg-iphone-app) #wx{padding-bottom:calc(32px + var(--sab))!important}
+html:not(.gg-iphone-app) #gnav{bottom:calc(var(--sab) * .5 + 3px)}
 /* iPhone-Webapp: ganz minimiertes Sheet = nur noch Griff, Inhalte ausgeblendet */
 html.gg-iphone-app body[data-gg-min=hud] #hud>*,html.gg-iphone-app body[data-gg-min=plan] #plan>*,html.gg-iphone-app body[data-gg-min=wx] #wx>*{visibility:hidden!important}
 html.gg-iphone-app body[data-gg-min=hud] #hgrab,html.gg-iphone-app body[data-gg-min=hud] #hgrab *,html.gg-iphone-app body[data-gg-min=plan] #pl-grab,html.gg-iphone-app body[data-gg-min=plan] #pl-grab *,html.gg-iphone-app body[data-gg-min=wx] #wx-grab,html.gg-iphone-app body[data-gg-min=wx] #wx-grab *{visibility:visible!important}
@@ -4331,5 +4358,17 @@ nav.addEventListener('pointerup',e=>end(e,false));nav.addEventListener('pointerc
 new MutationObserver(()=>{if(!drag)show(mode(),null)}).observe(document.body,{attributes:true,attributeFilter:['class']});
 addEventListener('gg-mode-switched',()=>show(mode(),null));show(mode(),null);
 })();
+</script>
+
+<style>
+/* Sheet-Kopf: statt Walze nur noch eine Überschrift (Umschalten über die untere Leiste) */
+.modewheel-wrap{background:none!important}
+.modewheel-wrap::before,.modewheel-wrap::after{display:none!important}
+.mwt{display:block;text-align:center;font:700 15px/30px system-ui,-apple-system,sans-serif;letter-spacing:-.01em;color:var(--fg);white-space:nowrap}
+html body[data-tab] .modewheel-wrap,html body[data-tab] .modewheel-wrap *{pointer-events:none!important}
+</style>
+<script>
+(function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
+Object.keys(T).forEach(id=>{const r=document.getElementById(id),w=r&&r.querySelector(':scope>.modewheel-wrap');if(!w)return;w.setAttribute('aria-label',T[id]);w.removeAttribute('role');w.innerHTML='<span class="mwt">'+T[id]+'</span>'})})();
 </script>
 </body></html>
