@@ -4287,4 +4287,39 @@ html.gg-iphone-app .modewheel-wrap,html.gg-iphone-app .modewheel{touch-action:no
  const events=['touchstart','touchmove','touchend','touchcancel','pointerdown','pointermove','pointerup','pointercancel','mousedown','mouseup','click','dblclick','contextmenu'];
  events.forEach(type=>window.addEventListener(type,e=>{if(e.target===guard)e.stopImmediatePropagation()},{capture:true,passive:true}));
 })();</script>
+
+<style>
+/* Untere Modus-Leiste: Fahrten · Routen · Wetter */
+#gnav{position:fixed;left:50%;bottom:calc(var(--sab) * .5 + 6px);transform:translateX(-50%);z-index:26;display:none;width:min(264px,calc(100% - 40px));height:34px;padding:3px;box-sizing:border-box;border-radius:17px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+body[data-tab=map] #gnav{display:flex}
+#gnav .gt{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / 3);border-radius:14px;background:rgba(var(--ac-rgb),.2);border:1px solid rgba(var(--ac-rgb),.55);box-sizing:border-box;transition:transform .22s cubic-bezier(.3,.8,.3,1);pointer-events:none}
+#gnav.drag .gt{transition:none}
+#gnav button{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:none;color:var(--dim);font:600 12px/1 system-ui,-apple-system,sans-serif;padding:0;cursor:pointer;touch-action:none}
+#gnav button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#gnav button.on{color:var(--fg)}
+#hud{padding-bottom:calc(36px + var(--sab))!important}
+#plan,#wx{padding-bottom:calc(36px + var(--sab))!important}
+</style>
+<div id="gnav" class="glass" role="tablist" aria-label="Fahrten, Routen, Wetter">
+ <span class="gt"></span>
+ <button type="button" role="tab"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Fahrten</button>
+ <button type="button" role="tab"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>Routen</button>
+ <button type="button" role="tab"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 1 1 .8-7.9A5.5 5.5 0 0 1 18.5 11 3.5 3.5 0 0 1 18 18z"/></svg>Wetter</button>
+</div>
+<script>
+(function(){const nav=document.getElementById('gnav'),thumb=nav.querySelector('.gt'),B=[...nav.querySelectorAll('button')];let cur=0,drag=null;
+const mode=()=>document.body.classList.contains('wx-on')?2:document.body.classList.contains('pl-on')?1:0;
+function show(i,px){cur=i;thumb.style.transform=px==null?'translateX('+i*100+'%)':'translateX('+px+'px)';B.forEach((b,k)=>{b.classList.toggle('on',k===i);b.setAttribute('aria-selected',String(k===i))})}
+const idxAt=x=>{const r=nav.getBoundingClientRect();return Math.max(0,Math.min(2,Math.floor((x-r.left-3)/((r.width-6)/3))))};
+nav.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button)return;e.stopPropagation();drag={x:e.clientX,i:idxAt(e.clientX)};nav.setPointerCapture(e.pointerId);nav.classList.add('drag');show(mode(),null);move(e)});
+function move(e){if(!drag)return;const r=nav.getBoundingClientRect(),tw=(r.width-6)/3,px=Math.max(0,Math.min(tw*2,e.clientX-r.left-3-tw/2));thumb.style.transform='translateX('+px+'px)';drag.i=idxAt(e.clientX);B.forEach((b,k)=>b.classList.toggle('on',k===drag.i))}
+nav.addEventListener('pointermove',e=>{if(drag){e.stopPropagation();move(e)}});
+function end(e,cancel){if(!drag)return;e.stopPropagation();const i=cancel?mode():drag.i;drag=null;nav.classList.remove('drag');show(i,null);
+ if(i!==mode()&&window.ggGo3){try{if(document.body.dataset.tab!=='map')return;window.ggGo3(i)}catch(x){console.error(x)}setTimeout(()=>show(mode(),null),400)}}
+nav.addEventListener('pointerup',e=>end(e,false));nav.addEventListener('pointercancel',e=>end(e,true));
+['click','mousedown','touchstart','touchmove','touchend'].forEach(t=>nav.addEventListener(t,e=>e.stopPropagation(),{passive:true}));
+new MutationObserver(()=>{if(!drag)show(mode(),null)}).observe(document.body,{attributes:true,attributeFilter:['class']});
+addEventListener('gg-mode-switched',()=>show(mode(),null));show(mode(),null);
+})();
+</script>
 </body></html>
