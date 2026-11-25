@@ -4254,6 +4254,7 @@ window.ggPeek=function(k){k=k||panelOf();let sab=0,h=0;
  try{if(!probe){probe=document.createElement('div');probe.style.cssText='position:fixed;left:0;top:0;width:0;height:var(--sab,0px);visibility:hidden;pointer-events:none';document.body.appendChild(probe)}sab=probe.offsetHeight||0}catch(e){}
  try{const p=document.getElementById(k=='wx'?'wx':k=='plan'?'plan':'hud'),w=p&&p.querySelector('.modewheel-wrap');
   if(w){const r=w.getBoundingClientRect(),q=p.getBoundingClientRect();if(r.height>0&&q.height>0)h=r.bottom-q.top+8}}catch(e){}
+ if(root.classList.contains('gg-iphone-app'))return Math.round(sab+22);
  return Math.round(sab+(h>30?h:60))};
 const b=document.createElement('button');b.id='ggup';b.type='button';b.tabIndex=-1;b.setAttribute('aria-hidden','true');
 b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>';document.body.appendChild(b);
@@ -4299,6 +4300,15 @@ body[data-tab=map] #gnav{display:flex}
 #gnav button.on{color:var(--fg)}
 #hud{padding-bottom:calc(36px + var(--sab))!important}
 #plan,#wx{padding-bottom:calc(36px + var(--sab))!important}
+/* Normaler Handy-Browser: Leiste 30 % flacher (iPhone-Webapp bleibt unverändert) */
+html:not(.gg-iphone-app) #gnav{height:24px;padding:2px 3px;border-radius:12px}
+html:not(.gg-iphone-app) #gnav .gt{top:2px;bottom:2px;border-radius:10px}
+html:not(.gg-iphone-app) #gnav button{font-size:11px;gap:4px}
+html:not(.gg-iphone-app) #gnav button svg{width:13px;height:13px}
+html:not(.gg-iphone-app) #hud,html:not(.gg-iphone-app) #plan,html:not(.gg-iphone-app) #wx{padding-bottom:calc(26px + var(--sab))!important}
+/* iPhone-Webapp: ganz minimiertes Sheet = nur noch Griff, Inhalte ausgeblendet */
+html.gg-iphone-app body[data-gg-min=hud] #hud>*,html.gg-iphone-app body[data-gg-min=plan] #plan>*,html.gg-iphone-app body[data-gg-min=wx] #wx>*{visibility:hidden!important}
+html.gg-iphone-app body[data-gg-min=hud] #hgrab,html.gg-iphone-app body[data-gg-min=hud] #hgrab *,html.gg-iphone-app body[data-gg-min=plan] #pl-grab,html.gg-iphone-app body[data-gg-min=plan] #pl-grab *,html.gg-iphone-app body[data-gg-min=wx] #wx-grab,html.gg-iphone-app body[data-gg-min=wx] #wx-grab *{visibility:visible!important}
 </style>
 <div id="gnav" class="glass" role="tablist" aria-label="Fahrten, Routen, Wetter">
  <span class="gt"></span>
