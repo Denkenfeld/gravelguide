@@ -309,6 +309,8 @@ body.drag::after{content:"Dateien hier ablegen";position:fixed;inset:10px;border
 #hbody #dh{display:none}
 #hbody #dsc{overflow:visible;padding:4px 12px 24px;flex:none}
 body.sx #mc{display:none}
+body.pex #mc,body.pex #bmc,body.pex #bmore{display:none!important}
+.tagm{flex:none;font-size:10.5px;font-weight:700;border-radius:8px;padding:2px 7px;white-space:nowrap;color:#ffb020;border:1px solid rgba(255,176,32,.6)}
 .rngrow{padding:8px 0 4px;transition:opacity .2s}
 .rngrow.off{opacity:.45}
 .rngrow .hd{display:flex;justify-content:space-between;align-items:baseline}
@@ -563,7 +565,9 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
  <h3>Hammerhead Karoo</h3>
  <div class="card"><div class="stack"><div class="hh"><button id="hh-login" class="btn" type="button">Mit Hammerhead anmelden</button><button id="hh-logout" class="btn g" type="button" hidden>Abmelden</button></div><span id="hh-status"></span>
   <div class="kv" style="border:0;padding:2px 0"><span>Letzte Synchronisierung</span><b id="hh-last">–</b></div>
+  <div class="kv" style="border:0;padding:2px 0"><span>Routen</span><b id="hh-rt">–</b></div>
   <button id="hh-now" class="btn g" type="button">Jetzt synchronisieren</button>
+  <button id="hh-rtsend" class="btn g" type="button">Offene Routen senden</button>
   <small class="note" style="margin:0">Nach der Anmeldung holt die App neue Fahrten automatisch von deinem Karoo-Konto.</small></div></div>
  <h3>Profil</h3>
  <div class="card">
@@ -578,9 +582,9 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
  <h3>Daten</h3>
  <div class="card"><div class="stack">
   <label class="btn" for="fi">FIT, GPX oder Backup importieren</label>
+  <button class="btn g" id="sana">Aus dem Browser-Cache Daten, Routen &amp; Fahrten laden</button>
   <button class="btn g" id="sbk">Backup speichern (JSON)</button>
   <button class="btn g" id="scsv">Fahrten als CSV exportieren</button>
-  <button class="btn g" id="sana">Aus Gravel Analyse übernehmen</button>
   <button class="btn r" id="sclr">Alle Fahrten löschen</button></div></div>
  <h3>Darstellung</h3>
  <div class="card">
@@ -607,7 +611,7 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
   <div id="dstats"></div><div id="dzone" class="sgp" hidden></div><div id="dgrade" class="sgp" hidden></div>
   <div class="sgp"><h3>Notiz</h3><textarea class="nt" id="dnote" rows="2" placeholder="Wie war die Fahrt? Wetter, Gefühl, Material …"></textarea></div>
   <div id="ddev" class="sgp" hidden></div>
-  <div class="acts"><button class="btn" id="dshare">Teilen</button><button class="btn" id="dstory">Story</button><button class="btn g" id="dgpx">GPX</button><button class="btn" id="dkaroo">Als Route speichern</button><button class="btn g" id="dren">Umbenennen</button><button class="btn r" id="ddel">Löschen</button></div></div>
+  <div class="acts"><button class="btn" id="dshare">Teilen</button><button class="btn" id="dstory">Story</button><button class="btn g" id="dgpx">GPX</button><button class="btn" id="dkaroo">Route an Karoo senden</button><button class="btn g" id="dren">Umbenennen</button><button class="btn r" id="ddel">Löschen</button></div></div>
 </div>
 
 <div id="bd"></div>
@@ -1269,16 +1273,12 @@ function dRouteGpx(r){const o=r.raw,R=6371000,rad=Math.PI/180;dRouteGpx.pts=[];l
   if(la!=null&&i<r.n-1){const x=(b-lo)*rad*Math.cos((a+la)/2*rad),y=(a-la)*rad;if(Math.sqrt(x*x+y*y)*R<8)continue}
   la=a;lo=b;k++;dRouteGpx.pts.push([b,a,+r.alt[i]||0]);s+='<trkpt lat="'+a.toFixed(6)+'" lon="'+b.toFixed(6)+'"><ele>'+(+r.alt[i]||0).toFixed(1)+'</ele></trkpt>\n'}
  return k>1?s+'</trkseg></trk></gpx>':null}
-async function dToKaroo(){const r=D.r,H=window.HammerheadSync;
- if(!H||!H.sendRoute){say('Hammerhead-Sync nicht geladen');return}
- if(!(await H.isConnected())){say('Erst mit Hammerhead anmelden');return}
+async function dToKaroo(){const r=D.r;
  const g=dRouteGpx(r);if(!g){say('Keine Streckendaten vorhanden');return}
+ if(!window.ggRtPush){say('Routen-Modul nicht geladen');return}
  const key=dkey(r.raw);let mp={};try{mp=JSON.parse(localStorage.getItem('gg_ride_rt')||'{}')}catch(e){}
- const old=mp[key]||null;say('Sende an Hammerhead …');
- try{const res=await H.sendRoute(g,rname(r),old);
-  if(res&&res.id){mp[key]=res.id;try{localStorage.setItem('gg_ride_rt',JSON.stringify(mp))}catch(e){}if(window.ggRouteStore)window.ggRouteStore(res.id,rname(r),dRouteGpx.pts);if(window.ggRouteSent)window.ggRouteSent(res.id)}
-  say(old?'Route im Dashboard aktualisiert':'Als Route gespeichert – im Dashboard und unter „Routen“')}
- catch(e){say(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')')}}
+ const res=await window.ggRtPush({name:rname(r),c:dRouteGpx.pts,hh:mp[key]||null});
+ if(res){mp[key]=res.id;try{localStorage.setItem('gg_ride_rt',JSON.stringify(mp))}catch(e){}}}
 function dl(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}
 function dRename(){const r=D.r,v=prompt('Name der Fahrt',rname(r));if(v==null)return;const t=v.trim();if(!t)return;r.raw.title=t;$('dname').textContent=t;persist();if(tab=='rides')renderRides();say('Name gespeichert')}
 function dDelete(){const r=D.r,o=r.raw;delSet.add(o.n+o.t);delSet.add(dkey(o));kv.set('axon1-del',[...delSet]).catch(()=>{});raws=raws.filter(x=>x!==o);
@@ -1371,8 +1371,13 @@ $('dfav').onclick=()=>{if(!D)return;const o=D.r.raw;if(o.fav)delete o.fav;else o
 $('dnote').onchange=e=>{if(!D)return;const o=D.r.raw,v=e.target.value.trim();if(v)o.note=v;else delete o.note;persist()};
 $('dshare').onclick=()=>D&&shareRide();
 $('s-mk').onchange=e=>{const v=e.target.value.trim();ls.set('custom_maptiler_key',v);mKey=v||MKEYS[0];mtOff=false;tileErr=0;restyle();say(v?'Eigener Key gespeichert':'Standard-Schlüssel aktiv')};
+$('sana').onclick=async()=>{closeSheets();let r=0;
+ try{const o=JSON.parse(localStorage.getItem('gg_plans')||'[]'),a=JSON.parse(localStorage.getItem('gg_rt')||'[]'),ids=new Set(a.map(x=>x.id));
+  o.forEach(p=>{const id='L'+p.id;if(!ids.has(id)&&p.p&&p.p.length>1){a.push({id,name:p.n,p:p.p,f:p.f||'trekking',c:null,km:p.km||0,up:p.up||0,t:p.id,sent:null});r++}});
+  if(r){localStorage.setItem('gg_rt',JSON.stringify(a.slice(0,150)));try{window.ggRtRefresh&&window.ggRtRefresh()}catch(e){}}}catch(e){}
+ const n=await fromAnalyse(true);
+ say(n||r?(n?n+' Fahrten':'')+(n&&r?' und ':'')+(r?r+' Routen':'')+' aus dem Browser-Cache geladen':'Im Browser-Cache nichts Neues gefunden')};
 $('sbk').onclick=()=>{if(!raws.length)return say('Nichts zu sichern');dl(new Blob([JSON.stringify(raws)],{type:'application/json'}),'gravel-guide-backup-'+new Date().toISOString().slice(0,10)+'.json');say('Backup gespeichert')};
-$('sana').onclick=()=>{closeSheets();fromAnalyse(false)};
 $('sclr').onclick=()=>{const b=$('sclr');if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Wirklich ALLE löschen?';b._t=setTimeout(()=>{b.classList.remove('arm');b.textContent='Alle Fahrten löschen'},4000);return}
  clearTimeout(b._t);b.classList.remove('arm');b.textContent='Alle Fahrten löschen';closeSheets();delSet.clear();kv.del('axon1-del').catch(()=>{});try{localStorage.removeItem('axon1')}catch(e){}setRaws([],false);say('Alle Fahrten gelöscht')};
 /* ============================================================
@@ -1933,7 +1938,8 @@ const SYNC={fn:null};
 const lastSync=()=>+ls.get('gg_lastsync',0)||0;
 function fmtSync(t){if(!t)return'Noch nie';const n=Date.now(),m=Math.round((n-t)/6e4),td=kd(n,'d'),dd=kd(t,'d'),hm=fTm(t)+' Uhr';
  if(m<1)return'gerade eben';if(m<60)return'vor '+m+' Min.';if(dd==td)return'heute, '+hm;if(dd==pv(td,'d'))return'gestern, '+hm;return fD(t)+', '+hm}
-function updateSyncUi(){const e=$('hh-last');if(e)e.textContent=fmtSync(lastSync())}
+function updateSyncUi(){const e=$('hh-last');if(e)e.textContent=fmtSync(lastSync());const q=$('hh-rt');if(q&&window.ggRtInfo)try{q.textContent=window.ggRtInfo()}catch(x){}}
+$('hh-rtsend').onclick=()=>{if(window.ggRtSendOpen)window.ggRtSendOpen();setTimeout(updateSyncUi,1500)};
 function markSynced(ts){ls.set('gg_lastsync',String(ts||Date.now()));updateSyncUi()}
 function findSync(){if(SYNC.fn)return SYNC.fn;
  for(const o of[window.HammerheadSync,window.hammerheadSync,window.HHSync,window.hhSync,window.HH])if(o)for(const k of['syncNow','sync','run','check','poll','refresh'])if(typeof o[k]=='function')return()=>o[k].call(o);
@@ -1942,7 +1948,7 @@ $('hh-now').onclick=async()=>{const b=$('hh-now');if(b.disabled)return;
  const lo=$('hh-login');if(lo&&!lo.hidden){say('Bitte zuerst mit Hammerhead anmelden');return}
  const run=findSync();if(!run){try{dispatchEvent(new CustomEvent('gravel:sync-now'))}catch(e){}say('Synchronisierung angefordert');return}
  b.disabled=true;b.textContent='Synchronisiere …';
- try{const r=await run();if(r===false)throw 0;markSynced();say('Synchronisierung abgeschlossen')}catch(e){say('Synchronisierung fehlgeschlagen')}
+ try{const r=await run();if(r===false)throw 0;markSynced();try{window.ggRtRefresh&&window.ggRtRefresh()}catch(x){}say('Synchronisierung abgeschlossen');setTimeout(updateSyncUi,1500)}catch(e){say('Synchronisierung fehlgeschlagen')}
  finally{b.disabled=false;b.textContent='Jetzt synchronisieren';updateSyncUi()}};
 setInterval(()=>{if(tab=='more')updateSyncUi()},30000);
 /* ---- Sanfte Kamera-Drehung bis zur ersten Interaktion ---- */
@@ -2097,7 +2103,7 @@ body.pl-on #map canvas{cursor:crosshair}
  <h4>Anstiege</h4><div id="pl-cl"></div>
  <h4>Wegpunkte</h4><div id="pl-wp"></div>
  <h4>Export &amp; Import</h4>
- <div class="plbtns"><button class="chip" id="pl-x-gx">GPX ↓ speichern</button><button class="chip" id="pl-x-gi">GPX ↑ laden</button><button class="chip" id="pl-x-sh">Link teilen</button><button class="chip" id="pl-x-gm">Google Maps</button><button class="chip on" id="pl-x-ka">→ An Karoo senden</button><button class="chip" id="pl-x-kn">Als neue Route senden</button></div>
+ <div class="plhint" id="pl-kst"></div><div class="plbtns"><button class="chip" id="pl-x-gx">GPX ↓ speichern</button><button class="chip" id="pl-x-gi">GPX ↑ laden</button><button class="chip" id="pl-x-sh">Link teilen</button><button class="chip" id="pl-x-gm">Google Maps</button><button class="chip on" id="pl-x-ka">→ An Karoo senden</button><button class="chip" id="pl-x-kn">Als neue Route senden</button></div>
 </div>
 </div>
 <div id="pl-ring"><svg viewBox="0 0 56 56" width="84" height="84"><circle cx="28" cy="28" r="24"/></svg></div>
@@ -2460,15 +2466,17 @@ function plGpx(){
  const g=plGpxText(true),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([g],{type:'application/gpx+xml'}));a.download='gravel-route.gpx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
 }
 async function plKaroo(forceNew){
- if(!PL.all){warn('Noch keine Route');return}
- const H=window.HammerheadSync;if(!H||!H.sendRoute){warn('Hammerhead-Sync nicht geladen');return}
- if(!(await H.isConnected())){warn('Erst mit Hammerhead anmelden');return}
- const nm='Gravel Guide '+new Date().toLocaleDateString('de-DE')+' '+Math.round(plStats().km)+'km';
- warn('Sende an Hammerhead …');
- const old=forceNew?null:PL.kid||null;
- try{const r=await H.sendRoute(plGpxText(false,nm),nm,old);if(r&&r.id){PL.kid=r.id;try{if(window.ggRouteStore&&PL.all&&PL.all.c)window.ggRouteStore(r.id,nm,PL.all.c)}catch(e){}try{localStorage.setItem('gg_pl_kid',r.id);const sn=hrSent();if(sn.indexOf(r.id)<0){sn.push(r.id);localStorage.setItem('gg_pl_sent',JSON.stringify(sn.slice(-200)))}}catch(e){}}setTimeout(()=>plHrLoad(true),1500);setTimeout(()=>plHrLoad(true),6000);warn(old?'Route aktualisiert – Karoo synchronisieren':'Route im Dashboard – Karoo synchronisieren')}
- catch(e){warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')')}
+ if(!PL.all||PL.pts.length<2){warn('Noch keine Route');return}
+ if(document.body.classList.contains('pl-bz')){warn('Route wird noch berechnet …');return}
+ const d=rtRecFromDraft();rtUpsert(d);GX.put(d.id,PL.all.c);
+ const res=await hhPush({name:d.name,c:PL.all.c,rec:rtRecs().find(r=>r.id==d.id),hh:d.sent||null,forceNew});
+ if(res){PL.kid=res.id;PL.src={recId:res.rec.id,hh:res.id,nm0:d.name,sig0:plSig()};try{localStorage.setItem('gg_pl_kid',res.id)}catch(e){}plKarooUi()}
 }
+const plSig=()=>JSON.stringify([PL.pts.map(p=>[r5(p[0]),r5(p[1])]),PL.prof,(el('pl-nm').value||'').trim()]);
+function plKarooUi(){const a=el('pl-x-ka'),n=el('pl-x-kn'),s=el('pl-kst');if(!a)return;
+ const hh=(PL.src&&PL.src.hh)||PL.kid||null,r=PL.src&&PL.src.recId?rtRecs().find(x=>x.id==PL.src.recId):null,mod=!hh||!r||r.mod||(PL.src&&PL.src.sig0!=null&&PL.src.sig0!==plSig());
+ a.textContent=hh?'→ Änderungen an Karoo senden':'→ An Karoo senden';n.style.display=hh?'':'none';
+ if(s)s.textContent=!hh?'Noch nicht an Hammerhead gesendet. Der Name oben wird übernommen.':mod?'Auf dem Karoo liegt noch die alte Version.':'Auf dem Karoo liegt dieser Stand.'}
 async function plImport(file){
  PL.kreset();PL.leg={};PL.src=null;try{const doc=new DOMParser().parseFromString(await file.text(),'application/xml');
   let n=[...doc.getElementsByTagName('trkpt')];if(n.length<2)n=[...doc.getElementsByTagName('rtept')];
@@ -2518,7 +2526,8 @@ const clk=d=>d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
 function plMetrics(){const p=el('plan');if(!p.style.height)PLX.h0=p.offsetHeight||PLX.h0||170;const tp=el('top'),t=tp?tp.getBoundingClientRect().bottom+8:90;PLX.hm=Math.max(PLX.h0+140,window.innerHeight-t)}
 function plExApply(e){const p=el('plan');PL.ex=e;
  if(e<=.001){PL.ex=0;p.style.height='';p.classList.remove('ex','dragx');pnlSet(null)}
- else{plMetrics();const h=PLX.h0+(PLX.hm-PLX.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex','dragx');pnlSet(h)}
+ else{plMetrics();const h=PLX.h0+(PLX.hm-PLX.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex','dragx');pnlSet(null)}
+ document.body.classList.toggle('pex',e>.001);
  if(!PLX.cq)PLX.cq=requestAnimationFrame(()=>{PLX.cq=0;plChart();rtChart()})}
 function plExTo(t,done){cancelAnimationFrame(PLX.raf);if(t>0&&PL.ex<.001){PL.edit?plBody():rtBody();plHrLoad()}const e0=PL.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
  const f=n=>{const q=Math.min(1,(n-t0)/D),k=1-Math.pow(1-q,3);plExApply(e0+(t-e0)*k);if(q<1)PLX.raf=requestAnimationFrame(f);else{plExApply(t);done&&done()}};PLX.raf=requestAnimationFrame(f)}
@@ -2555,7 +2564,7 @@ function plClimbsOf(A){const c=A.c,d=A.d,n=c.length,z=c.map((p,i)=>{let s=0,k=0;
  pv.push(dir>0?mx:mn);const out=[];
  for(let k=0;k<pv.length-1;k++){const a=pv[k],b=pv[k+1],gain=z[b]-z[a],len=d[b]-d[a];if(gain>=25&&len>200)out.push({a,b,gain,len,gr:gain/len*100,km:d[a]/1000})}
  return out}
-function plBody(){const bd=el('pl-body');if(!bd)return;const A=PL.all,s=plStats(),has=!!(A&&s.km>0);
+function plBody(){const bd=el('pl-body');if(!bd)return;plKarooUi();const A=PL.all,s=plStats(),has=!!(A&&s.km>0);
  const kcal=has?(()=>{const m=(typeof WT=='number'?WT:75)+(typeof BW=='number'?BW:12),v=s.km/Math.max(.1,s.h)/3.6,W=m*9.81*s.up+.006*m*9.81*s.km*1000+.5*1.2*.4*v*v*s.km*1000;return W/.24/4184})():0;
  let gmax=0;if(has&&PL.g)PL.g.forEach(v=>{if(v>gmax)gmax=v});
  let arr='–',sun='';
@@ -2625,7 +2634,7 @@ async function plHrLoad(force){const H=window.HammerheadSync;
  if(!(await H.isConnected())){PL.hr=null;PL.hrMsg='Mit Hammerhead anmelden, um Dashboard-Routen zu sehen.';rtRebuild();return}
  if(!force&&PL.hr&&Date.now()-PL.hr.t<60000)return;
  if(PL.hrBusy)return;PL.hrBusy=1;PL.hrMsg='Lade Routen …';rtMsg();
- try{const l=await H.listRoutes();try{console.info('Hammerhead-Routenliste: Felder =',l[0]?Object.keys(l[0]):[],'| mit polyline:',l.filter(x=>x&&x.polyline).length,'von',l.length)}catch(e){}PL.hr={t:Date.now(),l};PL.hrMsg='';rtRebuild();rtPrefetch()}
+ try{const l=await H.listRoutes();try{console.info('Hammerhead-Routenliste: Felder =',l[0]?Object.keys(l[0]):[],'| mit polyline:',l.filter(x=>x&&x.polyline).length,'von',l.length)}catch(e){}PL.hr={t:Date.now(),l};PL.hrMsg='';try{const a=rtRecs();let ch=0;a.forEach(r=>{const h=l.find(x=>x.id===r.sent);if(h&&r.ln&&!r.mod&&h.name===r.name){delete r.ln;ch=1}});if(ch)rtPut(a)}catch(e){}rtRebuild();rtPrefetch()}
  catch(e){PL.hrMsg=e.status==403||e.status==401?'Recht „Routen lesen“ fehlt – bitte neu bei Hammerhead anmelden.':'Routen konnten nicht geladen werden ('+(e.status||'Netz')+').';rtMsg()}
  finally{PL.hrBusy=0}}
 window.ggRouteSent=id=>{try{const sn=hrSent();if(sn.indexOf(id)<0){sn.push(id);localStorage.setItem('gg_pl_sent',JSON.stringify(sn.slice(-200)))}}catch(e){}setTimeout(()=>plHrLoad(true),1500);setTimeout(()=>plHrLoad(true),6000)};
@@ -2655,7 +2664,7 @@ function rtThumb(c){
 
 /* Routen = Dashboard-Routen + lokale Daten (Streckenpunkte kennt nur die App, was sie selbst erzeugt/gesendet hat) */
 function rtItems(){const hh=(PL.hr&&PL.hr.l)||[],recs=rtRecs(),o=[];
- hh.forEach(h=>{const rec=recs.find(r=>r.sent===h.id)||null;o.push({key:h.id,name:(rec&&rec.ln&&rec.name)||h.name||(rec&&rec.name)||'Route',km:(h.distance||0)/1000,up:h.gain||0,date:h.createdAt?Date.parse(h.createdAt):(rec?rec.t:0),hh:h.id,rec,poly:h.polyline||null,c:rec&&rec.c||null})});
+ hh.forEach(h=>{const rec=recs.find(r=>r.sent===h.id)||null;o.push({key:h.id,name:(rec&&rec.ln&&rec.name)||h.name||(rec&&rec.name)||'Route',km:(h.distance||0)/1000,up:h.gain||0,date:h.createdAt?Date.parse(h.createdAt):(rec?rec.t:0),hh:h.id,hhName:h.name,rec,poly:h.polyline||null,c:rec&&rec.c||null})});
  recs.forEach(r=>{if(r.sent&&hh.some(h=>h.id===r.sent))return;o.push({key:r.id,name:r.name,km:r.km||0,up:r.up||0,date:r.t||0,hh:null,rec:r,c:r.c||null})});
  return o.sort((a,b)=>b.date-a.date)}
 const rtFind=(L,key,rid)=>L.findIndex(x=>(key&&x.key==key)||(rid&&x.rec&&x.rec.id==rid));
@@ -2683,7 +2692,7 @@ function rtStatsOv(){const L=RT.L,tk=L.reduce((a,x)=>a+x.km,0),tu=L.reduce((a,x)
  return f('km',fmt(tk),'km')+f('up',fmt(tu),'m ↑')+f('',fmt(av),'Ø km')+f('',fmt(lg),'längste')}
 function rtGraph(){const g=el('rhgr');if(!g)return;const L=RT.L;if(!L.length){g.innerHTML='';return}
  const get=x=>RM=='up'?x.up:x.km,u=RM=='up'?' m':' km',mx=Math.max(...L.map(get),1e-6),A=L.map((x,j)=>({x,j})).reverse().slice(-60),n=A.length;
- g.innerHTML='<div class="gb">'+A.map((o,i)=>'<i data-j="'+o.j+'" class="c'+(o.x.c?'':' nv')+(i==n-1?' l':'')+'" title="'+esc(o.x.name)+' · '+fmt(get(o.x),RM=='up'?0:1)+u+(o.x.c?'':' · keine Vorschau')+(o.x.hh?' · Karoo':' · nur Browser')+'" style="height:'+Math.max(4,get(o.x)/mx*100).toFixed(1)+'%;animation-delay:'+Math.min(i*14,400)+'ms"></i>').join('')+'</div>'}
+ g.innerHTML='<div class="gb">'+A.map((o,i)=>'<i data-j="'+o.j+'" class="c'+(o.x.c?'':' nv')+(i==n-1?' l':'')+'" title="'+esc(o.x.name)+' · '+fmt(get(o.x),RM=='up'?0:1)+u+(o.x.c?'':' · keine Vorschau')+(o.x.hh?' · Karoo':' · nur App')+'" style="height:'+Math.max(4,get(o.x)/mx*100).toFixed(1)+'%;animation-delay:'+Math.min(i*14,400)+'ms"></i>').join('')+'</div>'}
 function rtHead(){const it=rtCur(),f=(v,u)=>'<div><b>'+v+'<small>'+u+'</small></b></div>',p=el('plan');
  p.classList.toggle('rrd',!!it);el('rhnm').textContent=it?it.name:'';
  const L=RT.L,lg=el('rwlogo');if(lg)lg.innerHTML='<b>'+fmt(L.length)+'</b>';
@@ -2691,7 +2700,7 @@ function rtHead(){const it=rtCur(),f=(v,u)=>'<div><b>'+v+'<small>'+u+'</small></
  else{el('rhst').innerHTML=rtStatsOv();rtGraph();rtBarUpdate()}
  rtMsg()}
 function rtMsg(){const s=el('rhsub');if(!s)return;const L=RT.L,nh=L.filter(x=>x.hh).length;
- s.textContent=PL.hrMsg||(L.length?nh+' auf dem Karoo'+(L.length-nh?' · '+(L.length-nh)+' nur im Browser':''):'Noch keine Routen');
+ s.textContent=PL.hrMsg||(L.length?nh+' auf dem Karoo'+(L.filter(x=>rtState(x)=='mod'||rtState(x)=='nm').length?' · '+L.filter(x=>rtState(x)=='mod'||rtState(x)=='nm').length+' geändert':'')+(L.length-nh?' · '+(L.length-nh)+' nur in der App':''):'Noch keine Routen');
  const m=el('rb-msg');if(m)m.textContent=PL.hrMsg||''}
 function rtSel(i){RT.barKey=null;RT.i=i;const it=rtCur();RT.sk=it?it.key:null;RT.sr=it&&it.rec?it.rec.id:null;
  RT.A=it&&it.c&&it.c.length>1?rtA(it.c):null;
@@ -2763,14 +2772,15 @@ function rtBody(){const bd=el('rbody');if(!bd)return;const it=rtCur(),X=(v,l)=>'
  if(!it){const L=RT.L,tk=L.reduce((a,x)=>a+x.km,0),tu=L.reduce((a,x)=>a+x.up,0),lg=L.reduce((a,x)=>Math.max(a,x.km),0);
   bd.innerHTML='<h4>Übersicht</h4><div class="plg">'+X(fmt(L.length),'Routen')+X(fmt(tk),'km gesamt')+X(fmt(tu),'m ↑ gesamt')+X(fmt(lg),'km längste')+'</div>'
    +rtListHtml()
-   +'<h4>Backup</h4><div class="plhint">Alle Routen mit Strecke als eine GPX-Datei sichern. In einem neuen Browser mit „Backup laden“ wiederherstellen.</div><div class="plbtns" style="margin-top:6px"><button class="chip on" data-a="rbk">⤓ Backup speichern</button><button class="chip" data-a="rrs">⤒ Backup laden</button></div>'+'<h4>Hammerhead Dashboard</h4><div class="plhint" id="rb-msg"></div><div class="plbtns" style="margin-top:6px"><button class="chip" data-a="rref">↻ Aktualisieren</button><button class="chip" data-a="rdash">Dashboard öffnen</button><button class="chip" data-a="rimp">GPX importieren</button></div><div class="plhint">Routen und Fahrten werden bewusst nur im Hammerhead Dashboard gelöscht.</div>';
+   +'<h4>Backup</h4><div class="plhint">Alle Routen mit Strecke als eine GPX-Datei sichern. In einem neuen Browser mit „Backup laden“ wiederherstellen.</div><div class="plbtns" style="margin-top:6px"><button class="chip on" data-a="rbk">⤓ Backup speichern</button><button class="chip" data-a="rrs">⤒ Backup laden</button></div>'+'<h4>Hammerhead Dashboard</h4><div class="plhint" id="rb-msg"></div><div class="plbtns" style="margin-top:6px"><button class="chip" data-a="rref">↻ Aktualisieren</button><button class="chip" data-a="rdash">Karoo öffnen</button><button class="chip" data-a="rimp">GPX importieren</button></div><div class="plhint">Routen und Fahrten werden bewusst nur im Hammerhead Dashboard gelöscht.</div>';
   rtMsg();return}
  const A=RT.A,canEdit=!!(it.c||(it.rec&&it.rec.p&&it.rec.p.length>1));
  bd.innerHTML='<h4>Route</h4><div class="plg" id="rb-xs"></div><div class="plsun" id="rb-sun"></div>'
   +(A?'<h4>Start &amp; Tempo</h4><div class="plrow"><span>Abfahrt</span><input type="time" id="rb-t0"></div><div class="plrow"><span>Ø Tempo</span><input type="range" id="rb-spd" min="12" max="30" step="1"><output id="rb-spdv"></output></div><h4>Steigungen</h4><div class="pldist" id="rb-dist"></div><div class="pllg" id="rb-dlg"></div><h4>Anstiege</h4><div id="rb-cl"></div>'
     :'<div class="plhint" style="margin-top:10px">Für diese Route liegt nur die Zusammenfassung aus dem Dashboard vor, ohne Streckenpunkte. Eine Vorschau gibt es für Routen, die du aus dieser App gesendet hast.</div>')
-  +'<h4>Aktionen</h4><div class="plbtns"><button class="chip on" data-a="redit"'+(canEdit?'':' disabled')+'>✎ Im Planer bearbeiten</button><button class="chip" data-a="rsend"'+(A?'':' disabled')+'>→ '+(it.hh?'Im Dashboard aktualisieren':'An Karoo senden')+'</button>'+(it.hh&&A?'<button class="chip" data-a="rnewsend">Als neue Route senden</button>':'')+'<button class="chip" data-a="rgpx"'+(A?'':' disabled')+'>GPX ↓</button><button class="chip" data-a="rdash">Dashboard öffnen</button>'+(!it.hh?'<button class="chip" data-a="rdel">Entfernen</button>':'')+'</div>'
-  +(it.hh?'<div class="plhint">Gelöscht wird diese Route nur im Hammerhead Dashboard.</div>':'<div class="plhint">Diese Route liegt nur in der App. „Entfernen“ löscht nur diese lokale Kopie.</div>');
+  +'<h4>Karoo</h4><div class="plhint hhst">'+hhStatus(it)+'</div><div class="plbtns"><button class="chip on" data-a="rsend"'+(A?'':' disabled')+'>'+hhLabel(it)+'</button>'+(it.hh&&A?'<button class="chip" data-a="rnewsend">Als neue Route senden</button>':'')+'<button class="chip" data-a="rdash">Karoo öffnen</button></div>'
+  +'<h4>Route</h4><div class="plbtns"><button class="chip" data-a="redit"'+(canEdit?'':' disabled')+'>✎ Im Planer bearbeiten</button><button class="chip" data-a="rrn">Umbenennen</button><button class="chip" data-a="rgpx"'+(A?'':' disabled')+'>GPX ↓</button>'+(!it.hh?'<button class="chip" data-a="rdel">Entfernen</button>':'')+'</div>'
+  +(it.hh?'<div class="plhint">Gelöscht wird diese Route nur im Hammerhead Dashboard.</div>':'<div class="plhint">„Entfernen“ löscht nur die lokale Kopie in der App.</div>');
  const t0=el('rb-t0');if(t0){t0.value=(el('pl-t0')&&el('pl-t0').value)||plNowT();t0.oninput=()=>{PL.t0u=1;if(el('pl-t0'))el('pl-t0').value=t0.value;rtBodyDyn()}}
  const sp=el('rb-spd');if(sp){sp.value=PL.spd;el('rb-spdv').textContent=PL.spd+' km/h';sp.oninput=()=>{PL.spd=+sp.value;el('rb-spdv').textContent=PL.spd+' km/h';try{localStorage.setItem('gg_pl_spd',PL.spd)}catch(e){}if(el('pl-spd')){el('pl-spd').value=PL.spd;el('pl-spdv').textContent=PL.spd+' km/h'}rtHead();rtBodyDyn()}}
  if(A){const km=BN.map(()=>0);for(let i=1;i<A.c.length;i++){const L=A.d[i]-A.d[i-1],g=(A.g[i-1]+A.g[i])/2;for(let k=0;k<BN.length;k++)if(g>=BN[k][1]&&g<BN[k][2]){km[k]+=L/1000;break}}
@@ -2804,7 +2814,7 @@ function rtAssign(it){if(!it||!it.hh)return;let f=el('rt-assign');
  f.click()}
 function rtPop(open){const p=el('rpop');if(!p)return;if(open===false||(open===undefined&&p.classList.contains('on'))){p.classList.remove('on');return}
  const it=rtCur();if(!it)return;const has=!!(it.c&&it.c.length>1),link=has||(it.rec&&it.rec.p&&it.rec.p.length>1),d=a=>a?'':' disabled';
- p.innerHTML='<button class="pri" data-a="psend"'+d(has)+'>→ '+(it.hh?'Im Dashboard aktualisieren':'An Karoo senden')+'</button>'+(it.hh&&has?'<button data-a="pnew">Als neue Route senden</button>':'')+(it.hh&&!has?'<button class="pri" data-a="passign">GPX zur Route laden</button>':'')+'<button data-a="pgpx"'+d(has)+'>GPX speichern</button><button data-a="plink"'+d(link)+'>Link teilen</button>';
+ p.innerHTML='<button class="pri" data-a="psend"'+d(has)+'>'+hhLabel(it)+'</button>'+(it.hh&&has?'<button data-a="pnew">Als neue Route senden</button>':'')+(it.hh&&!has?'<button class="pri" data-a="passign">GPX zur Route laden</button>':'')+'<button data-a="pgpx"'+d(has)+'>GPX speichern</button><button data-a="plink"'+d(link)+'>Link teilen</button>';
  const r=el('rshare').getBoundingClientRect();p.style.left=Math.max(8,Math.min(innerWidth-246,r.left))+'px';p.style.bottom=(innerHeight-r.top+8)+'px';p.classList.add('on')}
 function gpxOfCoords(c,name){const x=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');let g='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Gravel Guide" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+x(name)+'</name><trkseg>\n';c.forEach(p=>{g+='<trkpt lat="'+(+p[1]).toFixed(6)+'" lon="'+(+p[0]).toFixed(6)+'"><ele>'+(+p[2]||0).toFixed(1)+'</ele></trkpt>\n'});return g+'</trkseg></trk></gpx>'}
 async function rtGpx(it){if(!it||!it.c){warn('Keine Streckendaten');return}const fc=it.rec?await GX.get(it.rec.id):null,c=fc&&fc.length>1?fc:it.c;rtSave(new Blob([gpxOfCoords(c,it.name)],{type:'application/gpx+xml'}),(it.name||'route').replace(/[^\w\- äöüÄÖÜß]/g,'_')+'.gpx')}
@@ -2835,14 +2845,15 @@ async function rtRestore(file){try{const doc=new DOMParser().parseFromString(awa
  catch(e){warn('Backup konnte nicht gelesen werden')}}
 function rtRow(x,j){const loc=!x.hh,can=!!(x.c||(x.rec&&x.rec.p&&x.rec.p.length>1));
  return'<div class="plli tap rrow'+(loc?' loc':'')+'" data-a="rg" data-i="'+(j+1)+'"><span class="rth">'+rtThumb(x.c)+'</span><div class="t">'+esc(x.name)+'<small>'+fmt(x.km,1)+' km · '+fmt(x.up)+' m ↑'+(x.date?' · '+new Date(x.date).toLocaleDateString('de-DE'):'')+(x.c?'':' · keine Vorschau')+'</small></div>'
-  +(loc?'<span class="tagl">nur Browser</span>':'<span class="tagk">Karoo</span>')
+  +(()=>{const q=rtState(x);return q=='app'?'<span class="tagl">nur App</span>':(q=='mod'||q=='nm')?'<span class="tagm">geändert</span>':'<span class="tagk">Karoo</span>'})()
   +(!x.c&&x.hh?'<button class="chip rgp" data-a="ras" data-i="'+(j+1)+'">GPX +</button>':'')
   +'<button class="rbt" data-a="rel" data-i="'+(j+1)+'" aria-label="Bearbeiten"'+(can?'':' disabled')+'>'+PEN+'</button>'
   +(loc?'<button class="rbt" data-a="rdl" data-i="'+(j+1)+'" aria-label="Aus dem Browser entfernen">'+XSV+'</button>':'')+'</div>'}
 function rtListHtml(){const L=RT.L;if(!L.length)return'<h4>Routen</h4><div class="plhint">Noch keine Routen. Plane eine neue Route oder sende eine Fahrt als Route.</div>';
  const k=[],l=[];L.forEach((x,j)=>(x.hh?k:l).push(rtRow(x,j)));
  let h='<h4>Auf dem Karoo ('+k.length+')</h4>'+(k.length?k.join(''):'<div class="plhint">'+(PL.hrMsg||'Keine Routen im Dashboard.')+'</div>');
- if(l.length)h+='<h4>Nur in diesem Browser ('+l.length+')</h4><div class="plhint">Diese Routen liegen nicht auf dem Karoo. Sende sie dorthin oder entferne sie.</div>'+l.join('')+'<div class="plbtns" style="margin-top:8px"><button class="chip on" data-a="rsl">→ Alle an Karoo senden</button><button class="chip" data-a="rcl2">Alle entfernen</button></div>';
+ if(l.length)h+='<h4>Nur in der App ('+l.length+')</h4><div class="plhint">Diese Routen liegen nicht auf dem Karoo.</div>'+l.join('')+'<div class="plbtns" style="margin-top:8px"><button class="chip" data-a="rcl2">Alle entfernen</button></div>';
+ const op=L.filter(rtOpen).length;if(op)h+='<div class="plbtns" style="margin-top:10px"><button class="chip on" data-a="rsl">→ '+op+(op==1?' offene Route':' offene Routen')+' an Karoo senden</button></div>';
  return h}
 function rtDelRow(x,b){if(!x||x.hh||!x.rec)return;
  if(!b.classList.contains('arm')){b.classList.add('arm');const old=b.innerHTML;b.textContent='Entfernen?';b.style.cssText='width:auto;padding:0 10px;font-size:12px';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.innerHTML=old;b.style.cssText=''}},3200);return}
@@ -2852,9 +2863,11 @@ function rtClearLocal(b){if(!PL.hr){warn('Erst mit Hammerhead verbinden, damit k
  if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Wirklich '+loc.length+' entfernen?';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Alle entfernen'}},3500);return}
  const ids=new Set(loc.map(x=>x.rec.id));rtPut(rtRecs().filter(r=>!ids.has(r.id)));ids.forEach(id=>GX.del(id));RT.i=0;RT.sk=null;RT.sr=null;RT.sig='';rtRebuild();warn(ids.size+' Routen aus dem Browser entfernt')}
 async function rtSendLocal(){const H=window.HammerheadSync;if(!H||!H.sendRoute||!(await H.isConnected())){warn('Erst mit Hammerhead anmelden');return}
- const loc=RT.L.filter(x=>!x.hh&&x.c&&x.c.length>1);if(!loc.length){warn('Keine lokalen Routen mit Strecke');return}
- let n=0;for(const x of loc){try{await rtSend(x);n++}catch(e){}}
- RT.want=null;RT.i=0;RT.sk=null;RT.sr=null;RT.sig='';rtRebuild();warn(n+(n==1?' Route':' Routen')+' an Karoo gesendet')}
+ const loc=rtItems().filter(rtOpen);if(!loc.length){warn('Alles gesendet – keine offenen Routen');return}
+ warn('Sende '+loc.length+(loc.length==1?' Route …':' Routen …'));let n=0;
+ for(const x of loc){const fc=x.rec?await GX.get(x.rec.id):null;if(await hhPush({name:x.name,c:fc&&fc.length>1?fc:x.c,rec:x.rec,hh:x.hh,quiet:1}))n++}
+ RT.want=null;RT.sig='';rtRebuild();warn(n+' von '+loc.length+' Routen gesendet – jetzt am Karoo synchronisieren')}
+window.ggRtSendOpen=rtSendLocal;
 function rtDown(c){const d=[0];for(let i=1;i<c.length;i++)d.push(d[i-1]+hv(c[i-1],c[i]));const L=d[d.length-1],cnt=Math.max(1,Math.min(24,Math.round(L/4000))),ix=[0];
  for(let k=1;k<cnt;k++){const t=L*k/cnt;let i=ix[ix.length-1]+1;while(i<c.length-1&&d[i]<t)i++;if(i>ix[ix.length-1])ix.push(i)}
  if(ix[ix.length-1]!=c.length-1)ix.push(c.length-1);return ix.map(i=>[c[i][0],c[i][1]])}
@@ -2862,15 +2875,36 @@ async function rtLink(it){const pts=it.rec&&it.rec.p&&it.rec.p.length>1?it.rec.p
  try{const url=location.origin+location.pathname+'#p='+await plPackOf(it.rec&&it.rec.f||'trekking',pts);
   if(navigator.share){try{await navigator.share({title:it.name||'Gravel Guide Route',url});return}catch(e){if(e&&e.name=='AbortError')return}}
   await navigator.clipboard.writeText(url);warn('Link kopiert')}catch(e){warn('Teilen nicht möglich')}}
-async function rtSend(it,forceNew){if(!it||!it.c||it.c.length<2){warn('Keine Streckendaten');return}
- const H=window.HammerheadSync;if(!H||!H.sendRoute){warn('Hammerhead-Sync nicht geladen');return}
- if(!(await H.isConnected())){warn('Erst mit Hammerhead anmelden');return}
- const old=forceNew?null:(it.hh||(it.rec&&it.rec.sent)||null);warn('Sende an Hammerhead …');
- try{const fc0=it.rec?await GX.get(it.rec.id):null,cc=fc0&&fc0.length>1?fc0:it.c;const res=await H.sendRoute(gpxOfCoords(cc,it.name),it.name,old);
-  if(res&&res.id){const A=rtA(it.c),s=statsOf(A);let rec=it.rec&&!forceNew?it.rec:null;if(!rec)rec={id:'L'+Date.now(),name:it.name,p:null,f:'trekking',c:it.c,t:Date.now()};
-   rec.km=s.km;rec.up=s.up;rec.dn=s.dn;rec.sent=res.id;rec.name=it.name;delete rec.ln;rtUpsert(rec);GX.put(rec.id,cc);RT.want=rec.id;rtRebuild();if(window.ggRouteSent)window.ggRouteSent(res.id)}
-  warn(old?'Route aktualisiert – Karoo synchronisieren':'Route im Dashboard – Karoo synchronisieren')}
- catch(e){warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')')}}
+/* ===== Hammerhead: EIN Sendeweg, EIN Status (Fahrten, Routenliste, Planer, Menü nutzen alle hhPush) ===== */
+const rtState=it=>{if(!it)return'';const r=it.rec;if(!it.hh)return'app';if(!r)return'dash';if(r.mod)return'mod';if(r.ln&&it.hhName!=null&&it.hhName!==r.name)return'nm';return'ok'};
+const rtOpen=x=>{const s=rtState(x);return(s=='app'||s=='mod')&&x.c&&x.c.length>1};
+const hhLabel=it=>{const s=rtState(it);return s=='app'?'→ An Karoo senden':(s=='mod'||s=='nm')?'→ Änderungen an Karoo senden':'↻ Erneut an Karoo senden'};
+function hhStatus(it){const s=rtState(it),r=it.rec,t=r&&r.st?' · zuletzt gesendet '+new Date(r.st).toLocaleString('de-DE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+ return s=='app'?'Nur in der App – noch nicht an das Karoo gesendet.':s=='mod'?'Lokal geändert – im Dashboard liegt noch die alte Version.'+(it.c?'':' Zum Senden fehlt die Strecke (GPX zur Route laden).'):s=='nm'?'Name lokal geändert, im Dashboard steht noch „'+esc(it.hhName||'')+'“. Neu senden; übernimmt Hammerhead den Namen nicht, im Dashboard umbenennen oder „Als neue Route senden“.':s=='dash'?'Nur im Dashboard – die App hat keine Streckenpunkte dazu.':'Auf dem Karoo-Dashboard, gleicher Stand'+t+'.'}
+async function hhPush(o){const H=window.HammerheadSync;
+ if(!H||!H.sendRoute){warn('Hammerhead-Sync nicht geladen');return null}
+ if(!(await H.isConnected())){warn('Erst mit Hammerhead anmelden (Konto-Symbol oben links)');return null}
+ if(!o.c||o.c.length<2){warn('Keine Streckendaten');return null}
+ const old=o.forceNew?null:(o.hh||(o.rec&&o.rec.sent)||null);if(!o.quiet)warn('Sende an Hammerhead …');
+ try{const res=await H.sendRoute(gpxOfCoords(o.c,o.name),o.name,old);if(!res||!res.id)throw{status:0};
+  const A=rtA(rtResample(o.c,500)),s=statsOf(A);let rec=o.forceNew?null:(o.rec||rtRecs().find(r=>r.sent===res.id||(old&&r.sent===old))||null);
+  if(!rec)rec={id:'L'+Date.now(),p:null,f:'trekking',t:Date.now()};
+  Object.assign(rec,{name:o.name,c:A.c,km:s.km,up:s.up,dn:s.dn,sent:res.id,ln:1,mod:0,st:Date.now()});
+  rtUpsert(rec);GX.put(rec.id,o.c);
+  if(PL.on&&!PL.edit){RT.want=rec.id;rtRebuild()}else RT.sig='';
+  if(window.ggRouteSent)window.ggRouteSent(res.id);
+  if(!o.quiet)warn('Gesendet – jetzt am Karoo synchronisieren');return{id:res.id,rec}}
+ catch(e){warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')');return null}}
+window.ggRtPush=hhPush;
+async function rtSend(it,forceNew){if(!it||!it.c||it.c.length<2){warn('Keine Streckendaten');return null}
+ const fc0=it.rec?await GX.get(it.rec.id):null,cc=fc0&&fc0.length>1?fc0:it.c;
+ return hhPush({name:it.name,c:cc,rec:it.rec,hh:it.hh,forceNew})}
+function rtRename(it){if(!it)return;const n=window.prompt('Neuer Name der Route',it.name||'');if(n==null)return;const nm=n.trim().slice(0,40);if(!nm||nm===it.name)return;
+ const a=rtRecs();let rec=it.rec&&a.find(r=>r.id==it.rec.id);
+ if(!rec){rec={id:'L'+Date.now(),name:nm,p:null,f:'trekking',c:null,km:it.km,up:it.up,t:it.date||Date.now(),sent:it.hh||null};a.unshift(rec)}
+ rec.name=nm;rec.ln=1;if(rec.sent)rec.mod=1;rtPut(a);RT.sig='';RT.want=rec.id;rtRebuild();warn(rec.sent?'Umbenannt – noch nicht an Karoo gesendet':'Umbenannt')}
+window.ggRtInfo=()=>{if(!PL.hr){plHrLoad();return PL.hrMsg||'wird geladen …'}const L=rtItems(),n=L.filter(x=>x.hh).length,o=L.filter(rtOpen).length;return n+' auf dem Karoo'+(o?' · '+o+' offen':' · alles gesendet')};
+window.ggRtRefresh=()=>plHrLoad(true);
 window.ggRouteStore=(id,name,c)=>{try{if(!c||c.length<2)return;const A=rtA(rtResample(c,500)),s=statsOf(A),a=rtRecs();let rec=a.find(r=>r.sent===id);if(!rec)rec={id:'L'+Date.now(),p:null,f:'trekking',t:Date.now()};rec.name=name;rec.c=A.c;rec.km=s.km;rec.up=s.up;rec.dn=s.dn;rec.sent=id;rtUpsert(rec);GX.put(rec.id,c);if(PL.on&&!PL.edit)rtRebuild()}catch(e){}};
 function rtDelLocal(it,btn){if(!it||it.hh)return;if(!btn.classList.contains('arm')){btn.classList.add('arm');btn.textContent='Sicher?';setTimeout(()=>{btn.classList.remove('arm');btn.textContent='Entfernen'},3200);return}
  rtPut(rtRecs().filter(r=>!(it.rec&&r.id==it.rec.id)));RT.i=0;RT.sk=null;RT.sr=null;RT.sig='';rtRebuild();warn('Lokale Kopie entfernt')}
@@ -2881,7 +2915,10 @@ function plSetFromCoords(c0){const c=c0.map(p=>[p[0],p[1],isFinite(p[2])?+p[2]:0
  ix[0]=0;ix[ix.length-1]=c.length-1;
  PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});PL.pts=ix.map(i=>[c[i][0],c[i][1]]);
  for(let k=0;k<ix.length-1;k++){if(ix[k+1]<=ix[k])continue;const a=PL.pts[k],b=PL.pts[k+1];PL.cache.set(segKey(a,b,'F'),{prof:'F',a,b,c:c.slice(ix[k],ix[k+1]+1),st:0})}}
-function plEditMode(v,nb){PL.edit=v?1:0;el('plan').classList.toggle('edit',!!v);rtPop(false);rtHoverEnd();plExApply(0);ensurePlan();plVis();plMarkers();
+function plEditMode(v,nb){const e0=PL.ex,pp=el('plan');PL.edit=v?1:0;pp.classList.toggle('edit',!!v);rtPop(false);rtHoverEnd();
+ /* Sheet-Position bleibt wie sie ist: nur neu vermessen, nicht einklappen */
+ cancelAnimationFrame(PLX.raf);pp.style.height='';pp.classList.remove('ex','dragx');PL.ex=0;ensurePlan();plVis();plMarkers();
+ if(e0>.001){plMetrics();PL.edit?plBody():rtBody();plExApply(e0)}else if(pp.classList.contains('min')&&PLC)PLC.jump(plCollapseY());
  if(v){if(!nb)plBuild()}else{RT.fk=null;rtRebuild()}
  setTimeout(()=>{plChart();rtChart()},60)}
 function rtNew(){PL.pts=[];PL.leg={};PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});PL.hist=[];PL.src=null;PL.kreset();PL.all=null;PL.segs=[];el('pl-nm').value='';plSave();plEditMode(1);plDraw();warn('Karte gedrückt halten, um den Start zu setzen')}
@@ -2889,10 +2926,11 @@ function rtEdit(it){if(!it)return;rtPop(false);
  if(it.rec&&it.rec.p&&it.rec.p.length>1){PL.pts=it.rec.p.map(p=>p.slice());PL.prof=PF0(it.rec.f);PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)})}
  else if(it.c&&it.c.length>1)plSetFromCoords(it.c);
  else{warn('Für diese Route gibt es keine Streckendaten zum Bearbeiten');return}
- PL.leg=(it.rec&&it.rec.lg)?Object.assign({},it.rec.lg):{};PL.hist=[];PL.src={recId:it.rec?it.rec.id:null,hh:it.hh||(it.rec&&it.rec.sent)||null,nm0:it.name};PL.kid=PL.src.hh;el('pl-nm').value=it.name||'';plEditMode(1);plFit()}
+ PL.leg=(it.rec&&it.rec.lg)?Object.assign({},it.rec.lg):{};PL.hist=[];PL.src={recId:it.rec?it.rec.id:null,hh:it.hh||(it.rec&&it.rec.sent)||null,nm0:it.name};PL.kid=PL.src.hh;el('pl-nm').value=it.name||'';PL.src.sig0=plSig();plEditMode(1);plFit()}
 function rtRecFromDraft(){const A=PL.all,s=plStats(),base=PL.src&&PL.src.recId?rtRecs().find(r=>r.id==PL.src.recId):null,
   nm=(el('pl-nm').value||'').trim()||('Route '+new Date().toLocaleDateString('de-DE')+' · '+Math.round(s.km)+' km');
- return{id:base?base.id:'L'+Date.now(),name:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,lg:Object.assign({},PL.leg),c:rtResample(A.c,500),km:s.km,up:s.up,dn:s.dn,t:base?base.t:Date.now(),sent:(base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid||null,ln:(PL.src&&PL.src.nm0!=null&&nm!=PL.src.nm0)?1:((base&&base.ln)||0)}}
+ return{id:base?base.id:'L'+Date.now(),name:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,lg:Object.assign({},PL.leg),c:rtResample(A.c,500),km:s.km,up:s.up,dn:s.dn,t:base?base.t:Date.now(),sent:(base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid||null,ln:(PL.src&&PL.src.nm0!=null&&nm!=PL.src.nm0)?1:((base&&base.ln)||0),st:(base&&base.st)||0,
+  mod:(((base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid)&&(!PL.src||PL.src.sig0==null||PL.src.sig0!==plSig()))?1:((base&&base.mod)||0)}}
 function plCancel(){if(!window.confirm('Route verwerfen?\n\nDie Route wird nicht gespeichert. Möchtest du wirklich abbrechen?'))return;
  ++PL.tok;document.body.classList.remove('pl-bz');PL.pts=[];PL.leg={};PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});PL.hist=[];PL.src=null;PL.kreset();PL.all=null;PL.segs=[];el('pl-nm').value='';plHoverEnd();plSave();plDraw();RT.i=0;RT.sk=null;RT.sr=null;RT.sig='';plEditMode(0);}
 function plFinish(){let saved=null;
@@ -2918,7 +2956,7 @@ function rtInit(){
  el('rbody').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,it=rtCur();
   if(a=='rg'){rtGo(+b.dataset.i);plExTo(0)}
   else if(a=='rcl'){const A=RT.A;if(!A)return;const bb=new maplibregl.LngLatBounds();for(let k=+b.dataset.ca;k<=+b.dataset.cb;k++)bb.extend([A.c[k][0],A.c[k][1]]);plExTo(0);setTimeout(()=>map.fitBounds(bb,{padding:{top:120,bottom:el('plan').offsetHeight+40,left:50,right:50},maxZoom:15}),380)}
-  else if(a=='redit')rtEdit(it);else if(a=='rsend')rtSend(it);else if(a=='rnewsend')rtSend(it,true);else if(a=='rgpx')rtGpx(it);
+  else if(a=='redit')rtEdit(it);else if(a=='rrn')rtRename(it);else if(a=='rsend')rtSend(it);else if(a=='rnewsend')rtSend(it,true);else if(a=='rgpx')rtGpx(it);
   else if(a=='rdash')window.open('https://dashboard.hammerhead.io/routes','_blank','noopener');
   else if(a=='rdel')rtDelLocal(it,b);else if(a=='rref')plHrLoad(true);else if(a=='rimp')el('pl-file').click();else if(a=='rbk')rtBackup();else if(a=='rrs')rtRestorePick();else if(a=='rel'){const x=RT.L[+b.dataset.i-1];if(x)rtEdit(x)}else if(a=='rdl')rtDelRow(RT.L[+b.dataset.i-1],b);else if(a=='ras'){const x=RT.L[+b.dataset.i-1];if(x)rtAssign(x)}else if(a=='rsl')rtSendLocal();else if(a=='rcl2')rtClearLocal(b)});
  rtRebuild()}
@@ -3822,9 +3860,9 @@ function xMetrics(){const p=wxEl();if(!p.style.height)X.h0=p.offsetHeight||X.h0|
 function pnl(v){try{if(typeof pnlSet=='function')pnlSet(v)}catch(e){}}
 function xApply(e){const p=wxEl();X.ex=e;
  if(e<=.001){X.ex=0;p.style.height='';p.classList.remove('ex');pnl(null)}
- else{xMetrics();const h=X.h0+(X.hm-X.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex');pnl(h)}
+ else{xMetrics();const h=X.h0+(X.hm-X.h0)*e;p.style.height=h.toFixed(1)+'px';p.classList.add('ex');pnl(null)}
  document.documentElement.style.setProperty('--wxh',p.offsetHeight+'px');document.documentElement.style.setProperty('--hudh',p.offsetHeight+'px');
- document.body.classList.toggle('wx-big',e>.25);
+ document.body.classList.toggle('wx-big',e>.25);document.body.classList.toggle('pex',e>.001);
  if(!X.cq)X.cq=requestAnimationFrame(()=>{X.cq=0;const c=Q('#wxchart');if(X.ex>0&&c&&state.wx&&c.clientWidth&&(c.clientWidth!==X.cw||!c.firstChild)){X.cw=c.clientWidth;renderChart()}})}
 function xTo(t,done){cancelAnimationFrame(X.raf);const e0=X.ex,t0=performance.now(),D=Math.max(180,Math.abs(t-e0)*340);
  const f=n=>{const q=Math.min(1,(n-t0)/D),k=1-Math.pow(1-q,3);xApply(e0+(t-e0)*k);if(q<1)X.raf=requestAnimationFrame(f);else{xApply(t);done&&done()}};X.raf=requestAnimationFrame(f)}
