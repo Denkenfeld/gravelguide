@@ -2815,7 +2815,9 @@ function rtAssign(it){if(!it||!it.hh)return;let f=el('rt-assign');
 function rtPop(open){const p=el('rpop');if(!p)return;if(open===false||(open===undefined&&p.classList.contains('on'))){p.classList.remove('on');return}
  const it=rtCur();if(!it)return;const has=!!(it.c&&it.c.length>1),link=has||(it.rec&&it.rec.p&&it.rec.p.length>1),d=a=>a?'':' disabled';
  p.innerHTML='<button class="pri" data-a="psend"'+d(has)+'>'+hhLabel(it)+'</button>'+(it.hh&&has?'<button data-a="pnew">Als neue Route senden</button>':'')+(it.hh&&!has?'<button class="pri" data-a="passign">GPX zur Route laden</button>':'')+'<button data-a="pgpx"'+d(has)+'>GPX speichern</button><button data-a="plink"'+d(link)+'>Link teilen</button>';
- const r=el('rshare').getBoundingClientRect();p.style.left=Math.max(8,Math.min(innerWidth-246,r.left))+'px';p.style.bottom=(innerHeight-r.top+8)+'px';p.classList.add('on')}
+ const r=el('rshare').getBoundingClientRect();p.style.left=Math.max(8,Math.min(innerWidth-246,r.left))+'px';p.style.top='auto';p.style.bottom=(innerHeight-r.top+8)+'px';p.classList.add('on');
+ /* Reicht der Platz über dem Button nicht (Sheet ganz oben), das Menü darunter öffnen */
+ if(r.top-8-p.offsetHeight<8){p.style.bottom='auto';p.style.top=Math.min(r.bottom+8,innerHeight-p.offsetHeight-8)+'px'}}
 function gpxOfCoords(c,name){const x=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');let g='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Gravel Guide" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>'+x(name)+'</name><trkseg>\n';c.forEach(p=>{g+='<trkpt lat="'+(+p[1]).toFixed(6)+'" lon="'+(+p[0]).toFixed(6)+'"><ele>'+(+p[2]||0).toFixed(1)+'</ele></trkpt>\n'});return g+'</trkseg></trk></gpx>'}
 async function rtGpx(it){if(!it||!it.c){warn('Keine Streckendaten');return}const fc=it.rec?await GX.get(it.rec.id):null,c=fc&&fc.length>1?fc:it.c;rtSave(new Blob([gpxOfCoords(c,it.name)],{type:'application/gpx+xml'}),(it.name||'route').replace(/[^\w\- äöüÄÖÜß]/g,'_')+'.gpx')}
 function rtSave(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
@@ -2891,10 +2893,11 @@ async function hhPush(o){const H=window.HammerheadSync;
   if(!rec)rec={id:'L'+Date.now(),p:null,f:'trekking',t:Date.now()};
   Object.assign(rec,{name:o.name,c:A.c,km:s.km,up:s.up,dn:s.dn,sent:res.id,ln:1,mod:0,st:Date.now()});
   rtUpsert(rec);GX.put(rec.id,o.c);
-  if(PL.on&&!PL.edit){RT.want=rec.id;rtRebuild()}else RT.sig='';
-  if(window.ggRouteSent)window.ggRouteSent(res.id);
+  /* Anzeige-Aktualisierung getrennt: ein Darstellungsfehler darf ein erfolgreiches Senden nicht als Fehler melden */
+  try{if(PL.on&&!PL.edit){RT.want=rec.id;rtRebuild()}else RT.sig=''}catch(e2){console.error('Routenliste nach dem Senden:',e2);RT.sig='';RT.want=null}
+  try{if(window.ggRouteSent)window.ggRouteSent(res.id)}catch(e3){}
   if(!o.quiet)warn('Gesendet – jetzt am Karoo synchronisieren');return{id:res.id,rec}}
- catch(e){warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||'Netz')+')');return null}}
+ catch(e){console.error('Senden an Hammerhead:',e);warn(e.status==403||e.status==401?'Recht „Routen“ fehlt – bitte neu bei Hammerhead anmelden':'Senden fehlgeschlagen ('+(e.status||(e.message&&e.message.slice(0,60))||'Netz')+')');return null}}
 window.ggRtPush=hhPush;
 async function rtSend(it,forceNew){if(!it||!it.c||it.c.length<2){warn('Keine Streckendaten');return null}
  const fc0=it.rec?await GX.get(it.rec.id):null,cc=fc0&&fc0.length>1?fc0:it.c;
