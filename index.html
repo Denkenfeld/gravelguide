@@ -2470,8 +2470,9 @@ async function plKaroo(forceNew){
  if(document.body.classList.contains('pl-bz')){warn('Route wird noch berechnet …');return}
  const d=rtRecFromDraft();rtUpsert(d);GX.put(d.id,PL.all.c);
  const res=await hhPush({name:d.name,c:PL.all.c,rec:rtRecs().find(r=>r.id==d.id),hh:d.sent||null,forceNew});
- if(res){PL.kid=res.id;PL.src={recId:res.rec.id,hh:res.id,nm0:d.name,sig0:plSig()};try{localStorage.setItem('gg_pl_kid',res.id)}catch(e){}plKarooUi()}
+ if(res){PL.kid=res.id;PL.src={recId:res.rec.id,hh:res.id,nm0:d.name,sig0:plSig(),g0:plGeo()};try{localStorage.setItem('gg_pl_kid',res.id)}catch(e){}plKarooUi()}
 }
+const plGeo=()=>JSON.stringify([PL.pts.map(p=>[r5(p[0]),r5(p[1])]),PL.prof]);
 const plSig=()=>JSON.stringify([PL.pts.map(p=>[r5(p[0]),r5(p[1])]),PL.prof,(el('pl-nm').value||'').trim()]);
 function plKarooUi(){const a=el('pl-x-ka'),n=el('pl-x-kn'),s=el('pl-kst');if(!a)return;
  const hh=(PL.src&&PL.src.hh)||PL.kid||null,r=PL.src&&PL.src.recId?rtRecs().find(x=>x.id==PL.src.recId):null,mod=!hh||!r||r.mod||(PL.src&&PL.src.sig0!=null&&PL.src.sig0!==plSig());
@@ -2778,7 +2779,7 @@ function rtBody(){const bd=el('rbody');if(!bd)return;const it=rtCur(),X=(v,l)=>'
  bd.innerHTML='<h4>Route</h4><div class="plg" id="rb-xs"></div><div class="plsun" id="rb-sun"></div>'
   +(A?'<h4>Start &amp; Tempo</h4><div class="plrow"><span>Abfahrt</span><input type="time" id="rb-t0"></div><div class="plrow"><span>Ø Tempo</span><input type="range" id="rb-spd" min="12" max="30" step="1"><output id="rb-spdv"></output></div><h4>Steigungen</h4><div class="pldist" id="rb-dist"></div><div class="pllg" id="rb-dlg"></div><h4>Anstiege</h4><div id="rb-cl"></div>'
     :'<div class="plhint" style="margin-top:10px">Für diese Route liegt nur die Zusammenfassung aus dem Dashboard vor, ohne Streckenpunkte. Eine Vorschau gibt es für Routen, die du aus dieser App gesendet hast.</div>')
-  +'<h4>Karoo</h4><div class="plhint hhst">'+hhStatus(it)+'</div><div class="plbtns"><button class="chip on" data-a="rsend"'+(A?'':' disabled')+'>'+hhLabel(it)+'</button>'+(it.hh&&A?'<button class="chip" data-a="rnewsend">Als neue Route senden</button>':'')+'<button class="chip" data-a="rdash">Karoo öffnen</button></div>'
+  +'<h4>Karoo</h4><div class="plhint hhst">'+hhStatus(it)+'</div><div class="plbtns"><button class="chip on" data-a="rsend"'+(A?'':' disabled')+'>'+hhLabel(it)+'</button>'+(it.hh&&A?'<button class="chip" data-a="rnewsend">Als neue Route senden</button>':'')+(it.hh&&it.rec&&(rtState(it)=='mod'||rtState(it)=='nm')?'<button class="chip" data-a="rrv">↶ Auf Karoo-Stand zurücksetzen</button>':'')+'<button class="chip" data-a="rdash">Karoo öffnen</button></div>'
   +'<h4>Route</h4><div class="plbtns"><button class="chip" data-a="redit"'+(canEdit?'':' disabled')+'>✎ Im Planer bearbeiten</button><button class="chip" data-a="rrn">Umbenennen</button><button class="chip" data-a="rgpx"'+(A?'':' disabled')+'>GPX ↓</button>'+(!it.hh?'<button class="chip" data-a="rdel">Entfernen</button>':'')+'</div>'
   +(it.hh?'<div class="plhint">Gelöscht wird diese Route nur im Hammerhead Dashboard.</div>':'<div class="plhint">„Entfernen“ löscht nur die lokale Kopie in der App.</div>');
  const t0=el('rb-t0');if(t0){t0.value=(el('pl-t0')&&el('pl-t0').value)||plNowT();t0.oninput=()=>{PL.t0u=1;if(el('pl-t0'))el('pl-t0').value=t0.value;rtBodyDyn()}}
@@ -2891,7 +2892,7 @@ async function hhPush(o){const H=window.HammerheadSync;
  try{const res=await H.sendRoute(gpxOfCoords(o.c,o.name),o.name,old);if(!res||!res.id)throw{status:0};
   const A=rtA(rtResample(o.c,500)),s=statsOf(A);let rec=o.forceNew?null:(o.rec||rtRecs().find(r=>r.sent===res.id||(old&&r.sent===old))||null);
   if(!rec)rec={id:'L'+Date.now(),p:null,f:'trekking',t:Date.now()};
-  Object.assign(rec,{name:o.name,c:A.c,km:s.km,up:s.up,dn:s.dn,sent:res.id,ln:1,mod:0,st:Date.now()});
+  Object.assign(rec,{name:o.name,c:A.c,km:s.km,up:s.up,dn:s.dn,sent:res.id,ln:1,mod:0,mg:0,st:Date.now()});
   rtUpsert(rec);GX.put(rec.id,o.c);
   /* Anzeige-Aktualisierung getrennt: ein Darstellungsfehler darf ein erfolgreiches Senden nicht als Fehler melden */
   try{if(PL.on&&!PL.edit){RT.want=rec.id;rtRebuild()}else RT.sig=''}catch(e2){console.error('Routenliste nach dem Senden:',e2);RT.sig='';RT.want=null}
@@ -2906,6 +2907,13 @@ function rtRename(it){if(!it)return;const n=window.prompt('Neuer Name der Route'
  const a=rtRecs();let rec=it.rec&&a.find(r=>r.id==it.rec.id);
  if(!rec){rec={id:'L'+Date.now(),name:nm,p:null,f:'trekking',c:null,km:it.km,up:it.up,t:it.date||Date.now(),sent:it.hh||null};a.unshift(rec)}
  rec.name=nm;rec.ln=1;if(rec.sent)rec.mod=1;rtPut(a);RT.sig='';RT.want=rec.id;rtRebuild();warn(rec.sent?'Umbenannt – noch nicht an Karoo gesendet':'Umbenannt')}
+async function rtRevert(it){if(!it||!it.hh||!it.rec)return;
+ if(!window.confirm('Lokale Änderungen verwerfen und auf den Stand im Karoo-Dashboard zurücksetzen?'))return;
+ const a=rtRecs(),rec=a.find(r=>r.id==it.rec.id);if(!rec)return;
+ if(rec.mg){try{const g=await window.HammerheadSync.getRoute(it.hh),c=g.coords.map(p=>[p[0],p[1],0]);if(c.length<2)throw 0;
+   const A=rtA(rtResample(c,500)),st=statsOf(A);rec.c=A.c;rec.km=st.km;rec.up=it.up||st.up;rec.p=null;rec.lg=null;GX.put(rec.id,c)}
+  catch(e){warn('Strecke aus dem Dashboard nicht ladbar – Zurücksetzen abgebrochen');return}}
+ rec.name=it.hhName||rec.name;delete rec.ln;rec.mod=0;rec.mg=0;rtPut(a);RT.sig='';RT.want=rec.id;rtRebuild();warn('Auf den Stand im Karoo-Dashboard zurückgesetzt')}
 window.ggRtInfo=()=>{if(!PL.hr){plHrLoad();return PL.hrMsg||'wird geladen …'}const L=rtItems(),n=L.filter(x=>x.hh).length,o=L.filter(rtOpen).length;return n+' auf dem Karoo'+(o?' · '+o+' offen':' · alles gesendet')};
 window.ggRtRefresh=()=>plHrLoad(true);
 window.ggRouteStore=(id,name,c)=>{try{if(!c||c.length<2)return;const A=rtA(rtResample(c,500)),s=statsOf(A),a=rtRecs();let rec=a.find(r=>r.sent===id);if(!rec)rec={id:'L'+Date.now(),p:null,f:'trekking',t:Date.now()};rec.name=name;rec.c=A.c;rec.km=s.km;rec.up=s.up;rec.dn=s.dn;rec.sent=id;rtUpsert(rec);GX.put(rec.id,c);if(PL.on&&!PL.edit)rtRebuild()}catch(e){}};
@@ -2929,10 +2937,10 @@ function rtEdit(it){if(!it)return;rtPop(false);
  if(it.rec&&it.rec.p&&it.rec.p.length>1){PL.pts=it.rec.p.map(p=>p.slice());PL.prof=PF0(it.rec.f);PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)})}
  else if(it.c&&it.c.length>1)plSetFromCoords(it.c);
  else{warn('Für diese Route gibt es keine Streckendaten zum Bearbeiten');return}
- PL.leg=(it.rec&&it.rec.lg)?Object.assign({},it.rec.lg):{};PL.hist=[];PL.src={recId:it.rec?it.rec.id:null,hh:it.hh||(it.rec&&it.rec.sent)||null,nm0:it.name};PL.kid=PL.src.hh;el('pl-nm').value=it.name||'';PL.src.sig0=plSig();plEditMode(1);plFit()}
+ PL.leg=(it.rec&&it.rec.lg)?Object.assign({},it.rec.lg):{};PL.hist=[];PL.src={recId:it.rec?it.rec.id:null,hh:it.hh||(it.rec&&it.rec.sent)||null,nm0:it.name};PL.kid=PL.src.hh;el('pl-nm').value=it.name||'';PL.src.sig0=plSig();PL.src.g0=plGeo();plEditMode(1);plFit()}
 function rtRecFromDraft(){const A=PL.all,s=plStats(),base=PL.src&&PL.src.recId?rtRecs().find(r=>r.id==PL.src.recId):null,
   nm=(el('pl-nm').value||'').trim()||('Route '+new Date().toLocaleDateString('de-DE')+' · '+Math.round(s.km)+' km');
- return{id:base?base.id:'L'+Date.now(),name:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,lg:Object.assign({},PL.leg),c:rtResample(A.c,500),km:s.km,up:s.up,dn:s.dn,t:base?base.t:Date.now(),sent:(base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid||null,ln:(PL.src&&PL.src.nm0!=null&&nm!=PL.src.nm0)?1:((base&&base.ln)||0),st:(base&&base.st)||0,
+ return{id:base?base.id:'L'+Date.now(),name:nm,p:PL.pts.map(p=>[r5(p[0]),r5(p[1])]),f:PL.prof,lg:Object.assign({},PL.leg),c:rtResample(A.c,500),km:s.km,up:s.up,dn:s.dn,t:base?base.t:Date.now(),sent:(base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid||null,ln:(PL.src&&PL.src.nm0!=null&&nm!=PL.src.nm0)?1:((base&&base.ln)||0),st:(base&&base.st)||0,mg:((base&&base.mg)||(PL.src&&PL.src.g0!=null&&PL.src.g0!==plGeo()))?1:0,
   mod:(((base&&base.sent)||(PL.src&&PL.src.hh)||PL.kid)&&(!PL.src||PL.src.sig0==null||PL.src.sig0!==plSig()))?1:((base&&base.mod)||0)}}
 function plCancel(){if(!window.confirm('Route verwerfen?\n\nDie Route wird nicht gespeichert. Möchtest du wirklich abbrechen?'))return;
  ++PL.tok;document.body.classList.remove('pl-bz');PL.pts=[];PL.leg={};PL.cache.forEach((s,k)=>{if(k[0]=='F')PL.cache.delete(k)});PL.hist=[];PL.src=null;PL.kreset();PL.all=null;PL.segs=[];el('pl-nm').value='';plHoverEnd();plSave();plDraw();RT.i=0;RT.sk=null;RT.sr=null;RT.sig='';plEditMode(0);}
@@ -2959,7 +2967,7 @@ function rtInit(){
  el('rbody').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a,it=rtCur();
   if(a=='rg'){rtGo(+b.dataset.i);plExTo(0)}
   else if(a=='rcl'){const A=RT.A;if(!A)return;const bb=new maplibregl.LngLatBounds();for(let k=+b.dataset.ca;k<=+b.dataset.cb;k++)bb.extend([A.c[k][0],A.c[k][1]]);plExTo(0);setTimeout(()=>map.fitBounds(bb,{padding:{top:120,bottom:el('plan').offsetHeight+40,left:50,right:50},maxZoom:15}),380)}
-  else if(a=='redit')rtEdit(it);else if(a=='rrn')rtRename(it);else if(a=='rsend')rtSend(it);else if(a=='rnewsend')rtSend(it,true);else if(a=='rgpx')rtGpx(it);
+  else if(a=='redit')rtEdit(it);else if(a=='rrn')rtRename(it);else if(a=='rrv')rtRevert(it);else if(a=='rsend')rtSend(it);else if(a=='rnewsend')rtSend(it,true);else if(a=='rgpx')rtGpx(it);
   else if(a=='rdash')window.open('https://dashboard.hammerhead.io/routes','_blank','noopener');
   else if(a=='rdel')rtDelLocal(it,b);else if(a=='rref')plHrLoad(true);else if(a=='rimp')el('pl-file').click();else if(a=='rbk')rtBackup();else if(a=='rrs')rtRestorePick();else if(a=='rel'){const x=RT.L[+b.dataset.i-1];if(x)rtEdit(x)}else if(a=='rdl')rtDelRow(RT.L[+b.dataset.i-1],b);else if(a=='ras'){const x=RT.L[+b.dataset.i-1];if(x)rtAssign(x)}else if(a=='rsl')rtSendLocal();else if(a=='rcl2')rtClearLocal(b)});
  rtRebuild()}
