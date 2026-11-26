@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ELI Dictionary</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6f3ff;--card:rgba(255,255,255,.5);--ink:#12305a;--soft:#5b7499;--sun:#ffc83d;--sunink:#3a2a00;--coral:#ff6b5b;--mint:#2fc79a;--line:#cfe3f7;--bubA:#d9ecff;--bubB:#ffe9b8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1d38;--card:rgba(40,70,125,.45);--ink:#f1f6ff;--soft:#a7bbdd;--line:#2b4a7c;--bubA:#21457c;--bubB:#6b5416;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1d38;--card:rgba(40,70,125,.45);--ink:#f1f6ff;--soft:#a7bbdd;--line:#2b4a7c;--bubA:#21457c;--bubB:#6b5416;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(circle at 12% 8%,rgba(255,200,61,.55),transparent 38%),radial-gradient(circle at 88% 18%,rgba(255,107,91,.45),transparent 40%),radial-gradient(circle at 55% 100%,rgba(70,190,255,.5),transparent 45%),var(--bg);background-attachment:fixed;color:var(--ink);font-family:"Nunito",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;font-weight:600;font-size:18px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible{outline:4px solid var(--coral);outline-offset:2px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:14px 20px 10px;border-bottom:3px solid var(--line)}
+h1{margin:0 0 10px;font-weight:900;font-size:30px}
+.voices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.v{background:var(--card);border:4px solid var(--line);border-radius:22px;padding:10px 6px;text-align:center;font-weight:900;font-size:20px;min-height:68px}
+.v small{display:block;font-size:13px;font-weight:700;color:var(--soft)}
+.v[aria-pressed="true"]{background:var(--sun);border-color:var(--sun);color:var(--sunink)}
+.v[aria-pressed="true"] small{color:var(--sunink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.tab{padding:10px 20px;border-radius:999px;background:var(--card);font-weight:900;border:3px solid var(--line)}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+label.t{display:flex;gap:8px;align-items:center;font-weight:800}
+label.t input{width:26px;height:26px;accent-color:var(--mint)}
+.rate{display:flex;gap:6px;align-items:center;margin-left:auto}
+.rate button{padding:8px 14px;border-radius:14px;background:var(--card);border:3px solid var(--line);font-weight:900}
+.rate button[aria-pressed="true"]{background:var(--mint);border-color:var(--mint);color:#04281d}
+main{padding:16px 20px 60px;max-width:1100px;margin:0 auto}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px}
+.chip{flex:none;min-width:56px;padding:10px 16px;border-radius:18px;background:var(--card);border:3px solid var(--line);font-weight:900}
+.chip[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#fff}
+.chip small{display:block;font-size:11px;font-weight:700;opacity:.8}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:var(--card);border-radius:28px;padding:18px;border:3px solid var(--line)}
+.emo{font-size:46px;line-height:1}
+.word{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-size:28px;font-weight:900;margin:6px 0 2px}
+.word::after{content:"🔊";font-size:20px}
+.de{color:var(--coral);font-weight:900;font-size:21px}
+.pl{display:inline-block;background:var(--bubA);border-radius:12px;padding:2px 10px;font-size:15px;margin:6px 0}
+.sent{display:block;text-align:left;margin-top:8px;padding:10px 12px;border-radius:16px;background:var(--bubB);color:var(--ink);font-size:17px}
+.sent::before{content:"🔊 "}
+.forms{font-size:15px;color:var(--soft);margin-top:8px}
+.pg{margin-top:8px;font-size:14px;color:var(--soft)}
+h2{font-size:26px;font-weight:900;margin:8px 0 14px}
+.line{display:flex;margin:10px 0}
+.line.b{justify-content:flex-end}
+.bub{max-width:82%;text-align:left;padding:14px 18px;border-radius:26px;background:var(--bubA);font-size:21px;line-height:1.5}
+.line.b .bub{background:var(--bubB)}
+.bub.on{outline:5px solid var(--coral)}
+.big{padding:14px 26px;border-radius:20px;font-weight:900;font-size:21px;background:var(--mint);color:#04281d}
+.big.stop{background:var(--coral);color:#fff}
+.note{color:var(--soft);font-size:15px}
+@media (max-width:640px){.voices{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:no-preference){.card:active,.v:active,.bub:active{transform:scale(.97)}}
+/* Sprecher-Profilbilder */
+.v{display:flex;align-items:center;gap:12px;text-align:left;padding:8px 14px 8px 8px}
+.v div{min-width:0}
+.av{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.22)}
+.av.ph{display:grid;place-items:center;background:var(--coral);color:#fff;font-weight:900;font-size:26px}
+.v[aria-pressed="true"] .av{border-color:var(--ink)}
+/* Glass */
+.card,.v,.tab,.chip,.rate button,.sent,.bub{backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 30px rgba(18,48,90,.12),inset 0 1px 0 rgba(255,255,255,.6)}
+header,body::before{background:color-mix(in srgb,var(--bg) 45%,transparent);backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%)}
+header{border-bottom:1px solid rgba(255,255,255,.5)}
+.sent,.bub{background:color-mix(in srgb,var(--bubA) 65%,transparent)}
+.sent,.line.b .bub{background:color-mix(in srgb,var(--bubB) 65%,transparent)}
+h1{font-size:32px;letter-spacing:.5px}
+.dict{border-radius:28px;padding:22px 26px;column-width:270px;column-gap:36px;background:var(--card);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 30px rgba(18,48,90,.12)}
+.dict h3{margin:14px 0 6px;font-size:28px;font-weight:900;color:var(--coral);break-after:avoid;border-bottom:2px solid var(--line)}
+.dict h3:first-child{margin-top:0}
+.de-e{display:block;width:100%;text-align:left;padding:5px 2px;break-inside:avoid;font-size:17px;line-height:1.3}
+.de-e b{font-weight:900}
+.de-e span{color:var(--soft)}
+.de-e i{font-style:normal;font-size:13px;color:var(--coral);margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>ELI Dictionary</h1>
+  <div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div>
+  <div class="row">
+    <button class="tab" id="tabW">📚 Karten</button><button class="tab" id="tabD">📖 Wörterbuch</button>
+    <button class="tab" id="tabS">💬 Geschichten</button>
+    <label class="t"><input type="checkbox" id="showDe" checked> Deutsch zeigen</label>
+    <div class="rate" role="group" aria-label="Tempo">
+      <button data-r="0.7">🐢</button><button data-r="0.9">🙂</button><button data-r="1.05">🐇</button>
+    </div>
+  </div>
+</header>
+<main id="main"></main>
+
+<script>
+// ---- Daten: Beispielauswahl (Zahlen = Kapitel im Buch) ----
+const CH={1:"At home",35:"The stars and the planets"};
+const W=[
+["apartment",[1],"Wohnung","apartments","They rented a bright two-bedroom apartment near the city centre.","🏢"],
+["attic",[1],"Dachboden","attics","We store our old photo albums in the attic.","🏚️"],
+["aerial",[1,17],"Antenne","aerials","The strong wind damaged the TV aerial on our roof.","📡"],
+["balcony",[1],"Balkon","balconies","We drink tea on the balcony in summer.","🌇"],
+["bathroom",[1,4,12],"Badezimmer","bathrooms","She brushes her teeth in the bathroom.","🛁"],
+["bedroom",[1,4],"Schlafzimmer","bedrooms","My bedroom has a big blue bed.","🛏️"],
+["cellar",[1],"Keller","cellars","The old bikes are in the cellar.","🧱"],
+["chimney",[1],"Schornstein","chimneys","Smoke rises from the red chimney.","🏭"],
+["door",[1,3,22,24],"Tür","doors","Please close the door behind you.","🚪"],
+["garage",[1,8,12],"Garage","garages","Dad parks the car in the garage.","🚗"],
+["garden",[1],"Garten","gardens","The children play in the garden.","🌳"],
+["kitchen",[1,2,11,12],"Küche","kitchens","Mum is cooking soup in the kitchen.","🍳"],
+["living room",[1,3],"Wohnzimmer","living rooms","We watch films in the living room.","🛋️"],
+["roof",[1],"Dach","roofs","A cat is sitting on the roof.","🏠"],
+["window",[1,19,22,23,24],"Fenster","windows","Please open the window; it’s hot.","🪟"],
+["acorn",[30],"Eichel","acorns","Squirrels gather acorns in autumn.","🌰"],
+["applaud",[15],"applaudieren, klatschen",null,"The audience stood up to applaud the orchestra.","👏",{inf:"to applaud",pres:"I applaud · he/she/it applauds",past:"applauded",pp:"applauded",ing:"applauding"}],
+["astronaut",[35],"Astronaut / Astronautin","astronauts","The astronaut floated inside the space station.","👩‍🚀"],
+["astronomer",[35],"Astronom / Astronomin","astronomers","The astronomer discovered a new comet.","🔭"],
+["comet",[35],"Komet","comets","A bright comet flew past the Earth.","☄️"],
+["constellations",[35],"Sternbilder","constellations","We found three constellations in the night sky.","✨"],
+["equator",[35],"Äquator",null,"It is always warm near the equator.","🌍"],
+["galaxy",[35],"Galaxie","galaxies","Our galaxy is called the Milky Way.","🌌"],
+["helmet",[22,35],"Helm","helmets","An astronaut wears a helmet in space.","⛑️"],
+["Jupiter",[35],"Jupiter",null,"Jupiter is the biggest planet.","🪐"],
+["Mars",[35],"Mars",null,"Mars is the red planet.","🔴"],
+["Moon",[35],"Mond",null,"The Moon shines at night.","🌙"],
+["radio telescope",[35],"Radioteleskop","radio telescopes","The radio telescope listens to the stars.","📡"],
+["rocket",[35],"Rakete","rockets","The rocket flew into space.","🚀"],
+["Saturn",[35],"Saturn",null,"Saturn has beautiful rings.","🪐"],
+["space station",[35],"Raumstation","space stations","Astronauts live on the space station.","🛰️"]
+];
+const S={
+1:["Good morning. Come in, let me show you the house.","It’s very nice!","Yes, it is. I’ll open the door… please, go inside. This is the entrance.","It’s very spacious!","And here we have the kitchen and the dining room. The windows face the garden.","Isn’t there a balcony?","No, there isn’t. Look at the bedroom. It’s very spacious, isn’t it?","No balcony here either…","I’m sorry, but the bedroom hasn’t got a balcony either! But come with me, here we have the bathroom and the living room, while at the end of the hall there is another room which could be used as a study or a second bedroom.","It’s a very big apartment, but…","That’s not all. Follow me, let’s go downstairs.","Why?","Because the house has a garage too!","But there won’t be a balcony, surely!","Of course not! But it’s very big… you could use it as a cellar, if you don’t have a car.","Listen, the house is really beautiful, but I don’t understand why you’re showing it to me!","Weren’t you looking for a house to buy?","Absolutely not! I’m a student of architecture and I’m working on an essay about balconies!"],
+35:["From up here the Earth is beautiful; no borders nor boundaries!","Yuri? Just a few more minutes!","I can see the polar ice! The arid terrain near the equator! But now, I’m moving towards the moon…","Yuri, Yuri… answer me!","I’m moving around the solar system… Travelling over Mars, the red planet… and right down there I can see Saturn, with its rings!","Yuri, would you answer me?","I’m busy now! I’m leaving the solar system and I’m passing right by Pluto, but… there’s a meteorite shower, I need to be careful! I could be hit!","Yuri? Three minutes!","Earth base! You have no idea what you’re missing… the planets are rotating according to their orbits; the stars are shining in the dark… But now I’m leaving the Milky Way: I want to see our galaxy from the outside! Earth base, you should come up and see this! From such a distance the sun looks tiny…","One minute Yuri… then I’m coming to get you!","I’m coming back. Now passing at maximum speed over Uranus… Just down there is Jupiter… it’s enormous! A giant comet just flew past me! Fantastic!","Yuri, that’s enough… dinner is ready!","Alright, alright, I’m coming… but when I’m grown up I’m really going into space!","For now, go and wash your hands. There’ll be time for space later!","Yes, I promise… I’ll go!"]
+};
+const TITLE={1:"A nice house",35:"Journey into space"};
+
+// ---- Stimmen ----
+const VN=[["Ava","Premium"],["Zoe","Premium"],["Jamie","Premium"],["Evan","Enhanced"]];
+const PIC=["ava.jpg","zoe.jpg","jamie.jpg","van.jpg"]; // liegen im selben Ordner wie index.html
+const st={tab:"w",voice:0,rate:0.9,view:"ch",ch:1,sc:1,two:true,de:true,on:-1,token:0};
+let vs=[];
+function loadV(){vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));renderVoices()}
+function pick(i){
+  const n=VN[i][0].toLowerCase();
+  const m=vs.filter(v=>v.name.toLowerCase().startsWith(n));
+  return m.find(v=>/premium|enhanced/i.test(v.name))||m[0]||null;
+}
+function fallback(){return vs.find(v=>v.lang==="en-US")||vs[0]||null}
+function say(text,i){
+  return new Promise(res=>{
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pick(i)||fallback();
+    if(v){u.voice=v;u.lang=v.lang}else u.lang="en-US";
+    u.rate=st.rate;u.onend=u.onerror=()=>res();
+    speechSynthesis.speak(u);
+  });
+}
+function stop(){st.token++;speechSynthesis.cancel();st.on=-1;document.querySelectorAll(".bub.on").forEach(e=>e.classList.remove("on"));const b=document.getElementById("play");if(b){b.textContent="▶ Alles vorlesen";b.classList.remove("stop")}}
+function speakOne(text){stop();say(text,st.voice)}
+
+function renderVoices(){
+  document.getElementById("voices").innerHTML=VN.map((v,i)=>{
+    const ok=!!pick(i);
+    return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?v[1]+" ✓":"Ersatzstimme"}</small></div></button>`;
+  }).join("");
+}
+
+// ---- Wörter ----
+function chaptersWithData(){return [...new Set(W.flatMap(w=>w[1]))].sort((a,b)=>a-b)}
+function card(w){
+  const z=w[6];
+  return `<article class="card">
+    <div class="emo">${w[5]}</div>
+    <button class="word" data-say="${w[0]}">${w[0]}</button>
+    ${st.de?`<div class="de">${w[2]}</div>`:""}
+    ${w[3]?`<div class="pl">${w[3]}</div>`:""}
+    ${z?`<div class="forms">${z.inf} · ${z.pres}<br>past: ${z.past} · participle: ${z.pp} · ${z.ing}</div>`:""}
+    <button class="sent" data-say="${w[4].replace(/"/g,"&quot;")}">${w[4]}</button>
+    <div class="pg">Kapitel ${w[1].join(", ")}</div>
+  </article>`;
+}
+function renderWords(){
+  const chs=chaptersWithData();
+  const chips=`<div class="chips"><button class="chip" data-view="az" aria-pressed="${st.view==="az"}">A–Z</button>`+
+    chs.map(c=>`<button class="chip" data-ch="${c}" aria-pressed="${st.view==="ch"&&st.ch===c}">${c}<small>Kapitel</small></button>`).join("")+`</div>`;
+  let list,head="";
+  if(st.view==="az"){list=[...W].sort((a,b)=>a[0].toLowerCase().localeCompare(b[0].toLowerCase()));head="<h2>Alle Wörter A–Z</h2>"}
+  else{list=W.filter(w=>w[1].includes(st.ch));head=`<h2>Kapitel ${st.ch}${CH[st.ch]?": "+CH[st.ch]:""}</h2>`}
+  main.innerHTML=chips+head+`<div class="grid">${list.map(card).join("")}</div>
+  <p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
+}
+
+// ---- Wörterbuch (A-Wörter komplett, Rest aus der Auswahl) ----
+const A="abdomen|26|Bauch, Unterleib;access barrier|23|Zugangsschranke;accessories for the dog|6|Hundezubehör;accordion|15|Akkordeon;ace|16|Ass;acid rain|34|saurer Regen;acoustic guitar|15|Akustikgitarre;actor|13,14|Schauspieler;actress|14|Schauspielerin;adult|5|Erwachsene(r);adventure film|18|Abenteuerfilm;advertising|18|Werbung;aeroplane|24|Flugzeug;Africa|25|Afrika;afternoon|29|Nachmittag;air conditioning|12|Klimaanlage;airport|24|Flughafen;aisle|14,23,24|Gang;alarm clock|4|Wecker;allergies|27|Allergien;alley|8|Gasse;almond|21|Mandel;aluminium|34|Aluminium;aluminium foil|2|Alufolie;ambulance|27|Krankenwagen;amplifier|15|Verstärker;amusement park|25|Freizeitpark;ancor|22|Anker (anchor);animal fur|27|Tierfell;animal kingdom|32|Tierreich;animals welcome|25|Tiere willkommen;animal’s body|32|Tierkörper;ankle|26|Fußknöchel;ankle boots|20|Stiefeletten;anorak|20|Anorak;ant|30|Ameise;Antarctic Ocean|25|Südlicher Ozean;anteater|32|Ameisenbär;apple|21|Apfel;apricot|21|Aprikose;April|29|April;apron|2|Schürze;aquarium|25|Aquarium;archeological site|25|Ausgrabungsstätte;archery|28|Bogenschießen;archipelago|25|Inselgruppe;architect|13|Architekt(in);Arctic Ocean|25|Nordpolarmeer;arm|26|Arm;armchair|3|Sessel;armrest|3|Armlehne;arrivals|23,24|Ankunft;arrow keys|17|Pfeiltasten;Art|9|Kunst;artichoke|21|Artischocke;articulated lorry|22|Sattelzug;artificial satellite|35|künstlicher Satellit;artistic gymnastics|28|Kunstturnen;Asia|25|Asien;ask for information|23|nach Auskunft fragen;asparagus|21|Spargel;assistant director|18|Regieassistent(in);astronomical observatory|35|Sternwarte;Atlantic Ocean|25|Atlantik;atmospheric pollution|34|Luftverschmutzung;attach a file|17|eine Datei anhängen;aubergine|21|Aubergine;August|29|August;aunt|5|Tante;author|9|Autor(in);automatic check-in|24|Selbst-Check-in;automatic grasscutter|7|Mähroboter;autumn|29|Herbst;avalanche|29|Lawine;avenue|8|Allee;avocado|21|Avocado".split(";").map(s=>{const p=s.split("|");return [p[0],p[1].split(",").map(Number),p[2]]});
+function renderDict(){
+  const m=new Map();
+  A.forEach(a=>m.set(a[0].toLowerCase(),a));
+  W.forEach(w=>m.set(w[0].toLowerCase(),[w[0],w[1],w[2]]));
+  const L=[...m.values()].sort((a,b)=>a[0].toLowerCase().localeCompare(b[0].toLowerCase()));
+  let cur="",h="";
+  L.forEach(e=>{const c=e[0][0].toUpperCase();if(c!==cur){cur=c;h+=`<h3>${c}</h3>`}
+    h+=`<button class="de-e" data-say="${e[0]}"><b>${e[0]}</b>${st.de?` <span>${e[2]}</span>`:""} <i>${e[1].join(", ")}</i></button>`});
+  main.innerHTML=`<h2>Wörterbuch A–Z</h2><div class="dict">${h}</div><p class="note">${L.length} Wörter · die kleine Zahl ist das Kapitel · Tippen = anhören. Weitere Buchstaben folgen.</p>`;
+}
+
+// ---- Geschichten ----
+function renderStory(){
+  const L=S[st.sc];
+  const chips=`<div class="chips">`+Object.keys(S).map(c=>`<button class="chip" data-sc="${c}" aria-pressed="${st.sc==c}">${c}<small>Kapitel</small></button>`).join("")+`</div>`;
+  main.innerHTML=chips+`<h2>${st.sc}: ${TITLE[st.sc]}</h2>
+  <div class="row"><button class="big" id="play">▶ Alles vorlesen</button>
+  <label class="t"><input type="checkbox" id="two" ${st.two?"checked":""}> Zwei Stimmen</label></div>
+  <p class="note">${st.two?`Sprecher 1: ${VN[st.voice][0]} · Sprecher 2: ${VN[(st.voice+1)%4][0]}`:`Alles mit ${VN[st.voice][0]}`}. Tippe auf eine Sprechblase, um nur diese zu hören.</p>
+  ${L.map((t,i)=>`<div class="line ${i%2?"b":"a"}"><button class="bub" data-l="${i}">${t}</button></div>`).join("")}`;
+}
+async function playFrom(start){
+  stop();const my=st.token;
+  const b=document.getElementById("play");b.textContent="⏹ Stopp";b.classList.add("stop");
+  const L=S[st.sc];
+  for(let i=start;i<L.length;i++){
+    if(my!==st.token)return;
+    mark(i);
+    await say(L[i],st.two&&i%2?(st.voice+1)%4:st.voice);
+  }
+  if(my===st.token)stop();
+}
+function mark(i){
+  document.querySelectorAll(".bub.on").forEach(e=>e.classList.remove("on"));
+  const e=document.querySelector(`.bub[data-l="${i}"]`);
+  if(e){e.classList.add("on");e.scrollIntoView({block:"center",behavior:"smooth"})}
+}
+
+// ---- Steuerung ----
+const main=document.getElementById("main");
+function render(){
+  stop();
+  tabW.setAttribute("aria-pressed",st.tab==="w");tabS.setAttribute("aria-pressed",st.tab==="s");tabD.setAttribute("aria-pressed",st.tab==="d");
+  st.tab==="w"?renderWords():st.tab==="d"?renderDict():renderStory();
+  document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===st.rate));
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.i!==undefined){st.voice=+t.dataset.i;renderVoices();if(st.tab==="s")renderStory();say("Hello! I am "+VN[st.voice][0]+".",st.voice)}
+  else if(t.id==="tabW"){st.tab="w";render()}
+  else if(t.id==="tabD"){st.tab="d";render()}
+  else if(t.id==="tabS"){st.tab="s";render()}
+  else if(t.dataset.r){st.rate=+t.dataset.r;document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",b===t))}
+  else if(t.dataset.view){st.view="az";render()}
+  else if(t.dataset.ch){st.view="ch";st.ch=+t.dataset.ch;render()}
+  else if(t.dataset.sc){st.sc=+t.dataset.sc;render()}
+  else if(t.dataset.say){speakOne(t.dataset.say)}
+  else if(t.id==="play"){st.token&&speechSynthesis.speaking&&t.classList.contains("stop")?stop():playFrom(0)}
+  else if(t.dataset.l!==undefined){const i=+t.dataset.l;stop();playFrom(i)}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="showDe"){st.de=e.target.checked;if(st.tab==="w")renderWords();if(st.tab==="d")renderDict()}
+  if(e.target.id==="two"){st.two=e.target.checked;renderStory()}
+});
+if("speechSynthesis" in window){loadV();speechSynthesis.onvoiceschanged=loadV}
+else{document.querySelector("h1").insertAdjacentText("afterend","Dieser Browser kann nicht vorlesen.")}
+renderVoices();render();
+</script>
+</body>
+</html>
