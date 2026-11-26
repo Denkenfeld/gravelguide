@@ -885,7 +885,7 @@ const MT={
  v:{l:'Ø Tempo',u:'km/h',f:L=>{const a=L.filter(t=>t.h>0),h=sum(a,t=>t.h);return h?sum(a,t=>t.km)/h:null},fm:v=>f0(v,1)},
  pw:{l:'Ø Leistung',u:'W',f:L=>wavg(L,t=>t.pw),fm:v=>f0(v)},
  kc:{l:'Kalorien',u:'kcal',f:L=>sum(L,t=>t.kc),fm:v=>f0(v)}};
-const KORD=['km','up','h','n','days','avg','v','pw','kc'];
+const KORD=['km','up','h','n','days','kc','avg','v','pw'];const KLB={km:'Strecke',up:'Aufstieg',days:'Tage'};
 function agg(p){const m=new Map();V.forEach(t=>{const k=kd(t.date,p);(m.get(k)||m.set(k,[]).get(k)).push(t)});
  const ks=[...m.keys()].sort((a,b)=>a-b),o=[];if(!ks.length)return o;for(let k=ks[0];k<=ks[ks.length-1];k=nx(k,p))o.push({k,L:m.get(k)||[]});return o}
 function rname(r){const o=r.raw;if(o.title)return o.title;const d=new Date(r.date),h=d.getHours();return['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][d.getDay()]+(h<11?'smorgen':h<14?'smittag':h<18?'snachmittag':'sabend')+(r.km>=100?' · Langstrecke':'')}
@@ -1007,7 +1007,7 @@ function mapDraw(){if(!map||!map.getSource||!map.getSource('hm')||RP.on)return;
  const R=RAMP[mm];$('lg').style.background=R?'linear-gradient(90deg,'+R.filter((_,i)=>i%2).join(',')+')':mm=='tiles'?'linear-gradient(90deg,rgba(77,240,220,.3),#4df0dc)':'linear-gradient(90deg,#f66,#6f6,#66f)';
  $('l0').textContent=R?R[0]:'';$('l1').textContent=R?R[R.length-2]+'+ '+UN[mm]:mm=='tiles'?'gelb = neu im Zeitraum':'jede Fahrt eine Farbe'}
 function fitAll(){if(!map)return;if(!V.length&&GEO.mode!='off'){geoFitEmpty();return}const L=V.length?V:T;let a=181,b=-181,c=91,d=-91;for(const r of L){a=Math.min(a,r.bb[0]);b=Math.max(b,r.bb[2]);c=Math.min(c,r.bb[1]);d=Math.max(d,r.bb[3])}
- if(a>b)return;const hh=($('hud').offsetHeight||130)+16;try{map.resize();map.fitBounds([[a,c],[b,d]],{padding:{top:110,bottom:hh,left:28,right:60},maxZoom:15,duration:700,pitch:t3d?62:0,bearing:t3d?-12:0})}catch(e){}}
+ if(a>b)return;const hh=($('hud').offsetHeight||130)+16;try{map.resize();map.fitBounds([[a,c],[b,d]],{padding:{top:110,bottom:hh,left:44,right:44},maxZoom:15,duration:700,pitch:t3d?62:0,bearing:t3d?-12:0})}catch(e){}}
 function initMap(){
  if(typeof maplibregl=='undefined'){say('Karte konnte nicht geladen werden (MapLibre fehlt)');return}
  map=new maplibregl.Map({container:'map',style:styleOf(base),center:[8.86,48.25],zoom:9,pitch:t3d?62:0,bearing:t3d?-12:0,maxPitch:80,attributionControl:false,fadeDuration:100});
@@ -1122,7 +1122,7 @@ function renderStats(){const none=!V.length;$('st-none').hidden=!none;$('st-body
 function kpis(){const A=agg(per),pr=prevRange();
  $('kpi').innerHTML=KORD.filter(m=>m!='pw'||V.some(t=>t.pw)).map(m=>{const M=MT[m],cur=M.f(V),prev=pr&&PV.length?M.f(PV):null;let d='';
   if(prev>0&&cur!=null){const x=(cur/prev-1)*100;d=`<em class="${x>=0?'up':'dn'}" title="${clabel()}">${x>=0?'▲':'▼'} ${f0(Math.abs(x))} %</em>`}
-  return`<button class="k${m==met?' on':''}" data-m="${m}"><span class="l">${M.l}</span><b>${cur==null?'–':M.fm(cur)}<small>${M.u}</small></b>${d}<svg class="spk" viewBox="0 0 60 18" preserveAspectRatio="none">${spark(A.map(a=>M.f(a.L)),m==met?ACC:DMa(.7))}</svg></button>`}).join('')}
+  return`<button class="k${m==met?' on':''}" data-m="${m}"><div class="kh"><span class="l">${KLB[m]||M.l}</span>${d}</div><b>${cur==null?'–':M.fm(cur)}<small>${M.u}</small></b></button>`}).join('')}
 function chart(){if(!MT[met]||(met=='pw'&&!V.some(t=>t.pw)))met='km';const M=MT[met],A=agg(per),y=A.map(a=>M.f(a.L));
  const P=y.map((v,i)=>v==null?null:[i,v]).filter(Boolean);let line=null,tr=null;
  if(P.length>2){const mx=P.reduce((s,p)=>s+p[0],0)/P.length,my=P.reduce((s,p)=>s+p[1],0)/P.length;let nu=0,de=0;P.forEach(p=>{nu+=(p[0]-mx)*(p[1]-my);de+=(p[0]-mx)**2});const s=de?nu/de:0;line=A.map((_,i)=>{const v=my-s*mx+s*i;return v>=0?v:null});tr=my?s*(P.length-1)/my*100:0}
@@ -1679,7 +1679,7 @@ function pnlSet(v){try{const q=document.documentElement.style;if(v==null)q.remov
 function hudPnl(){pnlSet(SH.min&&SH.ty>.2?SH.H[0]-SH.ty:null)}
 const SH={st:0,ty:0,min:0,H:[0,0,0],host:"",tt:0,dirty:1,rid:null},PHs={},shEl=$("hud"),shGrab=document.createElement("div"),shBody=document.createElement("div");
 shGrab.id="hgrab";shGrab.setAttribute("role","button");shGrab.setAttribute("aria-label","Panel aufziehen");shBody.id="hbody";shEl.insertBefore(shGrab,shEl.firstChild);shEl.appendChild(shBody);
-function shMeasure(){const ex=shEl.classList.contains("ex");if(!ex)SH.H[0]=shEl.offsetHeight;const top=$("top").getBoundingClientRect().bottom+8;SH.H[2]=Math.max(SH.H[0]+60,Math.round(shEl.getBoundingClientRect().bottom-(SH.ty||0)-top));SH.H[1]=Math.round(clamp(SH.H[2]*.58,SH.H[0]+120,SH.H[2]))}
+function shMeasure(){const ex=shEl.classList.contains("ex");if(!ex)SH.H[0]=shEl.offsetHeight;const top=$("top").getBoundingClientRect().bottom+8;SH.H[2]=Math.max(SH.H[0]+60,Math.round(shEl.getBoundingClientRect().bottom-(SH.ty||0)-top));SH.H[1]=Math.round(clamp(SH.H[2]*.58,SH.H[0]+120,SH.H[2]));document.documentElement.style.setProperty('--dmh',Math.round(clamp(SH.H[1]-SH.H[0]+8,130,innerHeight*.34))+'px')}
 const rb=(x,d)=>(1-1/(x*.55/d+1))*d;
 const shMY=()=>Math.max(0,SH.H[0]-ggPeek("hud"));
 function shApply(p){const H0=SH.H[0],ty=p<H0?H0-p:0;SH.ty=ty;shEl.style.height=(p<H0?H0:p)+"px";shEl.style.translate=ty>.2?"0 "+ty.toFixed(1)+"px":"";pnlSet(ty>.2?H0-ty:null)}
@@ -4398,6 +4398,49 @@ html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) b
 /* Anzahl: nicht mehr über "Alle", sondern links neben der Überschrift */
 #wlogo,#rwlogo{display:none!important}
 .mwn{color:var(--act);font-weight:800;margin-right:7px}
+
+/* KPI-Felder: flach, 3-spaltig, Prozent oben rechts neben dem Namen, keine Sparklines */
+#kpi{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+#kpi .k{padding:7px 9px 8px!important;min-height:0!important;border-radius:14px}
+#kpi .spk{display:none!important}
+#kpi .kh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;column-gap:4px}
+#kpi .kh .l{font-size:11.5px;white-space:nowrap}
+#kpi .kh em{margin:0;font-size:10.5px;white-space:nowrap}
+#kpi .k b{margin-top:0;font-size:21px;line-height:1.1}
+#kpi .k b small{font-size:11px;margin-left:2px}
+/* KPI-Felder: Look wie die übrigen Karten im Sheet (statt fast schwarz) */
+#kpi .k{background:rgba(var(--fg-rgb),.05)!important;border:1px solid var(--ln)!important;color:var(--fg);font-family:inherit;-webkit-appearance:none;appearance:none;box-shadow:none}
+#kpi .k .l{color:var(--dim)}
+#kpi .k.on{background:rgba(var(--ac-rgb),.14)!important;border-color:rgba(var(--ac-rgb),.55)!important}
+#kpi .k.on b{color:var(--act)}
+#kpi .k:active{transform:scale(.97);transition:transform .1s}
+/* T/W/M/J (und andere Segment-Schalter): aktiv = gelber Rahmen wie die übrigen aktiven Felder */
+.seg button{border:1px solid transparent}
+.seg button.on{background:rgba(var(--ac-rgb),.14)!important;border-color:rgba(var(--ac-rgb),.55)!important;color:var(--act)!important;box-shadow:none!important}
+/* Fahrtenliste: Suchfeld, Monatsüberschrift und Fahrten wie die übrigen Karten im Sheet */
+#q{background:rgba(var(--fg-rgb),.05)!important;color:var(--fg);font-family:inherit}
+#q::placeholder{color:var(--dim2)}
+.rd{background:rgba(var(--fg-rgb),.05)!important;border-color:var(--ln)!important;color:var(--fg);font-family:inherit;-webkit-appearance:none;appearance:none;box-shadow:none}
+.rd svg.th{background:rgba(var(--fg-rgb),.07)!important}
+.mg{background:rgba(var(--fg-rgb),.06)!important;-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border-radius:14px;padding:10px 12px!important;margin:6px 0 8px!important}
+#more{background:rgba(var(--fg-rgb),.05)!important;border:1px solid var(--ln)}
+/* Einzelfahrt-Detail: Kennzahl-Felder, Statistikraster und Notizfeld wie die übrigen Karten */
+#dhero div{background:rgba(var(--fg-rgb),.05)!important}
+.st>div{background:rgba(var(--fg-rgb),.05)!important}
+.nt{background:rgba(var(--fg-rgb),.05)!important;color:var(--fg);font-family:inherit}
+.nt::placeholder{color:var(--dim2)}
+/* Einzelfahrt im Sheet: Karte so hoch, dass sie in der mittleren Position nicht unten abgeschnitten wird */
+#hbody #dmapw{height:var(--dmh,24vh);height:var(--dmh,24dvh);min-height:130px}
+/* Nicht klickbare Datenfelder: ohne eigenen Hintergrund, nur durch feine Linien getrennt (Buttons behalten ihre Kartenoptik) */
+#dhero{gap:0!important;border-top:1px solid var(--ln)}
+#dhero div{background:none!important;border:0!important;border-radius:0!important;border-bottom:1px solid var(--ln)!important;border-right:1px solid var(--ln)!important;padding:11px 12px!important}
+#dhero div:nth-child(3n){border-right:0!important}
+.st{background:none!important;gap:0!important;border:0!important;border-top:1px solid var(--ln)!important;border-radius:0!important}
+.st>div{background:none!important;border-bottom:1px solid var(--ln);border-right:1px solid var(--ln)}
+.st>div:nth-child(3n){border-right:0}
+.wxtiles{gap:0!important;border-top:1px solid var(--ln)}
+.wxtl{background:none!important;border-radius:0!important;border-bottom:1px solid var(--ln);border-right:1px solid var(--ln)}
+.wxtl:nth-child(3n){border-right:0}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
