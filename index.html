@@ -1652,9 +1652,9 @@ function whMap(r){if(!map||!map.getSource||!map.getSource("hm"))return;try{
   if(r)WH.ct=setTimeout(()=>{try{["selc-line","sel-line","sel-glow"].forEach(l=>pp(l,"line-opacity-transition",tr(900)));pp("selc-line","line-opacity",1);pp("sel-line","line-opacity",0);pp("sel-glow","line-opacity",.3)}catch(e){}},2000);
  map.setPaintProperty("hm-line","line-opacity",r?.22:.95);map.setPaintProperty("hm-glow","line-opacity",r?.06:(mm=="tiles"?.1:.3));
  if(r)map.fitBounds([[r.bb[0],r.bb[1]],[r.bb[2],r.bb[3]]],{padding:{top:96,bottom:$("hud").offsetHeight+36,left:36,right:36},duration:650,maxZoom:15.5});else fitAll()}catch(e){}}
-function whSel(i){WH.i=i;const r=i?WH.L[i-1]:null,f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>';
+function whSel(i){WH.i=i;HE.hs=null;const r=i?WH.L[i-1]:null,f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>';
  if(r){$("hnm").textContent=rname(r)+" · "+new Date(r.date).toLocaleDateString("de-DE",{day:"numeric",month:"short"});
-  $("hst").innerHTML=f(f0(r.km,1),"km","Strecke")+f(f0(r.up),"m","Höhe")+f(fHm(r.h),"h","Zeit")+f(f0(r.kc),"kcal","Kalorien")+(r.est?f(f0(r.vavg,1),"km/h","Ø Tempo"):f(f0(r.pw),"W","Ø Watt"))}
+  $("hst").innerHTML=f(f0(r.km,1),"km","Strecke")+f(f0(r.up),"hm","Höhe")+f(fHm(r.h),"h","Zeit")+f(f0(r.kc),"kcal","Kalorien")+(r.est?f(f0(r.vavg,1),"km/h","Ø Tempo"):f(f0(r.pw),"W","Ø Watt"))}
  else{$("hst").innerHTML=whStatsOv();HB=null;wlCount();whGraph()}
  if(r||WH.hl){WH.hl=!!r;whMap(r)}}
 function whTick(){const w=$("wh"),y=w.scrollTop,n=w.children.length,lgo=$("wlogo");whDots(y);lgo.style.transform="translateY("+(-y)+"px)";lgo.style.opacity=Math.max(0,1-y/24);c=Math.max(0,Math.min(n-1,Math.round(y/WIT)));
@@ -1837,13 +1837,20 @@ function heDraw(){const r=HE.r,c=HE.cv;if(!r)return;const bx=$("hele").getBoundi
   const gy=(top+base)/2+2,gw=9,gh=24;
   [xa,xb].forEach(x=>{const rx=clamp(x-gw/2,0,W-gw);g.fillStyle="#fff";g.strokeStyle=ACC;g.lineWidth=2;g.beginPath();g.roundRect?g.roundRect(rx,gy-gh/2,gw,gh,4.5):g.rect(rx,gy-gh/2,gw,gh);g.fill();g.stroke();
    g.strokeStyle=ACC;g.lineWidth=1.2;g.beginPath();g.moveTo(rx+gw/2,gy-5);g.lineTo(rx+gw/2,gy+5);g.stroke()});
-  dot();const q=heRng(r,A,B),sp=heSpd(r,A,B);$("her").innerHTML=f(f0(q.dist,1),"km")+f("↑"+f0(q.up),"m")+f("↓"+f0(q.dn),"m")+f("Ø "+(q.gr>0?"+":"")+f0(q.gr,1),"%")+(sp!=null?f("Ø "+f0(sp,1),"km/h"):"");return}
+  dot();heHud(r);return}
  prof();
  dot();if(HE.i!=null){const i=HE.i,x=X(r.cdist[i]),y=Y(r.alt[i]);
   g.strokeStyle=FGa(.55);g.lineWidth=1;g.beginPath();g.moveTo(x,2);g.lineTo(x,base);g.stroke();
   g.fillStyle="#fff";g.strokeStyle=ACC;g.lineWidth=2.5;g.beginPath();g.arc(x,y,4.6,0,7);g.fill();g.stroke()}
- if(HE.i==null)$("her").innerHTML=f("↑ "+f0(hi),"m")+f("↓ "+f0(lo),"m");
- else{const i=HE.i;$("her").innerHTML=f(f0(r.cdist[i],1),"km")+f(f0(r.alt[i]),"m")+f((r.gr[i]>0?"+":"")+f0(r.gr[i],1),"%")}}
+ heHud(r)}
+function heHud(r){const f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>',dt=r.raw&&r.raw.dt,
+ dtS=(a,b)=>{if(!dt)return 0;let t=0;for(let i=a+1;i<=b;i++)t+=dt[i]||0;return t},hh=t=>t>0?fHm(t/3600):'–';let h;
+ if(HE.rm&&HE.rg){const A=HE.rg.a,B=HE.rg.b,q=heRng(r,A,B),sp=heSpd(r,A,B),tt=dtS(A,B),tT=dtS(0,r.n-1),sh=tT>0?tt/tT:(r.cdist[B]-r.cdist[A])/(r.cdist[r.n-1]||1);
+  h=f(f0(q.dist,1),'km','Strecke')+f(f0(q.up),'hm','Höhe')+f(hh(tt),'h','Zeit')+f(f0((r.kc||0)*sh),'kcal','Kalorien')+f(sp!=null?f0(sp,1):'–','km/h','Ø Tempo')}
+ else if(HE.i!=null){const i=HE.i,sp=heSpd(r,Math.max(0,i-4),Math.min(r.n-1,i+4)),g=r.gr[i];
+  h=f(f0(r.cdist[i],1),'km','Strecke')+f(f0(r.alt[i]),'hm','ü. NN')+f(hh(dtS(0,i)),'h','Zeit')+f((g>0?'+':'')+f0(g,1),'%','Steigung')+f(sp!=null?f0(sp,1):'–','km/h','Tempo')}
+ else h=f(f0(r.km,1),'km','Strecke')+f(f0(r.up),'hm','Höhe')+f(fHm(r.h),'h','Zeit')+f(f0(r.kc),'kcal','Kalorien')+(r.est?f(f0(r.vavg,1),'km/h','Ø Tempo'):f(f0(r.pw),'W','Ø Watt'));
+ if(HE.hs!==h){HE.hs=h;$('hst').innerHTML=h}}
 function heCur(i){if(!map||!map.getSource)return;try{
  if(!map.getSource("hcur")){if(i==null)return;map.addSource("hcur",{type:"geojson",data:EMPTY});
   map.addLayer({id:"hcur-halo",type:"circle",source:"hcur",paint:{"circle-radius":13,"circle-color":ACC,"circle-opacity":.35,"circle-blur":.6}});
@@ -4364,11 +4371,44 @@ addEventListener('gg-mode-switched',()=>show(mode(),null));show(mode(),null);
 /* Sheet-Kopf: statt Walze nur noch eine Überschrift (Umschalten über die untere Leiste) */
 .modewheel-wrap{background:none!important}
 .modewheel-wrap::before,.modewheel-wrap::after{display:none!important}
-.mwt{display:block;text-align:center;font:700 15px/30px system-ui,-apple-system,sans-serif;letter-spacing:-.01em;color:var(--fg);white-space:nowrap}
+.mwt{display:block;text-align:center;font:800 19px/30px system-ui,-apple-system,sans-serif;color:var(--act);white-space:nowrap}
+#her{display:none!important}
+html body .modewheel-wrap{left:0!important;transform:none!important;width:max-content!important;min-width:0!important}
+.mwt{text-align:left}
 html body[data-tab] .modewheel-wrap,html body[data-tab] .modewheel-wrap *{pointer-events:none!important}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
 Object.keys(T).forEach(id=>{const r=document.getElementById(id),w=r&&r.querySelector(':scope>.modewheel-wrap');if(!w)return;w.setAttribute('aria-label',T[id]);w.removeAttribute('role');w.innerHTML='<span class="mwt">'+T[id]+'</span>'})})();
+</script>
+
+<script>
+/* Karussell: Sheets seitlich wischen  Fahrten → Routen → Wetter → Fahrten */
+(function(){const IDS=['hud','plan','wx'],B=document.body;
+const cur=()=>B.classList.contains('wx-on')?2:B.classList.contains('pl-on')?1:0;
+const sheet=i=>document.getElementById(IDS[i]);
+let g=null,swallow=0;
+function hBlocked(t,sh){if(B.dataset.tab!=='map')return true;if(sh.classList.contains('edit'))return true;
+ if(t.closest('canvas,input,textarea,select,[role=slider],#hele,#rhele,#wxsl,#wxhrs,#gnav,#pl-ring,.mapboxgl-canvas,#rpop,#wxpop'))return true;
+ for(let e=t;e&&e!==sh;e=e.parentElement){const cs=getComputedStyle(e);if((cs.overflowX==='auto'||cs.overflowX==='scroll')&&e.scrollWidth>e.clientWidth+2)return true}
+ return false}
+addEventListener('touchstart',e=>{g=null;if(e.touches.length!==1)return;const c=cur(),sh=sheet(c);if(!sh||!sh.contains(e.target)||hBlocked(e.target,sh))return;
+ const t=e.touches[0];g={x:t.clientX,y:t.clientY,t:performance.now(),c,sh,lock:0,dx:0,W:sh.getBoundingClientRect().width||innerWidth}},{capture:true,passive:true});
+addEventListener('touchmove',e=>{if(!g)return;const t=e.touches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;
+ if(!g.lock){if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){g=null;return}
+  if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.6){g.lock=1;g.sh.style.transition='none';swallow=1}else return}
+ g.dx=dx;g.sh.style.translate=dx+'px 0';if(e.cancelable)e.preventDefault();e.stopImmediatePropagation()},{capture:true,passive:false});
+function fin(e,cancel){if(!g||!g.lock){g=null;return}const o=g;g=null;e.stopImmediatePropagation();
+ const dt=Math.max(1,performance.now()-o.t),v=Math.abs(o.dx)/dt,go=!cancel&&(Math.abs(o.dx)>o.W*.25||(v>.45&&Math.abs(o.dx)>40)),dir=o.dx<0?1:-1;
+ if(!go||!window.ggGo3){o.sh.style.transition='translate .2s ease';o.sh.style.translate='0 0';setTimeout(()=>{o.sh.style.transition='';o.sh.style.translate='';swallow=0},230);return}
+ o.sh.style.transition='translate .16s ease-in';o.sh.style.translate=(-dir*o.W)+'px 0';
+ setTimeout(()=>{const n=(o.c+(dir>0?1:2))%3;o.sh.style.transition='';o.sh.style.translate='';
+  try{window.ggGo3(n)}catch(x){console.error(x)}
+  const ns=sheet(n);if(ns){ns.style.transition='none';ns.style.translate=(dir*o.W)+'px 0';void ns.offsetWidth;ns.style.transition='translate .22s cubic-bezier(.3,.8,.3,1)';ns.style.translate='0 0';
+   setTimeout(()=>{ns.style.transition='';ns.style.translate='';swallow=0},260)}else swallow=0},165)}
+addEventListener('touchend',e=>fin(e,false),{capture:true,passive:false});
+addEventListener('touchcancel',e=>fin(e,true),{capture:true,passive:false});
+['pointermove','pointerup','click'].forEach(t=>addEventListener(t,e=>{if(swallow&&(g&&g.lock||t==='click')){e.stopImmediatePropagation()}},true));
+})();
 </script>
 </body></html>
