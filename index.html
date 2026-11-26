@@ -509,7 +509,8 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
 #ggup:active{transform:translate(-50%,0) scale(.96)}
 #ggup svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 </style>
-<script>if(/iPhone/i.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches))document.documentElement.classList.add('gg-iphone-app');</script></head>
+<script>if(/iPhone/i.test(navigator.userAgent)&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches))document.documentElement.classList.add('gg-iphone-app');</script><script>window.ggCnt=function(id,n){var v=ggCnt.v=ggCnt.v||{};if(id)v[id]=n;for(var k in v){var r=document.getElementById(k),t=r&&r.querySelector('.mwt');if(!t)continue;var e=t.querySelector('.mwn');if(!e){e=document.createElement('span');e.className='mwn';t.insertBefore(e,t.firstChild)}if(e.textContent!==String(v[k]))e.textContent=v[k]}};</script>
+</head>
 <body data-tab="map" class="nodata">
 <input type="file" id="fi" multiple hidden>
 <div id="map"></div>
@@ -1903,7 +1904,7 @@ var HM="km",HB=null,GBR=[];
 const HMD={km:{g:r=>r.km,f:v=>f0(v,1),u:" km"},up:{g:r=>r.up,f:v=>f0(v),u:" m"},h:{g:r=>r.h,f:v=>fHm(v),u:" h"},kc:{g:r=>r.kc,f:v=>f0(v),u:" kcal"}};
 function whStatsOv(ride){const L=ride?[ride]:V,f=(k,n,u)=>'<div class="sm'+(HM==k?' on':'')+'" data-m="'+k+'"><b>'+n+'<small>'+u+'</small></b></div>';
  return f("km",f0(sum(L,x=>x.km)),"km")+f("up",f0(sum(L,x=>x.up)),"m")+f("h",fHm(sum(L,x=>x.h)),"h")+f("kc",f0(sum(L,x=>x.kc)),"kcal")}
-function wlCount(){const l=$("wlogo");if(l){const n=V.length;l.innerHTML="<b>"+f0(n)+"</b>"}if(typeof WH!="undefined"&&WH.i)return;const h=$("hnm");if(h){h.textContent="";h.classList.remove("lk")}}
+function wlCount(){const l=$("wlogo");if(l){const n=V.length;l.innerHTML="<b>"+f0(n)+"</b>";ggCnt("hnr",f0(n))}if(typeof WH!="undefined"&&WH.i)return;const h=$("hnm");if(h){h.textContent="";h.classList.remove("lk")}}
 function whBarMark(tgt){const g=$("hgr");if(!g)return;let hit=false;g.querySelectorAll("i[data-k]").forEach(i=>{const x=GBR[+i.dataset.k],on=!!tgt&&!!x&&x.r===tgt;i.classList.toggle("s",on);if(on)hit=true});g.classList.toggle("hs",hit)}
 function whBarLive(c){if(typeof WH=="undefined"||!WH.L)return;whBarMark(c>0?WH.L[c-1]:HB)}
 function whBarSel(){whBarMark(HB);if(typeof WH!="undefined"&&!WH.i)$("hst").innerHTML=whStatsOv(HB);
@@ -2716,7 +2717,7 @@ function rtGraph(){const g=el('rhgr');if(!g)return;const L=RT.L;if(!L.length){g.
  g.innerHTML='<div class="gb">'+A.map((o,i)=>'<i data-j="'+o.j+'" class="c'+(o.x.c?'':' nv')+(i==n-1?' l':'')+'" title="'+esc(o.x.name)+' · '+fmt(get(o.x),RM=='up'?0:1)+u+(o.x.c?'':' · keine Vorschau')+(o.x.hh?' · Karoo':' · nur App')+'" style="height:'+Math.max(4,get(o.x)/mx*100).toFixed(1)+'%;animation-delay:'+Math.min(i*14,400)+'ms"></i>').join('')+'</div>'}
 function rtHead(){const it=rtCur(),f=(v,u)=>'<div><b>'+v+'<small>'+u+'</small></b></div>',p=el('plan');
  p.classList.toggle('rrd',!!it);el('rhnm').textContent=it?it.name:'';
- const L=RT.L,lg=el('rwlogo');if(lg)lg.innerHTML='<b>'+fmt(L.length)+'</b>';
+ const L=RT.L,lg=el('rwlogo');if(lg)lg.innerHTML='<b>'+fmt(L.length)+'</b>';ggCnt('rhnr',fmt(L.length));
  if(it){const s=RT.A?statsOf(RT.A):null;el('rhst').innerHTML=f(fmt(it.km,1),'km')+f(fmt(it.up),'m ↑')+(s?f(hmm(s.h),'h')+f(fmt(plKcal(s)),'kcal'):'')}
  else{el('rhst').innerHTML=rtStatsOv();rtGraph();rtBarUpdate()}
  rtMsg()}
@@ -4393,10 +4394,14 @@ html body[data-tab] .modewheel-wrap,html body[data-tab] .modewheel-wrap *{pointe
 /* Normaler Browser (Desktop/Handy): ganz minimiert ebenfalls nur Griff, etwas tiefer */
 html:not(.gg-iphone-app) body[data-gg-min=hud] #hud>*,html:not(.gg-iphone-app) body[data-gg-min=plan] #plan>*,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx>*{visibility:hidden!important}
 html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab *,html:not(.gg-iphone-app) body[data-gg-min=plan] #pl-grab,html:not(.gg-iphone-app) body[data-gg-min=plan] #pl-grab *,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx-grab,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx-grab *{visibility:visible!important}
+
+/* Anzahl: nicht mehr über "Alle", sondern links neben der Überschrift */
+#wlogo,#rwlogo{display:none!important}
+.mwn{color:var(--act);font-weight:800;margin-right:7px}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
-Object.keys(T).forEach(id=>{const r=document.getElementById(id),w=r&&r.querySelector(':scope>.modewheel-wrap');if(!w)return;w.setAttribute('aria-label',T[id]);w.removeAttribute('role');w.innerHTML='<span class="mwt">'+T[id]+'</span>'})})();
+Object.keys(T).forEach(id=>{const r=document.getElementById(id),w=r&&r.querySelector(':scope>.modewheel-wrap');if(!w)return;w.setAttribute('aria-label',T[id]);w.removeAttribute('role');w.innerHTML='<span class="mwt">'+T[id]+'</span>'});ggCnt()})();
 </script>
 
 <script>
@@ -4440,5 +4445,28 @@ function fix(el){if(busy)return;const src=el.innerHTML;
 function scan(){document.querySelectorAll('.maplibregl-ctrl-attrib-inner').forEach(fix)}
 new MutationObserver(scan).observe(document.body,{childList:true,subtree:true,characterData:true});scan();
 })();
+</script>
+<script>
+/* Walzen: mehr Schwung beim Anwerfen (Fahrten, Routen, Wetter). GAIN = Stärke, FRIC = Auslaufen (näher an 1 = länger) */
+(function(){const GAIN=1.4,FRIC=.95,STEP=44;
+function attach(w){let s=[],raf=0;
+ const stop=()=>{if(raf){cancelAnimationFrame(raf);raf=0}w.style.scrollSnapType=''};
+ w.addEventListener('touchstart',()=>{stop();s=[]},{passive:true});
+ w.addEventListener('wheel',stop,{passive:true});
+ w.addEventListener('touchmove',e=>{const t=e.touches[0];s.push([performance.now(),t.clientY]);if(s.length>6)s.shift()},{passive:true});
+ const fin=()=>{const n=s.length;if(n<2)return;const a=s[0],b=s[n-1],dt=b[0]-a[0];s=[];
+  if(dt<=0||performance.now()-b[0]>70)return;
+  let v=-(b[1]-a[1])/dt;if(Math.abs(v)<.5)return;v*=GAIN;
+  w.style.scrollSnapType='none';let last=performance.now();
+  const step=t=>{const d=Math.min(32,t-last);last=t;w.scrollTop+=v*d;v*=Math.pow(FRIC,d/16.7);
+   const max=w.scrollHeight-w.clientHeight;
+   if(Math.abs(v)<.1||(w.scrollTop<=0&&v<0)||(w.scrollTop>=max&&v>0)){
+    const tgt=Math.max(0,Math.min(max,Math.round(w.scrollTop/STEP)*STEP));
+    w.style.scrollSnapType='';raf=0;w.scrollTo({top:tgt,behavior:'smooth'});return}
+   raf=requestAnimationFrame(step)};
+  raf=requestAnimationFrame(step)};
+ w.addEventListener('touchend',fin,{passive:true});
+ w.addEventListener('touchcancel',()=>{s=[]},{passive:true})}
+['wh','rwh','wxwh'].forEach(id=>{const w=document.getElementById(id);if(w)attach(w)})})();
 </script>
 </body></html>
