@@ -168,7 +168,10 @@ const S={
 const TITLE={1:"A nice house",35:"Journey into space"};
 
 // ---- Stimmen ----
-const VN=[["Ava","Premium"],["Zoe","Premium"],["Jamie","Premium"],["Evan","Enhanced"]];
+// [Profilname, Qualität, Kandidaten in Reihenfolge] – Premium-Stimmen sind für Safari meist unsichtbar,
+// daher folgen als Ersatz die natürlichsten Standardstimmen des iPads
+const VN=[["Ava","Premium",["Ava","Samantha"]],["Zoe","Premium",["Zoe","Karen","Tessa"]],["Jamie","Premium",["Jamie","Daniel"]],["Evan","Enhanced",["Evan","Reed","Eddy","Rocko"]]];
+const NATURAL=["Samantha","Daniel","Karen","Moira","Tessa","Reed","Eddy","Shelley","Sandy","Flo"];
 const PIC=["ava.jpg","zoe.jpg","jamie.jpg","van.jpg"]; // liegen im selben Ordner wie index.html
 const st={tab:"w",voice:0,rate:0.9,view:"ch",ch:1,sc:1,two:true,de:true,on:-1,token:0,mode:"cards",dir:"en",letter:"A",shuf:false,rnd:[],cur:null};
 let vs=[],vsKey="";
@@ -182,14 +185,19 @@ function loadV(){
 }
 function isEn(v){return /^en/i.test((v.lang||"").replace("_","-"))}
 function qual(v){const q=(v.name+" "+v.voiceURI).toLowerCase();return q.includes("premium")?3:q.includes("enhanced")?2:1}
-function pick(i){
-  const n=VN[i][0].toLowerCase();
-  const m=vs.filter(v=>isEn(v)&&(v.name.toLowerCase().split(/[\s(]/)[0]===n||v.voiceURI.toLowerCase().split(/[.\s_-]/).includes(n)));
-  m.sort((a,b)=>qual(b)-qual(a));
-  return m[0]||null;
+function byName(n){
+  n=n.toLowerCase();
+  return vs.filter(v=>isEn(v)&&(v.name.toLowerCase().split(/[\s(]/)[0]===n||v.voiceURI.toLowerCase().split(/[.\s_-]/).includes(n))).sort((a,b)=>qual(b)-qual(a))[0]||null;
 }
-// Ersatz: beste verfügbare englische Stimme (Premium/Enhanced zuerst), nicht die Standard-Computerstimme
-function fallback(){const en=vs.filter(isEn).sort((a,b)=>qual(b)-qual(a));return en.find(v=>/en-US/i.test(v.lang))||en[0]||null}
+function pick(i){
+  for(const n of VN[i][2]){const v=byName(n);if(v)return v}
+  return null;
+}
+// Notfall: Premium/Enhanced, dann natürliche Standardstimmen – nie Spaß-/Robotikstimmen
+function fallback(){
+  const en=vs.filter(isEn);
+  return en.find(v=>qual(v)>1)||NATURAL.map(byName).find(Boolean)||en.find(v=>/en-US/i.test(v.lang))||en[0]||null;
+}
 function say(text,i){
   if(!vs.length)loadV();
   return new Promise(res=>{
@@ -209,7 +217,7 @@ function speakOne(text){const busy=speechSynthesis.speaking||speechSynthesis.pen
 function renderVoices(){
   document.getElementById("voices").innerHTML=VN.map((v,i)=>{
     const ok=!!pick(i);
-    return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?v[1]+" ✓":"Ersatzstimme"}</small></div></button>`;
+    return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?(pick(i).name.split(" (")[0]===v[0]?v[1]+" ✓":"Stimme: "+pick(i).name.split(" (")[0]):"Ersatzstimme"}</small></div></button>`;
   }).join("");
   const info=document.getElementById("vinfo"),miss=VN.some((v,i)=>!pick(i));
   if(!miss)info.hidden=true;
