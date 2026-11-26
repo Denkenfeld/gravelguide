@@ -619,7 +619,7 @@ set();addEventListener('resize',set);addEventListener('orientationchange',functi
    <div class="chips" id="dch" style="padding:0 8px 10px"></div>
    <div id="dro"></div><canvas id="dpf"></canvas>
    <div id="drail"><div class="rl"><div class="rtk"></div><div class="rf" id="drf"></div><div class="hdl" id="dha"></div><div class="hdl" id="dhb"></div></div></div>
-   <div class="rnote"><span id="drn">Griffe ziehen, um einen Abschnitt zu wählen</span><button id="drx" hidden>Zurücksetzen</button></div></div>
+   <div class="rnote"><span id="drn"></span><button id="drx" hidden>Zurücksetzen</button></div></div>
   <div id="dclimb" class="sgp" hidden></div>
    <div id="dwxw" class="card" hidden></div>
   <div id="dstats"></div><div id="dzone" class="sgp" hidden></div><div id="dgrade" class="sgp" hidden></div>
@@ -1230,7 +1230,7 @@ function dRO(){const r=D.r,I=r.info||{},U=(l,v,u)=>v==null||v===''||v!==v?'':`<d
  else{$('dro').className='';const full=!partial(),[i0,i1]=selIdx(),S=full?null:selStat(r,i0,i1);
   h=U('Distanz',f0(full?r.km:S.km,1),'km')+U('Zeit',fHm((full?r.mt:S.t)/3600),'h')+U('Ø Tempo',f0(full?r.vavg:S.v,1),'km/h')+U('Aufstieg',f0(full?r.up:S.up),'m')+U('Ø bergauf',full?null:S.cg!=null?f0(S.cg,1):null,'%')
    +U('Ø Leistung',full?(r.pw?f0(r.pw):null):(S.pw?f0(S.pw):null),'W')+U('Ø Puls',full?(I.hravg!=null?f0(I.hravg):null):(S.hr?f0(S.hr):null),'bpm')+U('Ø Tritt',full?(I.cavg!=null?f0(I.cavg):null):(S.cad?f0(S.cad):null),'U/min')}
- $('dro').innerHTML=h;$('drx').hidden=!partial();$('drn').textContent=partial()?'Abschnitt '+f0(D.a*r.km,1)+' – '+f0(D.b*r.km,1)+' km':'Griffe ziehen, um einen Abschnitt zu wählen'}
+ $('dro').innerHTML=h;$('drx').hidden=!partial();$('drn').textContent=partial()?'Abschnitt '+f0(D.a*r.km,1)+' – '+f0(D.b*r.km,1)+' km':''}
 function dRail(){const a=D.a*100,b=D.b*100;$('dha').style.left=a+'%';$('dhb').style.left=b+'%';$('drf').style.left=a+'%';$('drf').style.width=(b-a)+'%'}
 function dProf(){if(!D)return;const cv=$('dpf'),c=cvs(cv);if(!c)return;const{g,w,h}=c,r=D.r,n=r.n,L=r.km||1,pl=12,pr=12,pt=14,pb=18,ph=h-pt-pb,base=pt+ph;
  let lo=Infinity,hi=-Infinity;for(const a of r.alt){if(a<lo)lo=a;if(a>hi)hi=a}if(hi-lo<20){const m=(hi+lo)/2;lo=m-10;hi=m+10}
@@ -1515,7 +1515,7 @@ function dExtra(){const r=D.r;
  const z=zonesOf(r);$('dzone').hidden=!z;if(z)$('dzone').innerHTML=`<h3>${z.tt}</h3><div class="zbar">${z.t.map((s,i)=>s>0?`<i style="flex:${s};background:${ZC[i]}"></i>`:'').join('')}</div><div class="gleg">${z.N.map((n,i)=>`<div><i style="background:${ZC[i]}"></i>${n}<b>${fHm(z.t[i]/3600)}</b></div>`).join('')}</div>`;
  const box=$('dwxw'),id=r.id;box.hidden=true;
  wxFor(r).then(w=>{if(!w||!D||D.r.id!==id)return;const dir=['N','NO','O','SO','S','SW','W','NW'][Math.round((w.d||0)/45)%8];
-  box.hidden=false;box.innerHTML=`<h2>Wetter</h2><div class="sub">zur Zeit der Fahrt · Open-Meteo</div><div class="wx"><div class="ico">${wxIcon(w.c)}</div><div class="vals"><div><b>${f0(w.t)}°</b><span>Temperatur</span></div><div><b>${f0(w.w)} km/h</b><span>Wind aus ${dir} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${w.d||0}deg)"><path d="M12 4v15M6 13l6 6 6-6"/></svg></span></div><div><b>${f0(w.p,1)} mm</b><span>Regen</span></div></div></div>`}).catch(()=>{})}
+  box.hidden=false;box.innerHTML=`${window.hwxHtml?hwxHtml(w,r):''}<h2>Wetter</h2><div class="sub">zur Zeit der Fahrt · Open-Meteo</div><div class="wx"><div class="ico">${wxIcon(w.c)}</div><div class="vals"><div><b>${f0(w.t)}°</b><span>Temperatur</span></div><div><b>${f0(w.w)} km/h</b><span>Wind aus ${dir} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${w.d||0}deg)"><path d="M12 4v15M6 13l6 6 6-6"/></svg></span></div><div><b>${f0(w.p,1)} mm</b><span>Regen</span></div></div></div>`}).catch(()=>{})}
 /* ---- Teilen-Bild ---- */
 async function shareRide(rr){const r=rr||D.r,W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
  const bg=g.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#14161b');bg.addColorStop(1,'#0a0b0e');g.fillStyle=bg;g.fillRect(0,0,W,H);
@@ -1653,7 +1653,7 @@ function whMap(r){if(!map||!map.getSource||!map.getSource("hm"))return;try{
   if(r)WH.ct=setTimeout(()=>{try{["selc-line","sel-line","sel-glow"].forEach(l=>pp(l,"line-opacity-transition",tr(900)));pp("selc-line","line-opacity",1);pp("sel-line","line-opacity",0);pp("sel-glow","line-opacity",.3)}catch(e){}},2000);
  map.setPaintProperty("hm-line","line-opacity",r?.22:.95);map.setPaintProperty("hm-glow","line-opacity",r?.06:(mm=="tiles"?.1:.3));
  if(r)map.fitBounds([[r.bb[0],r.bb[1]],[r.bb[2],r.bb[3]]],{padding:{top:96,bottom:$("hud").offsetHeight+36,left:36,right:36},duration:650,maxZoom:15.5});else fitAll()}catch(e){}}
-function whSel(i){WH.i=i;HE.hs=null;const r=i?WH.L[i-1]:null,f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>';
+function whSel(i){WH.i=i;HE.hs=null;try{window.hwx&&hwx(i?WH.L[i-1]:null)}catch(e){}const r=i?WH.L[i-1]:null,f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>';
  if(r){$("hnm").textContent=rname(r)+" · "+new Date(r.date).toLocaleDateString("de-DE",{day:"numeric",month:"short"});
   $("hst").innerHTML=f(f0(r.km,1),"km","Strecke")+f(f0(r.up),"hm","Höhe")+f(fHm(r.h),"h","Zeit")+f(f0(r.kc),"kcal","Kalorien")+f(f0(r.vavg,1),"km/h","Ø Tempo")}
  else{$("hst").innerHTML=whStatsOv();HB=null;wlCount();whGraph()}
@@ -1712,10 +1712,10 @@ function sgMove(x,y,tg,ev){if(!SG)return;
  const lo=SH.H[0]-shMY(),raw=SG.h+(SG.y-y),over=raw-SH.H[2],h=raw<lo?lo:over>0?SH.H[2]+rb(over,70):raw,n=performance.now();
  SG.s.push([n,h]);while(SG.s.length>2&&n-SG.s[0][0]>100)SG.s.shift();SG.c=h;shApply(h)}
 function sgEnd(){if(!SG||!SG.d){SG=null;return}const q=SG.s,a=q[0],b=q[q.length-1],v=q.length>1&&b[0]>a[0]&&performance.now()-b[0]<90?(b[1]-a[1])/(b[0]-a[0])*1000:0;let p=SG.c+v*.2;if(SG.c>=SH.H[0]-1)p=Math.max(p,SH.H[0]);SG=null;const P=[SH.H[0]-shMY(),...SH.H];let st=0;P.forEach((h,i)=>{if(Math.abs(h-p)<Math.abs(P[st]-p))st=i});if(st==0)shSet(0,v,true);else shSet(st-1,v)}
-shEl.addEventListener("touchstart",e=>{if(RP.on||e.target.closest("#wh,#hele,#dmapw,#dpf,input,select,textarea")){SG=null;return}sgBegin(e.touches[0].clientX,e.touches[0].clientY)},{passive:true});
+shEl.addEventListener("touchstart",e=>{if(RP.on||e.target.closest("#wh,#hele,#dmapw,#dpf,#drail,input,select,textarea")){SG=null;return}sgBegin(e.touches[0].clientX,e.touches[0].clientY)},{passive:true});
 shEl.addEventListener("touchmove",e=>sgMove(e.touches[0].clientX,e.touches[0].clientY,e.target,e),{passive:false});
 shEl.addEventListener("touchend",sgEnd);shEl.addEventListener("touchcancel",sgEnd);
-shEl.addEventListener("mousedown",e=>{if(e.button||RP.on||!((e.target===shEl&&document.body.dataset.ggMin)||e.target.closest("#hgrab,#hmain"))||e.target.closest("#wh,.chips,#hele,button,input"))return;e.preventDefault();sgBegin(e.clientX,e.clientY);
+shEl.addEventListener("mousedown",e=>{if(e.button||RP.on||!((e.target===shEl&&document.body.dataset.ggMin)||e.target.closest("#hgrab,#hmain"))||e.target.closest("#wh,.chips,#hele,#drail,button,input"))return;e.preventDefault();sgBegin(e.clientX,e.clientY);
  const mv=ev=>sgMove(ev.clientX,ev.clientY,null,ev),up=()=>{removeEventListener("mousemove",mv);removeEventListener("mouseup",up);if(SG&&SG.d){SH.nc=1;setTimeout(()=>SH.nc=0,60)}sgEnd()};addEventListener("mousemove",mv);addEventListener("mouseup",up)});
 shGrab.onclick=()=>{if(SH.nc)return;if(SH.min){shSet(0);return}shSet(SH.st==2?0:SH.st+1)};
 const _od=openDetail;openDetail=function(id){const r=TM.get(String(id));
@@ -4442,6 +4442,28 @@ html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) b
 .wxtl{background:none!important;border-radius:0!important;border-bottom:1px solid var(--ln);border-right:1px solid var(--ln)}
 .wxtl:nth-child(3n){border-right:0}
 #dlg[hidden]{display:none!important}
+/* Fahrten-Sheet: mehr Luft unter dem Logo (wie beim Routen-Sheet) */
+#hud.ex #hbody{padding-bottom:calc(30px + var(--sab))}
+/* Höhenprofil-Regler: größere Trefferfläche, Gesten gehören dem Regler */
+#drail{height:58px!important;margin-top:-4px!important;touch-action:none!important;-webkit-user-select:none;user-select:none}
+.hdl::after{content:"";position:absolute;inset:-14px;border-radius:50%}
+/* Einzelfahrt: Karte 1px niedriger; Inhalt unter der Karte in der mittleren Sheet-Position ausblenden */
+#hbody #dmapw{height:calc(var(--dmh,24vh) - 1px);height:calc(var(--dmh,24dvh) - 1px)}
+#hbody #dsc>*{transition:opacity .18s}
+#hud.ex:not(.full) #hbody #dsc>*{opacity:0;pointer-events:none}
+/* Wetter-Anzeige der Fahrt (Pfeil + Wert) oben rechts */
+#dwxw{position:relative}
+.hwxg{position:absolute;top:11px;right:14px;display:flex;align-items:center;gap:4px;height:30px;padding:0 9px 0 4px;border-radius:15px;color:var(--gc,var(--act));background:rgba(var(--fg-rgb),.06);border:1px solid rgba(var(--fg-rgb),.08)}
+.hwxg b{font-size:16px;font-weight:800;line-height:1;color:inherit;letter-spacing:-.02em}
+.hwxg svg{width:24px;height:24px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+/* Übersicht im halb ausgefahrenen Sheet: Inhalt der Karte unter den 9 Feldern ausblenden */
+#hbody #kpi+.card>*{transition:opacity .18s}
+#hud.ex:not(.full) #hbody #kpi+.card>*{opacity:0;pointer-events:none}
+/* Einzelfahrt im Sheet: die 3 Kennzahl-Felder unter der Karte entfallen, das Profil rückt nach oben */
+#hbody #dhero{display:none!important}
+/* Einzelfahrt-Profil: Hinweistext entfällt, Grafik 10px niedriger */
+#dpf{height:146px!important}
+.rnote{min-height:0!important}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
@@ -4455,7 +4477,7 @@ const cur=()=>B.classList.contains('wx-on')?2:B.classList.contains('pl-on')?1:0;
 const sheet=i=>document.getElementById(IDS[i]);
 let g=null,swallow=0;
 function hBlocked(t,sh){if(B.dataset.tab!=='map')return true;if(sh.classList.contains('edit'))return true;
- if(t.closest('canvas,input,textarea,select,[role=slider],#hele,#rhele,#wxsl,#wxhrs,#gnav,#pl-ring,.mapboxgl-canvas,#rpop,#wxpop'))return true;
+ if(t.closest('canvas,input,textarea,select,[role=slider],#hele,#drail,#dpf,#rhele,#wxsl,#wxhrs,#gnav,#pl-ring,.mapboxgl-canvas,#rpop,#wxpop'))return true;
  for(let e=t;e&&e!==sh;e=e.parentElement){const cs=getComputedStyle(e);if((cs.overflowX==='auto'||cs.overflowX==='scroll')&&e.scrollWidth>e.clientWidth+2)return true}
  return false}
 addEventListener('touchstart',e=>{g=null;if(e.touches.length!==1)return;const c=cur(),sh=sheet(c);if(!sh||!sh.contains(e.target)||hBlocked(e.target,sh))return;
@@ -4512,5 +4534,14 @@ function attach(w){let s=[],raf=0;
  w.addEventListener('touchend',fin,{passive:true});
  w.addEventListener('touchcancel',()=>{s=[]},{passive:true})}
 ['wh','rwh','wxwh'].forEach(id=>{const w=document.getElementById(id);if(w)attach(w)})})();
+</script>
+<script>
+/* Rad-Wertung der Fahrt (Wetter während der Fahrt): Pfeil + Zahl im Wetter-Feld der Einzelfahrt, oben rechts */
+(function(){const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+function score(w,r){const h=r&&r.h>0?r.h:1,rain=h>2?w.p*2/h:w.p,wind=w.w||0,gust=wind*1.5,ap=w.t,c=w.c||0,storm=c>=95;
+ const pen=cl(rain*20,0,50)+(gust>35?Math.min(25,(gust-35)*.8):0)+(wind>20?Math.min(10,(wind-20)*.6):0)+(ap<5?Math.min(20,(5-ap)*2.5):ap>30?Math.min(20,(ap-30)*3):0)+([71,73,75,77,85,86].includes(c)?25:0)+([56,57,66,67].includes(c)?40:0)+((c===45||c===48)?8:0);
+ let sc=Math.round(cl(100-pen,0,100));if(storm)sc=Math.min(sc,8);return{sc,storm}}
+window.hwxHtml=function(w,r){try{const s=score(w,r);return '<div class="hwxg" title="Rad-Wertung zur Zeit der Fahrt" style="--gc:hsl('+Math.round(s.sc*1.25)+' 78% 55%)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" opacity=".32"></circle><g style="transform-origin:12px 12px;transform:rotate('+((100-s.sc)*1.8).toFixed(1)+'deg)"><path d="M12 17.6V6.8M7.4 11.4 12 6.8l4.6 4.6"/></g></svg><b>'+(s.storm?'!':s.sc)+'</b></div>'}catch(e){return ''}};
+window.hwx=function(){const o=document.getElementById('hwxg');if(o)o.remove()};})();
 </script>
 </body></html>
