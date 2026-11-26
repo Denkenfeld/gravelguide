@@ -1268,7 +1268,7 @@ function dMapData(){const m=dmap;if(!m||!D||!m.getSource('dr'))return;const r=D.
  try{m.getSource('dr').setData({type:'FeatureCollection',features:segs([r],em)});
   const col=R?['interpolate',['linear'],['get','v'],...R]:ACC;m.setPaintProperty('dr-line','line-color',col);m.setPaintProperty('dr-glow','line-color',col);
   const C=coords(r);m.getSource('dpt').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{k:'s'},geometry:{type:'Point',coordinates:C[0]}},{type:'Feature',properties:{k:'e'},geometry:{type:'Point',coordinates:C[C.length-1]}}]});
-  $('dlg').innerHTML=R?`<span>${R[0]}</span><i style="background:linear-gradient(90deg,${R.filter((_,i)=>i%2).join(',')})"></i><span>${R[R.length-2]}+ ${UN[em]}</span>`:'';$('dlg').hidden=!R}catch(e){}}
+  $('dlg').innerHTML=R?`<span>${R[0]}</span><i style="background:linear-gradient(90deg,${R.filter((_,i)=>i%2).join(',')})"></i><span>${R[R.length-2]}+ ${UN[em]}</span>`:'';$('dlg').hidden=!R||em=='grade'}catch(e){}}
 function dFit(){const m=dmap;if(!m||!D)return;const b=D.r.bb;try{m.resize();m.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:38,duration:0,maxZoom:16,pitch:d3?60:0})}catch(e){}}
 function dMapSel(){const m=dmap;if(!m||!D||!m.getSource('dsel'))return;const r=D.r;
  try{if(!partial()){m.getSource('dsel').setData(EMPTY);return}const[i0,i1]=selIdx(),c=coords(r).slice(i0,i1+1);
@@ -4441,6 +4441,7 @@ html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) b
 .wxtiles{gap:0!important;border-top:1px solid var(--ln)}
 .wxtl{background:none!important;border-radius:0!important;border-bottom:1px solid var(--ln);border-right:1px solid var(--ln)}
 .wxtl:nth-child(3n){border-right:0}
+#dlg[hidden]{display:none!important}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
