@@ -78,12 +78,42 @@ h1{font-size:32px;letter-spacing:.5px}
 .de-e b{font-weight:900}
 .de-e span{color:var(--soft)}
 .de-e i{font-style:normal;font-size:13px;color:var(--coral);margin-left:4px}
+
+/* ---- Bild immer mittig ---- */
+.emo{text-align:center}
+/* ---- A-Z Buttons ---- */
+.letters{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 14px}
+.lt{min-width:46px;height:46px;padding:0 8px;border-radius:14px;background:var(--card);font-weight:900;font-size:20px;backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 30px rgba(18,48,90,.12),inset 0 1px 0 rgba(255,255,255,.6)}
+.lt[aria-pressed="true"]{background:var(--coral);color:#fff}
+.lt:disabled{opacity:.3;cursor:default}
+h2 .note{font-weight:700}
+#vinfo{margin-top:8px;font-size:13px}
+/* ---- Vokabeltraining: Karten zum Umdrehen ---- */
+:root{--face:#f6fbff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--face:#1c3866}}
+:root[data-theme="dark"]{--face:#1c3866}
+.flip{perspective:1200px;cursor:pointer;min-width:0}
+.flip-in{display:grid;grid-template-columns:minmax(0,1fr);transition:transform .55s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
+.flip.flipped .flip-in{transform:rotateY(180deg)}
+.face{grid-area:1/1;min-height:260px;background:var(--face);border:3px solid var(--line);border-radius:28px;padding:18px;box-shadow:0 8px 30px rgba(18,48,90,.12);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+.face.back{transform:rotateY(180deg)}
+.flip:not(.flipped) .back,.flip.flipped .front{pointer-events:none}
+.fw{font-size:36px;font-weight:900;line-height:1.15;word-break:break-word}
+.fwde{color:var(--coral)}
+.lang{font-size:12px;font-weight:800;color:var(--soft);letter-spacing:1px;text-transform:uppercase}
+.stars{display:flex;justify-content:center;gap:4px;margin-top:8px}
+.star{font-size:42px;line-height:1;padding:2px 6px;color:var(--soft)}
+.star.on{color:#ffb400}
+.hint{font-size:13px;color:var(--soft);text-align:center;margin-top:4px}
+@media (prefers-reduced-motion:reduce){.flip-in{transition:none}}
 </style>
 </head>
 <body>
 <header>
   <h1>ELI Dictionary</h1>
   <div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div>
+  <div class="note" id="vinfo" hidden></div>
   <div class="row">
     <button class="tab" id="tabW">📚 Karten</button><button class="tab" id="tabD">📖 Wörterbuch</button>
     <button class="tab" id="tabS">💬 Geschichten</button>
@@ -140,57 +170,121 @@ const TITLE={1:"A nice house",35:"Journey into space"};
 // ---- Stimmen ----
 const VN=[["Ava","Premium"],["Zoe","Premium"],["Jamie","Premium"],["Evan","Enhanced"]];
 const PIC=["ava.jpg","zoe.jpg","jamie.jpg","van.jpg"]; // liegen im selben Ordner wie index.html
-const st={tab:"w",voice:0,rate:0.9,view:"ch",ch:1,sc:1,two:true,de:true,on:-1,token:0};
-let vs=[];
-function loadV(){vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));renderVoices()}
+const st={tab:"w",voice:0,rate:0.9,view:"ch",ch:1,sc:1,two:true,de:true,on:-1,token:0,mode:"cards",dir:"en",letter:"A",shuf:false,rnd:[],cur:null};
+let vs=[],vsKey="";
+function loadV(){
+  const all=(window.speechSynthesis&&speechSynthesis.getVoices())||[];
+  if(!all.length)return false;
+  const key=all.map(v=>v.voiceURI).join("|");
+  vs=all;
+  if(key!==vsKey){vsKey=key;renderVoices()}
+  return true;
+}
+function isEn(v){return /^en/i.test((v.lang||"").replace("_","-"))}
+function qual(v){const q=(v.name+" "+v.voiceURI).toLowerCase();return q.includes("premium")?3:q.includes("enhanced")?2:1}
 function pick(i){
   const n=VN[i][0].toLowerCase();
-  const m=vs.filter(v=>v.name.toLowerCase().startsWith(n));
-  return m.find(v=>/premium|enhanced/i.test(v.name))||m[0]||null;
+  const m=vs.filter(v=>isEn(v)&&(v.name.toLowerCase().split(/[\s(]/)[0]===n||v.voiceURI.toLowerCase().split(/[.\s_-]/).includes(n)));
+  m.sort((a,b)=>qual(b)-qual(a));
+  return m[0]||null;
 }
-function fallback(){return vs.find(v=>v.lang==="en-US")||vs[0]||null}
+// Ersatz: beste verfügbare englische Stimme (Premium/Enhanced zuerst), nicht die Standard-Computerstimme
+function fallback(){const en=vs.filter(isEn).sort((a,b)=>qual(b)-qual(a));return en.find(v=>/en-US/i.test(v.lang))||en[0]||null}
 function say(text,i){
+  if(!vs.length)loadV();
   return new Promise(res=>{
     const u=new SpeechSynthesisUtterance(text);
     const v=pick(i)||fallback();
-    if(v){u.voice=v;u.lang=v.lang}else u.lang="en-US";
-    u.rate=st.rate;u.onend=u.onerror=()=>res();
+    if(v){u.voice=v;u.lang=(v.lang||"en-US").replace("_","-")}else u.lang="en-US";
+    u.rate=st.rate;
+    let done=false;const fin=()=>{if(!done){done=true;res()}};
+    u.onend=u.onerror=fin;
+    window._u=u; // iOS/Safari: Utterance nicht vom Garbage Collector einsammeln lassen
     speechSynthesis.speak(u);
   });
 }
 function stop(){st.token++;speechSynthesis.cancel();st.on=-1;document.querySelectorAll(".bub.on").forEach(e=>e.classList.remove("on"));const b=document.getElementById("play");if(b){b.textContent="▶ Alles vorlesen";b.classList.remove("stop")}}
-function speakOne(text){stop();say(text,st.voice)}
+function speakOne(text){const busy=speechSynthesis.speaking||speechSynthesis.pending;stop();busy?setTimeout(()=>say(text,st.voice),90):say(text,st.voice)}
 
 function renderVoices(){
   document.getElementById("voices").innerHTML=VN.map((v,i)=>{
     const ok=!!pick(i);
     return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?v[1]+" ✓":"Ersatzstimme"}</small></div></button>`;
   }).join("");
+  const info=document.getElementById("vinfo"),miss=VN.some((v,i)=>!pick(i));
+  if(!miss)info.hidden=true;
+  else{
+    info.hidden=false;
+    info.textContent=vs.length?"Nicht alle Stimmen gefunden → Ersatzstimme. Auf diesem Gerät verfügbar: "+[...new Set(vs.filter(isEn).map(v=>v.name))].join(", "):"Stimmen werden geladen …";
+  }
 }
 
 // ---- Wörter ----
+let R={};try{R=JSON.parse(localStorage.getItem("eli_stars")||"{}")||{}}catch(e){}
+function saveR(){try{localStorage.setItem("eli_stars",JSON.stringify(R))}catch(e){}}
+const LBL=["","noch gar nicht","geht so","perfekt"];
+function starsHTML(id){
+  const n=R[W[id][0]]||0;
+  return [1,2,3].map(k=>`<button class="star${k<=n?" on":""}" data-star="${k}" data-id="${id}" aria-label="${k} Stern${k>1?"e":""}: ${LBL[k]}" aria-pressed="${k===n}">${k<=n?"★":"☆"}</button>`).join("");
+}
+function rate(b){
+  const id=+b.dataset.id,k=+b.dataset.star,w=W[id][0];
+  R[w]=(R[w]===k?0:k);saveR();
+  document.querySelectorAll(`.stars[data-id="${id}"]`).forEach(e=>e.innerHTML=starsHTML(id));
+  updateProgress();
+}
+function updateProgress(){
+  const p=document.getElementById("prog");if(!p||!st.cur)return;
+  const c=[0,0,0,0];st.cur.forEach(i=>c[R[W[i][0]]||0]++);
+  p.textContent=`★★★ perfekt: ${c[3]} von ${st.cur.length} · ★★: ${c[2]} · ★: ${c[1]} · noch nicht bewertet: ${c[0]}`;
+}
 function chaptersWithData(){return [...new Set(W.flatMap(w=>w[1]))].sort((a,b)=>a-b)}
-function card(w){
+function inner(w,showDe){
   const z=w[6];
-  return `<article class="card">
-    <div class="emo">${w[5]}</div>
+  return `<div class="emo">${w[5]}</div>
     <button class="word" data-say="${w[0]}">${w[0]}</button>
-    ${st.de?`<div class="de">${w[2]}</div>`:""}
+    ${showDe?`<div class="de">${w[2]}</div>`:""}
     ${w[3]?`<div class="pl">${w[3]}</div>`:""}
     ${z?`<div class="forms">${z.inf} · ${z.pres}<br>past: ${z.past} · participle: ${z.pp} · ${z.ing}</div>`:""}
     <button class="sent" data-say="${w[4].replace(/"/g,"&quot;")}">${w[4]}</button>
-    <div class="pg">Kapitel ${w[1].join(", ")}</div>
-  </article>`;
+    <div class="pg">Kapitel ${w[1].join(", ")}</div>`;
+}
+function card(i){return `<article class="card">${inner(W[i],st.de)}</article>`}
+function tcard(i){
+  const w=W[i],en=st.dir==="en";
+  return `<div class="flip"><div class="flip-in">
+    <div class="face front"><span class="lang">${en?"English":"Deutsch"}</span><div class="fw${en?"":" fwde"}">${en?w[0]:w[2]}</div>
+      <div class="stars" data-id="${i}">${starsHTML(i)}</div><div class="hint">Tippen zum Umdrehen</div></div>
+    <div class="face back">${inner(w,true)}<div class="stars" data-id="${i}">${starsHTML(i)}</div><div class="hint">Auf die Karte tippen = zurückdrehen</div></div>
+  </div></div>`;
 }
 function renderWords(){
   const chs=chaptersWithData();
   const chips=`<div class="chips"><button class="chip" data-view="az" aria-pressed="${st.view==="az"}">A–Z</button>`+
     chs.map(c=>`<button class="chip" data-ch="${c}" aria-pressed="${st.view==="ch"&&st.ch===c}">${c}<small>Kapitel</small></button>`).join("")+`</div>`;
-  let list,head="";
-  if(st.view==="az"){list=[...W].sort((a,b)=>a[0].toLowerCase().localeCompare(b[0].toLowerCase()));head="<h2>Alle Wörter A–Z</h2>"}
-  else{list=W.filter(w=>w[1].includes(st.ch));head=`<h2>Kapitel ${st.ch}${CH[st.ch]?": "+CH[st.ch]:""}</h2>`}
-  main.innerHTML=chips+head+`<div class="grid">${list.map(card).join("")}</div>
-  <p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
+  const all=W.map((_,i)=>i);
+  if(st.view==="az"){
+    const avail=new Set(all.map(i=>W[i][0][0].toUpperCase()));
+    if(!avail.has(st.letter))st.letter=[...avail].sort()[0];
+    const letters=`<div class="letters">`+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(L=>`<button class="lt" data-letter="${L}" aria-pressed="${st.letter===L}"${avail.has(L)?"":" disabled"}>${L}</button>`).join("")+`</div>`;
+    const list=all.filter(i=>W[i][0][0].toUpperCase()===st.letter).sort((a,b)=>W[a][0].toLowerCase().localeCompare(W[b][0].toLowerCase()));
+    st.cur=list;
+    main.innerHTML=chips+letters+`<h2>Wörter mit ${st.letter} <span class="note">· ${list.length}</span></h2><div class="grid">${list.map(card).join("")}</div>
+    <p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
+    return;
+  }
+  const tr=st.mode==="train";
+  const list=all.filter(i=>W[i][1].includes(st.ch));
+  if(tr&&st.shuf)list.sort((a,b)=>st.rnd[a]-st.rnd[b]);
+  st.cur=list;
+  const modes=`<div class="row" style="margin:0 0 12px"><button class="tab" data-mode="cards" aria-pressed="${!tr}">🗂️ Lernkarten</button><button class="tab" data-mode="train" aria-pressed="${tr}">🎯 Vokabeltraining</button></div>`;
+  const tools=tr?`<div class="row" style="margin:0 0 12px"><button class="tab" data-dir="en" aria-pressed="${st.dir==="en"}">Englisch → Deutsch</button><button class="tab" data-dir="de" aria-pressed="${st.dir==="de"}">Deutsch → Englisch</button><button class="tab" data-shuf="1">🔀 Mischen</button>${st.shuf?`<button class="tab" data-shuf="0">↕ Reihenfolge</button>`:""}</div>`:"";
+  const head=`<h2>Kapitel ${st.ch}${CH[st.ch]?": "+CH[st.ch]:""}</h2>`;
+  main.innerHTML=chips+head+modes+tools+
+    `<div class="grid">${list.map(tr?tcard:card).join("")}</div>`+
+    (tr?`<p class="note" id="prog"></p><p class="note">Sterne: ★ = kann ich noch gar nicht · ★★ = geht so · ★★★ = kann ich perfekt. Denselben Stern nochmal antippen = zurücksetzen. Deine Sterne bleiben gespeichert.</p>`
+       :`<p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`);
+  if(tr)updateProgress();
 }
 
 // ---- Wörterbuch (A-Wörter komplett, Rest aus der Auswahl) ----
@@ -217,7 +311,9 @@ function renderStory(){
   ${L.map((t,i)=>`<div class="line ${i%2?"b":"a"}"><button class="bub" data-l="${i}">${t}</button></div>`).join("")}`;
 }
 async function playFrom(start){
+  const busy=speechSynthesis.speaking||speechSynthesis.pending;
   stop();const my=st.token;
+  if(busy)await new Promise(r=>setTimeout(r,90));
   const b=document.getElementById("play");b.textContent="⏹ Stopp";b.classList.add("stop");
   const L=S[st.sc];
   for(let i=start;i<L.length;i++){
@@ -242,6 +338,11 @@ function render(){
   document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===st.rate));
 }
 document.addEventListener("click",e=>{
+  if(!vs.length&&"speechSynthesis" in window)loadV();
+  const sb=e.target.closest(".star");
+  if(sb){rate(sb);return}
+  const fl=e.target.closest(".flip");
+  if(fl&&!e.target.closest("[data-say]")){fl.classList.toggle("flipped");return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.i!==undefined){st.voice=+t.dataset.i;renderVoices();if(st.tab==="s")renderStory();say("Hello! I am "+VN[st.voice][0]+".",st.voice)}
   else if(t.id==="tabW"){st.tab="w";render()}
@@ -249,7 +350,11 @@ document.addEventListener("click",e=>{
   else if(t.id==="tabS"){st.tab="s";render()}
   else if(t.dataset.r){st.rate=+t.dataset.r;document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",b===t))}
   else if(t.dataset.view){st.view="az";render()}
-  else if(t.dataset.ch){st.view="ch";st.ch=+t.dataset.ch;render()}
+  else if(t.dataset.ch){st.view="ch";st.ch=+t.dataset.ch;st.shuf=false;render()}
+  else if(t.dataset.mode){st.mode=t.dataset.mode;st.shuf=false;render()}
+  else if(t.dataset.dir){st.dir=t.dataset.dir;render()}
+  else if(t.dataset.shuf!==undefined){st.shuf=t.dataset.shuf==="1";if(st.shuf)st.rnd=W.map(()=>Math.random());render()}
+  else if(t.dataset.letter){st.letter=t.dataset.letter;render()}
   else if(t.dataset.sc){st.sc=+t.dataset.sc;render()}
   else if(t.dataset.say){speakOne(t.dataset.say)}
   else if(t.id==="play"){st.token&&speechSynthesis.speaking&&t.classList.contains("stop")?stop():playFrom(0)}
@@ -259,7 +364,11 @@ document.addEventListener("change",e=>{
   if(e.target.id==="showDe"){st.de=e.target.checked;if(st.tab==="w")renderWords();if(st.tab==="d")renderDict()}
   if(e.target.id==="two"){st.two=e.target.checked;renderStory()}
 });
-if("speechSynthesis" in window){loadV();speechSynthesis.onvoiceschanged=loadV}
+if("speechSynthesis" in window){
+  loadV();speechSynthesis.onvoiceschanged=loadV;
+  // iOS/iPadOS feuert voiceschanged oft nicht -> kurz nachladen, bis die Stimmen da sind
+  let tries=0;const iv=setInterval(()=>{loadV();if(++tries>40)clearInterval(iv)},250);
+}
 else{document.querySelector("h1").insertAdjacentText("afterend","Dieser Browser kann nicht vorlesen.")}
 renderVoices();render();
 </script>
