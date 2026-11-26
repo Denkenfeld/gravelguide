@@ -1227,8 +1227,8 @@ function selStat(r,i0,i1){let t=0,pw=0,pt=0,hs=0,ht=0,cs=0,ct=0,up=0,ref=r.alt[i
 function dRO(){const r=D.r,I=r.info||{},U=(l,v,u)=>v==null||v===''||v!==v?'':`<div><b>${v}${u?`<small>${u}</small>`:''}</b><span>${l}</span></div>`;let h;
  if(D.cur!=null){const i=D.cur,at=(a,d)=>a&&a[i]!=null?f0(a[i],d):null;$('dro').className='cur';
   h=U('Strecke',f0(r.cdist[i],1),'km')+U('Zeit',fHm(r.ce[i]/3600),'h')+U('Höhe',f0(r.alt[i]),'m')+U('Steigung',f0(r.gr[i],1),'%')+U('Tempo',f0(r.v[i],1),'km/h')+U('Leistung',r.est?null:f0(r.w[i]),'W')+U('Puls',at(r.hr,0),'bpm')+U('Tritt',at(r.cad,0),'U/min')}
- else{$('dro').className='';const full=!partial(),[i0,i1]=selIdx(),S=full?null:selStat(r,i0,i1);
-  h=U('Distanz',f0(full?r.km:S.km,1),'km')+U('Zeit',fHm((full?r.mt:S.t)/3600),'h')+U('Ø Tempo',f0(full?r.vavg:S.v,1),'km/h')+U('Aufstieg',f0(full?r.up:S.up),'m')+U('Ø bergauf',full?null:S.cg!=null?f0(S.cg,1):null,'%')
+ else{$('dro').className='';const full=!partial(),[i0,i1]=selIdx(),S=selStat(r,i0,i1);
+  h=U('Distanz',f0(full?r.km:S.km,1),'km')+U('Zeit',fHm((full?r.mt:S.t)/3600),'h')+U('Ø Tempo',f0(full?r.vavg:S.v,1),'km/h')+U('Aufstieg',f0(full?r.up:S.up),'m')+U('Ø bergauf',S.cg!=null?f0(S.cg,1):null,'%')
    +U('Ø Leistung',full?(r.pw?f0(r.pw):null):(S.pw?f0(S.pw):null),'W')+U('Ø Puls',full?(I.hravg!=null?f0(I.hravg):null):(S.hr?f0(S.hr):null),'bpm')+U('Ø Tritt',full?(I.cavg!=null?f0(I.cavg):null):(S.cad?f0(S.cad):null),'U/min')}
  $('dro').innerHTML=h;$('drx').hidden=!partial();$('drn').textContent=partial()?'Abschnitt '+f0(D.a*r.km,1)+' – '+f0(D.b*r.km,1)+' km':''}
 function dRail(){const a=D.a*100,b=D.b*100;$('dha').style.left=a+'%';$('dhb').style.left=b+'%';$('drf').style.left=a+'%';$('drf').style.width=(b-a)+'%'}
@@ -4464,6 +4464,17 @@ html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) b
 /* Einzelfahrt-Profil: Hinweistext entfällt, Grafik 10px niedriger */
 #dpf{height:146px!important}
 .rnote{min-height:0!important}
+/* "Alle" in der Walze so groß wie die Kennzahlen rechts daneben */
+#wh .wi[data-i="0"] b,#rwh .wi[data-i="0"] b{font-size:17px!important;font-weight:700;line-height:1.1}
+/* Kanal-Auswahl (Höhe, Leistung …) als Button links oben in der Karte der Einzelfahrt */
+#dch{display:none!important}
+#dchb{position:absolute;left:10px;top:10px;z-index:3;height:38px;padding:0 11px 0 14px;border-radius:13px;background:var(--glass);border:1px solid var(--ln);color:var(--fg);font:600 14px/1 inherit;font-family:inherit;display:flex;align-items:center;gap:6px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);-webkit-appearance:none;appearance:none}
+#dchb[hidden],#dchm[hidden]{display:none}
+#dchb svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+#dchb.open svg{transform:rotate(180deg)}
+#dchm{position:absolute;left:10px;top:54px;z-index:4;min-width:156px;padding:6px;border-radius:16px;background:var(--glass);border:1px solid var(--ln);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 8px 28px rgba(0,0,0,.35)}
+#dchm button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;border-radius:11px;background:none;color:var(--fg);font:600 14px/1.2 inherit;font-family:inherit}
+#dchm button.on{background:rgba(var(--ac-rgb),.16);color:var(--act)}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
@@ -4543,5 +4554,26 @@ function score(w,r){const h=r&&r.h>0?r.h:1,rain=h>2?w.p*2/h:w.p,wind=w.w||0,gust
  let sc=Math.round(cl(100-pen,0,100));if(storm)sc=Math.min(sc,8);return{sc,storm}}
 window.hwxHtml=function(w,r){try{const s=score(w,r);return '<div class="hwxg" title="Rad-Wertung zur Zeit der Fahrt" style="--gc:hsl('+Math.round(s.sc*1.25)+' 78% 55%)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" opacity=".32"></circle><g style="transform-origin:12px 12px;transform:rotate('+((100-s.sc)*1.8).toFixed(1)+'deg)"><path d="M12 17.6V6.8M7.4 11.4 12 6.8l4.6 4.6"/></g></svg><b>'+(s.storm?'!':s.sc)+'</b></div>'}catch(e){return ''}};
 window.hwx=function(){const o=document.getElementById('hwxg');if(o)o.remove()};})();
+</script>
+<script>
+/* Einzelfahrt: Kanal-Button in der Karte (öffnet Auswahl Höhe/Leistung/…) */
+(function(){const mw=document.getElementById('dmapw'),dch=document.getElementById('dch');if(!mw||!dch)return;
+const b=document.createElement('button');b.id='dchb';b.type='button';b.hidden=true;b.innerHTML='<span>Höhe</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>';
+const m=document.createElement('div');m.id='dchm';m.hidden=true;mw.appendChild(b);mw.appendChild(m);
+const close=()=>{m.hidden=true;b.classList.remove('open')};
+function sync(){const cs=[...dch.querySelectorAll('.chip')];b.hidden=cs.length<2;const on=cs.find(c=>c.classList.contains('on'));
+ b.firstChild.textContent=on?on.textContent:'Höhe';
+ m.innerHTML=cs.map(c=>'<button type="button" data-c="'+c.dataset.c+'" class="'+(c.classList.contains('on')?'on':'')+'">'+c.textContent+'</button>').join('');}
+new MutationObserver(sync).observe(dch,{childList:true,subtree:true});sync();
+b.addEventListener('click',e=>{e.stopPropagation();const o=m.hidden;m.hidden=!o;b.classList.toggle('open',o)});
+m.addEventListener('click',e=>{const i=e.target.closest('button');if(!i)return;e.stopPropagation();const c=dch.querySelector('.chip[data-c="'+i.dataset.c+'"]');if(c)c.click();close()});
+document.addEventListener('pointerdown',e=>{if(!m.hidden&&!e.target.closest('#dchm,#dchb'))close()},true);})();
+/* Walzen merken ihre Position: nach dem Zurückwischen (Sheet war ausgeblendet) wieder zuletzt gewählter Eintrag statt "Alle" */
+(function(){const STEP=44;
+['wh','rwh','wxwh'].forEach(id=>{const w=document.getElementById(id);if(!w)return;let mem=0,tm=0,was=false;
+ w.addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(()=>{if(w.offsetWidth>0&&!restoring)mem=Math.round(w.scrollTop/STEP)},140)},{passive:true});
+ let restoring=false;
+ const chk=()=>{const vis=w.offsetWidth>0;if(vis&&!was){restoring=true;clearTimeout(tm);w.style.scrollSnapType='none';w.scrollTop=mem*STEP;requestAnimationFrame(()=>{w.style.scrollSnapType='';setTimeout(()=>{restoring=false},200)})}was=vis};
+ new ResizeObserver(chk).observe(w);chk()})})();
 </script>
 </body></html>
