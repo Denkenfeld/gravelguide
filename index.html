@@ -4417,4 +4417,17 @@ addEventListener('touchcancel',e=>fin(e,true),{capture:true,passive:false});
 ['pointermove','pointerup','click'].forEach(t=>addEventListener(t,e=>{if(swallow&&(g&&g.lock||t==='click')){e.stopImmediatePropagation()}},true));
 })();
 </script>
+
+<script>
+/* Kartenhinweis aufräumen: OpenStreetMap -> OSM, doppelte Einträge (z. B. aus dem Höhenmodell des iPhones) entfernen */
+(function(){let busy=0;
+const norm=h=>h.replace(/<[^>]*>/g,'').replace(/©|&copy;/gi,'').replace(/\s+/g,' ').trim().toLowerCase();
+function fix(el){if(busy)return;const src=el.innerHTML;
+ let h=src.replace(/OpenStreetMap(?:[\s-]*(?:contributors|Mitwirkende))?/gi,'OSM');
+ const parts=h.split(/\s*\|\s*/).filter(p=>norm(p)),keep=parts.filter((p,i)=>{const n=norm(p);return !parts.some((q,j)=>j!==i&&(norm(q)===n?j<i:norm(q).includes(n)&&norm(q)!==n))});
+ h=keep.join(' | ');if(h!==src){busy=1;el.innerHTML=h;busy=0}}
+function scan(){document.querySelectorAll('.maplibregl-ctrl-attrib-inner').forEach(fix)}
+new MutationObserver(scan).observe(document.body,{childList:true,subtree:true,characterData:true});scan();
+})();
+</script>
 </body></html>
