@@ -1654,7 +1654,7 @@ function whMap(r){if(!map||!map.getSource||!map.getSource("hm"))return;try{
  if(r)map.fitBounds([[r.bb[0],r.bb[1]],[r.bb[2],r.bb[3]]],{padding:{top:96,bottom:$("hud").offsetHeight+36,left:36,right:36},duration:650,maxZoom:15.5});else fitAll()}catch(e){}}
 function whSel(i){WH.i=i;HE.hs=null;const r=i?WH.L[i-1]:null,f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'+l+'</span></div>';
  if(r){$("hnm").textContent=rname(r)+" · "+new Date(r.date).toLocaleDateString("de-DE",{day:"numeric",month:"short"});
-  $("hst").innerHTML=f(f0(r.km,1),"km","Strecke")+f(f0(r.up),"hm","Höhe")+f(fHm(r.h),"h","Zeit")+f(f0(r.kc),"kcal","Kalorien")+(r.est?f(f0(r.vavg,1),"km/h","Ø Tempo"):f(f0(r.pw),"W","Ø Watt"))}
+  $("hst").innerHTML=f(f0(r.km,1),"km","Strecke")+f(f0(r.up),"hm","Höhe")+f(fHm(r.h),"h","Zeit")+f(f0(r.kc),"kcal","Kalorien")+f(f0(r.vavg,1),"km/h","Ø Tempo")}
  else{$("hst").innerHTML=whStatsOv();HB=null;wlCount();whGraph()}
  if(r||WH.hl){WH.hl=!!r;whMap(r)}}
 function whTick(){const w=$("wh"),y=w.scrollTop,n=w.children.length,lgo=$("wlogo");whDots(y);lgo.style.transform="translateY("+(-y)+"px)";lgo.style.opacity=Math.max(0,1-y/24);c=Math.max(0,Math.min(n-1,Math.round(y/WIT)));
@@ -1663,10 +1663,10 @@ function whTick(){const w=$("wh"),y=w.scrollTop,n=w.children.length,lgo=$("wlogo
 function whRebuild(){const sig=V.length+"|"+(V.length?V[0].id+V[V.length-1].id:"");if(sig==WH.sig){whSel(WH.i);return}
  WH.sig=sig;WH.L=[...V].reverse();const w=$("wh");
  w.innerHTML='<div class="wi" data-i="0"><svg viewBox="0 0 36 36" width="34" height="34" fill="none" stroke="var(--ac)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 25c4-11 8 3 12-6s8 3 14-9M5 31h26"/></svg><span><b>Alle</b></span></div>'+
-  WH.L.map((r,j)=>'<div class="wi" data-i="'+(j+1)+'"><i class="th"></i><span><b>'+new Date(r.date).toLocaleDateString("de-DE",{day:"numeric",month:"short"})+'</b><small>'+f0(r.km)+" km</small></span></div>").join("");
+  WH.L.map((r,j)=>'<div class="wi" data-i="'+(j+1)+'"><i class="th"></i><span><b>'+new Date(r.date).toLocaleDateString("de-DE",{day:"numeric",month:"short"}).replace(/\./g,function(m,o,t){return o==t.length-1?"":m})+'</b></span></div>').join("");
  w.scrollTop=0;WH.c=0;whThumbs(0);whFit();whTick();whSel(0);shSync()}
 function whFit(){const w=$('wh');if(!w||!w.offsetWidth)return;let f=13;w.style.setProperty('--wfs',f+'px');const ov=()=>{for(const e of w.querySelectorAll('.wi span b,.wi span small'))if(e.scrollWidth>e.clientWidth+.5)return 1;return 0};
- while(f>8&&ov()){f-=.5;w.style.setProperty('--wfs',f+'px')}}
+ while(f>8&&ov()){f-=.5;w.style.setProperty('--wfs',f+'px')}['rwh','wxwh'].forEach(function(i){var e=document.getElementById(i);if(e)e.style.setProperty('--wfs',f+'px')})}
 addEventListener('resize',()=>whFit());if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>whFit());setTimeout(whFit,400);
 $("wh").addEventListener("scroll",()=>{cancelAnimationFrame(WH.f);WH.f=requestAnimationFrame(whTick)},{passive:true});
 $("wh").addEventListener("click",e=>{const el=e.target.closest(".wi");if(el)$("wh").scrollTo({top:el.dataset.i*WIT,behavior:"smooth"})});
@@ -1849,7 +1849,7 @@ function heHud(r){const f=(v,u,l)=>'<div><b>'+v+'<small>'+u+'</small></b><span>'
   h=f(f0(q.dist,1),'km','Strecke')+f(f0(q.up),'hm','Höhe')+f(hh(tt),'h','Zeit')+f(f0((r.kc||0)*sh),'kcal','Kalorien')+f(sp!=null?f0(sp,1):'–','km/h','Ø Tempo')}
  else if(HE.i!=null){const i=HE.i,sp=heSpd(r,Math.max(0,i-4),Math.min(r.n-1,i+4)),g=r.gr[i];
   h=f(f0(r.cdist[i],1),'km','Strecke')+f(f0(r.alt[i]),'hm','ü. NN')+f(hh(dtS(0,i)),'h','Zeit')+f((g>0?'+':'')+f0(g,1),'%','Steigung')+f(sp!=null?f0(sp,1):'–','km/h','Tempo')}
- else h=f(f0(r.km,1),'km','Strecke')+f(f0(r.up),'hm','Höhe')+f(fHm(r.h),'h','Zeit')+f(f0(r.kc),'kcal','Kalorien')+(r.est?f(f0(r.vavg,1),'km/h','Ø Tempo'):f(f0(r.pw),'W','Ø Watt'));
+ else h=f(f0(r.km,1),'km','Strecke')+f(f0(r.up),'hm','Höhe')+f(fHm(r.h),'h','Zeit')+f(f0(r.kc),'kcal','Kalorien')+f(f0(r.vavg,1),'km/h','Ø Tempo');
  if(HE.hs!==h){HE.hs=h;$('hst').innerHTML=h}}
 function heCur(i){if(!map||!map.getSource)return;try{
  if(!map.getSource("hcur")){if(i==null)return;map.addSource("hcur",{type:"geojson",data:EMPTY});
@@ -1917,13 +1917,13 @@ function whGraph(){const g=$("hgr");if(!g)return;const M=HMD[HM]||HMD.km;let v;
  const mx=Math.max(...v.map(x=>x.y),1e-6),L=v.length-1;
  g.innerHTML='<div class="gb">'+v.map((x,i)=>'<i data-k="'+i+'" class="'+(i==L&&!HB?'l':'')+(x.r?' c':'')+'" title="'+x.t+'" style="height:'+Math.max(4,x.y/mx*100).toFixed(1)+'%;animation-delay:'+Math.min(i*14,400)+'ms"></i>').join("")+'</div>';whBarSel()}
 (function(){const s=$("hst"),g=$("hgr");if(s)s.addEventListener("click",e=>{const d=e.target.closest("[data-m]");if(!d||(typeof WH!="undefined"&&WH.i))return;HM=d.dataset.m;s.querySelectorAll("[data-m]").forEach(x=>x.classList.toggle("on",x===d));whGraph()});
- if(g)g.addEventListener("click",e=>{const b=e.target.closest("i[data-k]");if(!b)return;const x=GBR[+b.dataset.k];if(!x||!x.r)return;buzz();HB=HB===x.r?null:x.r;WH.hl=!!HB;whMap(HB);whBarSel()})})();
+ if(g)g.addEventListener("click",e=>{const b=e.target.closest("i[data-k]");if(!b||(typeof WH!="undefined"&&WH.i))return;const x=GBR[+b.dataset.k];if(!x||!x.r)return;buzz();HB=HB===x.r?null:x.r;WH.hl=!!HB;whMap(HB);whBarSel()})})();
 function whDots(y,id){const c=$(id||"whd");if(!c)return;const W=8,H=124,d=Math.min(2,devicePixelRatio||1);
  if(c.width!=W*d){c.width=W*d;c.height=H*d}
  const g=c.getContext("2d");g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,W,H);
  const rgb=(getComputedStyle(document.documentElement).getPropertyValue("--fg-rgb")||"255,255,255").trim(),R=57.3,st=11;
  for(let k=-40;k<=40;k++){let a=k*st-y;a=((a+540)%360)-180;if(Math.abs(a)>=86)continue;
-  const r=a*Math.PI/180,py=62+R*Math.sin(r),cs=Math.cos(r);
+  const r=a*Math.PI/180,py=47+R*Math.sin(r),cs=Math.cos(r);
   g.fillStyle="rgba("+rgb+","+(.04+.2*cs*cs).toFixed(3)+")";g.beginPath();g.arc(W/2,py,.35+.75*cs,0,7);g.fill()}}
 /* Logo vertikal an der Titelzeile des Panels ausrichten */
 function wlogoPos(){const l=$("wlogo"),a=$("hnr").getBoundingClientRect(),w=$("whw").getBoundingClientRect();if(!a.height||!w.height)return;l.style.top=(a.top+a.height/2-w.top-l.offsetHeight/2).toFixed(1)+"px"}
@@ -2673,7 +2673,7 @@ function rtUpsert(rec){const a=rtRecs(),i=a.findIndex(x=>x.id==rec.id);if(i>=0)a
 (function(){try{if(localStorage.getItem('gg_rt')==null){const o=JSON.parse(localStorage.getItem('gg_plans')||'[]');if(o.length)rtPut(o.map(r=>({id:'L'+r.id,name:r.n,p:r.p,f:r.f||'trekking',c:null,km:r.km||0,up:r.up||0,t:r.id,sent:null})))}}catch(e){}})();
 function rtResample(c,max){const n=c.length,k=Math.max(1,Math.ceil(n/max)),o=[];for(let i=0;i<n;i+=k)o.push([r5(c[i][0]),r5(c[i][1]),Math.round(+c[i][2]||0)]);const l=c[n-1],q=o[o.length-1];if(!q||q[0]!=r5(l[0])||q[1]!=r5(l[1]))o.push([r5(l[0]),r5(l[1]),Math.round(+l[2]||0)]);return o}
 function rtA(c){const d=[0];for(let i=1;i<c.length;i++)d.push(d[i-1]+hv(c[i-1],c[i]));const A={c,d};A.g=plGradesOf(A);return A}
-const rtDate=d=>d?new Date(d).toLocaleDateString('de-DE',{day:'numeric',month:'short'}):'–';
+const rtDate=d=>d?new Date(d).toLocaleDateString('de-DE',{day:'numeric',month:'short'}).replace(/\.$/,''):'–';
 const PEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 00-4-4L4 16z"/></svg>',XSV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ALLSVG='<svg viewBox="0 0 36 36" width="34" height="34" fill="none" stroke="var(--ac)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 25c4-11 8 3 12-6s8 3 14-9M5 31h26"/></svg>';
 function rtThumb(c){
@@ -2693,7 +2693,7 @@ function rtRebuild(){const w=el('rwh');if(!w)return;
  const L=rtItems(),sig=L.map(x=>x.key+'|'+x.name+'|'+Math.round(x.km*10)+'|'+(x.c?x.c.length:0)).join(';');
  if(sig==RT.sig&&!RT.want){RT.L=L;rtSel(RT.i);return}
  RT.sig=sig;RT.L=L;
- w.innerHTML='<div class="wi" data-i="0">'+ALLSVG+'<span><b>Alle</b><small>'+L.length+' Routen</small></span></div>'+L.map((it,j)=>'<div class="wi'+(it.hh?'':' loc')+'" data-i="'+(j+1)+'">'+rtThumb(it.c)+(it.hh?'':'<i class="lcd" title="nur im Browser"></i>')+'<span><b>'+rtDate(it.date)+'</b><small>'+fmt(it.km)+' km</small></span></div>').join('');
+ w.innerHTML='<div class="wi" data-i="0">'+ALLSVG+'<span><b>Alle</b></span></div>'+L.map((it,j)=>'<div class="wi'+(it.hh?'':' loc')+'" data-i="'+(j+1)+'">'+rtThumb(it.c)+(it.hh?'':'<i class="lcd" title="nur im Browser"></i>')+'<span><b>'+rtDate(it.date)+'</b></span></div>').join('');
  let i=0;if(RT.want){const k=rtFind(L,RT.want,RT.want);i=k>=0?k+1:0;RT.want=null}else if(RT.i){const k=rtFind(L,RT.sk,RT.sr);i=k>=0?k+1:0}
  w.scrollTop=i*WIT;RT.c=i;rtTick();rtSel(i)}
 function rtTick(){const w=el('rwh'),y=w.scrollTop,n=w.children.length,lgo=el('rwlogo');whDots(y,'rwd');lgo.style.transform='translateY('+(-y)+'px)';lgo.style.opacity=Math.max(0,1-y/24);
@@ -3584,10 +3584,10 @@ function buildUI(){
 function whDotsW(y){const c=Q('#wxwd');if(!c)return;const W=8,H=124,d=Math.min(2,devicePixelRatio||1);if(c.width!=W*d){c.width=W*d;c.height=H*d}
  const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,W,H);
  const rgb=(getComputedStyle(document.documentElement).getPropertyValue('--fg-rgb')||'255,255,255').trim(),R=57.3,st=11;
- for(let k=-40;k<=40;k++){let a=k*st-y;a=((a+540)%360)-180;if(Math.abs(a)>=86)continue;const r=a*Math.PI/180,py=62+R*Math.sin(r),cs=Math.cos(r);g.fillStyle='rgba('+rgb+','+(.04+.2*cs*cs).toFixed(3)+')';g.beginPath();g.arc(W/2,py,.35+.75*cs,0,7);g.fill()}}
+ for(let k=-40;k<=40;k++){let a=k*st-y;a=((a+540)%360)-180;if(Math.abs(a)>=86)continue;const r=a*Math.PI/180,py=47+R*Math.sin(r),cs=Math.cos(r);g.fillStyle='rgba('+rgb+','+(.04+.2*cs*cs).toFixed(3)+')';g.beginPath();g.arc(W/2,py,.35+.75*cs,0,7);g.fill()}}
 const WIT=44;let wCur=-1,wTm=0;
 function buildWheel(){
- const w=Q('#wxwh');w.innerHTML=LAYERS.map((l,k)=>'<div class="wi" data-i="'+k+'">'+l[3]+'<span><b>'+l[1]+'</b><small>'+l[2]+'</small></span></div>').join('');
+ const w=Q('#wxwh');w.innerHTML=LAYERS.map((l,k)=>'<div class="wi" data-i="'+k+'">'+l[3]+'<span><b>'+l[1]+'</b></span></div>').join('');
  w.addEventListener('click',e=>{const el=e.target.closest('.wi');if(el)w.scrollTo({top:el.dataset.i*WIT,behavior:'smooth'})});
  w.addEventListener('scroll',wTick,{passive:true});
 }
@@ -4294,7 +4294,7 @@ window.ggPeek=function(k){k=k||panelOf();let sab=0,h=0;
  try{const p=document.getElementById(k=='wx'?'wx':k=='plan'?'plan':'hud'),w=p&&p.querySelector('.modewheel-wrap');
   if(w){const r=w.getBoundingClientRect(),q=p.getBoundingClientRect();if(r.height>0&&q.height>0)h=r.bottom-q.top+8}}catch(e){}
  if(root.classList.contains('gg-iphone-app'))return Math.round(sab+22);
- return Math.round(sab+(h>30?h:60))};
+ return Math.round(sab+36)};
 const b=document.createElement('button');b.id='ggup';b.type='button';b.tabIndex=-1;b.setAttribute('aria-hidden','true');
 b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg>';document.body.appendChild(b);
 const bd=document.body;
@@ -4382,6 +4382,17 @@ addEventListener('gg-mode-switched',()=>show(mode(),null));show(mode(),null);
 html body .modewheel-wrap{left:0!important;transform:none!important;width:max-content!important;min-width:0!important}
 .mwt{text-align:left}
 html body[data-tab] .modewheel-wrap,html body[data-tab] .modewheel-wrap *{pointer-events:none!important}
+
+/* Walzen: Auswahlzeile 15px höher (auf Höhe der Werte rechts), nur Hauptzeile, einzeilig */
+#wh,#rwh,#wxwh{padding:25px 0 55px!important;scroll-padding:0 0 30px;-webkit-mask-image:linear-gradient(transparent,#000 9%,#000 68%,transparent);mask-image:linear-gradient(transparent,#000 9%,#000 68%,transparent)}
+#wh .wi,#rwh .wi,#wxwh .wi{scroll-snap-align:center!important;scroll-snap-stop:always;gap:6px;padding:0 6px}
+#wh .wi small,#rwh .wi small,#wxwh .wi small{display:none!important}
+#rwh .wi span,#wxwh .wi span{flex:1;min-width:0;white-space:nowrap}
+#wh .wi b,#rwh .wi b,#wxwh .wi b{font-size:var(--wfs,13px)!important;white-space:nowrap!important;line-height:1.15}
+
+/* Normaler Browser (Desktop/Handy): ganz minimiert ebenfalls nur Griff, etwas tiefer */
+html:not(.gg-iphone-app) body[data-gg-min=hud] #hud>*,html:not(.gg-iphone-app) body[data-gg-min=plan] #plan>*,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx>*{visibility:hidden!important}
+html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab,html:not(.gg-iphone-app) body[data-gg-min=hud] #hgrab *,html:not(.gg-iphone-app) body[data-gg-min=plan] #pl-grab,html:not(.gg-iphone-app) body[data-gg-min=plan] #pl-grab *,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx-grab,html:not(.gg-iphone-app) body[data-gg-min=wx] #wx-grab *{visibility:visible!important}
 </style>
 <script>
 (function(){const T={hnr:'Fahrten',rhnr:'Routen',wxnr:'Wetter'};
