@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1 - At home</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: Kopfzeile mit Reitern, großes Bild als Bühne, Wortkarte rechts (Handy: unten) */
+:root{color-scheme:light;--bg:#edf6fb;--panel:#fff;--panel2:#e1eff8;--line:#b6d1e3;--fg:#17324a;--muted:#4d6d87;--primary:#b83a27;--select:#0f6e66;--sun:var(--primary);--teal:var(--select);
+--disp:'Baloo 2',ui-rounded,'Trebuchet MS',sans-serif;--body:'Nunito',system-ui,sans-serif;--ipa:'Lucida Sans Unicode','Segoe UI',system-ui,sans-serif}
+[hidden]{display:none!important}
+html,body{margin:0}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:500 16px/1.5 var(--body)}
+.wrap{max-width:1500px;margin:0 auto;padding-block:14px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--disp);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:800}h1 span{color:var(--primary)}
+h2{font-size:1.5rem}h3{font-size:1.15rem}
+header{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.count{color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+nav{display:flex;gap:6px;overflow-x:auto;padding:3px;margin-bottom:12px;scrollbar-width:none}
+button,select,input{font:700 .95rem var(--body);color:var(--fg)}
+button{background:var(--panel2);border:1.5px solid var(--line);border-radius:12px;padding:8px 14px;cursor:pointer;min-height:42px;touch-action:manipulation}
+button:hover{border-color:var(--teal)}
+button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+button[aria-pressed="true"]{background:var(--select);border-color:var(--select);color:#fff}
+nav button{white-space:nowrap;font-family:var(--disp);font-size:1.05rem}
+nav button[aria-selected="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+select,input[type=text],input[type=search]{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;min-height:42px;max-width:100%}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.seg{display:flex}.seg button{border-radius:0;margin-left:-1.5px}.seg button:first-child{border-radius:12px 0 0 12px;margin:0}.seg button:last-child{border-radius:0 12px 12px 0}
+.spacer{flex:1}
+.stagegrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+#stage{overflow:auto;border:2px solid var(--line);border-radius:18px;background:var(--panel);max-height:calc(82vh + 4px);-webkit-overflow-scrolling:touch}
+#scene{display:block;margin:0 auto;height:auto;user-select:none;-webkit-user-select:none}
+.obj{cursor:pointer}
+.obj:hover{filter:brightness(1.08) drop-shadow(0 0 5px #fff)}
+.obj.sel{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px #ff2f7d)}
+.lbl{cursor:pointer}.lbl rect{fill:#fff8e6;stroke:#10132f;stroke-width:2.5}
+.lbl text{font:800 23px var(--body);fill:#10132f;text-anchor:middle;dominant-baseline:central}
+.lbl:hover rect{fill:#ffd84d}.lbl.sel rect{fill:#ffd84d;stroke-width:4}.lbl.right rect{fill:#8cf0a8}.lbl.wrong rect{fill:var(--coral)}
+.lead{stroke:#10132f;stroke-width:2.2;opacity:.8;pointer-events:none}
+.leaddot{fill:#10132f;stroke:#fff;stroke-width:1.5;pointer-events:none}
+.mk{fill:none;stroke:#e11d62;stroke-width:5;stroke-dasharray:16 12;animation:spin 14s linear infinite;transform-box:fill-box;transform-origin:center}
+.mk.right{stroke:#16a34a;stroke-width:9}.mk.wrong{stroke:#dc2626;stroke-width:9}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tw{animation:tw 4s ease-in-out infinite}@keyframes tw{50%{opacity:.1}}
+@media (prefers-reduced-motion:reduce){.tw,.mk{animation:none}}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 2px 0}
+/* Wortkarte */
+#card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+#card .top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+#thumb{width:100%;aspect-ratio:1.5;border-radius:12px;background:var(--panel2);display:block;margin-bottom:10px}
+#cword{font:800 2rem/1.1 var(--disp);overflow-wrap:anywhere}
+.ipa{font-family:var(--ipa);color:var(--muted)}
+.de{font-size:1.25rem;font-weight:800;color:var(--primary)}
+.ex{border-top:1.5px solid var(--line);margin-top:12px;padding-top:10px}
+.ex p{margin:0 0 4px}.ex .d{color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.hide-de .tr{filter:blur(6px);cursor:pointer;user-select:none}
+.hide-de .tr.open{filter:none}
+#close{min-height:36px;padding:4px 12px}
+@media (min-width:1100px){
+ .stagegrid.has{grid-template-columns:minmax(0,1fr) 320px}
+ #card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px)}
+}
+@media (max-width:1099px){
+ #card{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:20px 20px 0 0;border-width:2px 0 0;max-height:52%;overflow:auto;box-shadow:0 -10px 30px rgba(20,20,40,.25);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+ #thumb{width:92px;aspect-ratio:1;float:right;margin:0 0 6px 10px}
+ #cword{font-size:1.6rem}
+ body.sheet .wrap{padding-bottom:56vh}
+}
+/* Wortliste */
+.lists{margin-top:22px;display:grid;gap:14px}
+.lists h3{margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border-radius:999px;min-height:38px;padding:6px 14px}
+.chip small{color:var(--muted);font-weight:500;margin-left:6px}
+.chip.seen{border-color:var(--teal)}
+/* Tour-/Quizleiste */
+.banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel2);border:2px solid var(--primary);border-radius:16px;padding:10px 14px;margin-bottom:10px}
+.banner strong{font:700 1.3rem var(--disp)}
+/* Detailbereiche */
+section.block{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:14px}
+.cards button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;background:var(--panel2);line-height:1.25;justify-content:flex-start;min-width:0}
+.cards svg{width:100%;max-width:150px}.cards small{color:var(--muted);font-weight:500;overflow-wrap:anywhere;hyphens:auto}
+.cards button.sel,.cards button:hover{border-color:var(--select);box-shadow:0 0 0 2px var(--select)}
+.figure svg{display:block;width:100%;height:auto;margin:12px auto 0}
+.elbl{cursor:pointer}.elbl text{font-weight:800;font-family:var(--body);fill:#17213a;paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round;text-anchor:middle;dominant-baseline:central}
+.elbl:hover text,.elbl.sel text{stroke:#ffd84d}
+.elbl:focus:not(:focus-visible),.lbl:focus:not(:focus-visible){outline:none}
+/* Geschichte */
+.story{display:grid;gap:10px;max-width:760px}
+.line-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:12px}
+.line-row.now{border-color:var(--primary);background:var(--panel2)}
+.who{font:700 .95rem var(--disp);color:var(--primary)}.line-row.s1 .who{color:var(--select)}
+.line-row p{margin:0}.line-row .tr{color:var(--muted)}
+.vw{all:unset;cursor:pointer;color:var(--primary);font-weight:800;text-decoration:underline;text-underline-offset:3px;border-radius:3px}
+.vw:focus-visible{outline:3px solid var(--teal)}
+.round{width:46px;height:46px;border-radius:50%;padding:0}
+/* Redewendungen */
+.idioms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.idiom{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.idiom h3{color:var(--primary);font-size:1.35rem}.idiom p{margin:6px 0 0}.idiom .tr{color:var(--muted)}
+/* Quiz */
+.quizbox{max-width:640px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:20px}
+.modes{display:grid;gap:10px;margin-top:12px}.modes button{text-align:left;padding:14px 16px}
+.modes small{display:block;color:var(--muted);font-weight:500}
+.qword{font:800 2.2rem/1.2 var(--disp);margin:10px 0}
+.opts{display:grid;gap:8px}.opts button{text-align:left}
+.opts button.right{background:#bbf7d0;border-color:#16a34a}.opts button.wrong{background:#fecaca;border-color:#dc2626}
+button:disabled{cursor:default;color:var(--fg)}
+.fb{min-height:1.6em;font-weight:800;margin:10px 0}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 14px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--fg);font:700 .95rem var(--body);text-decoration:none}
+.back:hover{border-color:var(--teal)}.back:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div><a class="back" href="Index.html">← Zurück zum Menu</a></div>
+<header>
+ <h1>1 - <span>At home</span></h1>
+ <div class="bar" style="margin:0">
+  <select id="accent" aria-label="Aussprache"><option value="en-GB">Britisches Englisch</option><option value="en-US">Amerikanisches Englisch</option></select>
+  <button id="slow" aria-pressed="false">Langsam sprechen</button>
+  <button id="showde" aria-pressed="true">Deutsch sichtbar</button>
+  <span class="count" id="count"></span>
+ </div>
+</header>
+<p id="nospeech" class="banner" hidden>Dieser Browser kann nicht vorlesen. Öffne die Seite in Safari oder Chrome, um die Wörter anzuhören.</p>
+<nav role="tablist" aria-label="Bereiche">
+ <button role="tab" data-v="bild">Bild</button>
+ <button role="tab" data-v="detail">Wohnung &amp; Zimmer</button>
+ <button role="tab" data-v="geschichte">Hörgeschichte</button>
+ <button role="tab" data-v="redensarten">Redewendungen</button>
+ <button role="tab" data-v="quiz">Quiz</button>
+</nav>
+
+<div class="stagegrid" id="grid">
+<main style="min-width:0">
+
+<div id="v-bild">
+ <div class="bar" id="tools">
+  <button class="primary" id="tour">▶ Alle Wörter abspielen</button>
+  <div class="seg" role="group" aria-label="Beschriftung im Bild">
+   <button data-lab="en">English</button><button data-lab="de">Deutsch</button><button data-lab="q">?</button><button data-lab="off">Aus</button>
+  </div>
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="Bildgröße"><button id="zout" aria-label="Verkleinern">−</button><button id="zfit">Ganzes Bild</button><button id="zin" aria-label="Vergrößern">+</button></div>
+ </div>
+ <div class="banner" id="tourbar" hidden><strong id="tourpos"></strong><span class="spacer"></span><button id="tprev">⏮ Zurück</button><button id="tpause">⏸ Pause</button><button id="tnext">Weiter ⏭</button><button id="tstop">⏹ Beenden</button></div>
+ <div class="banner" id="findbar" hidden><span id="findscore" class="count"></span><strong id="findword"></strong><button id="findplay">🔊 Nochmal</button><span id="findfb" role="status"></span><span class="spacer"></span><button id="findnext" class="primary" hidden>Weiter</button><button id="findstop">Beenden</button></div>
+ <div id="stage"></div>
+ <p class="hint">Tippe auf ein Ding oder sein Schild, um es zu hören. Wische im Bild, um dich umzusehen. Mit „?“ kannst du dich selbst testen.</p>
+ <div class="lists" id="lists">
+  <input type="search" id="search" placeholder="Wort suchen (Englisch oder Deutsch)" aria-label="Wort suchen">
+  <div id="chiplists"></div>
+ </div>
+</div>
+
+<div id="v-detail" hidden></div>
+
+<div id="v-geschichte" hidden>
+ <h2 id="story-title" lang="en"></h2>
+ <div class="bar" style="margin-top:10px">
+  <button class="primary" id="splay">▶ Geschichte abspielen</button><button id="sstop">⏹ Stopp</button>
+  <select id="role" aria-label="Rolle selbst sprechen"></select>
+  <button id="sdone" class="primary" hidden>Fertig gesprochen, weiter</button>
+ </div>
+ <div class="story" id="story"></div>
+</div>
+
+<div id="v-redensarten" hidden><div class="idioms" id="idioms"></div></div>
+
+<div id="v-quiz" hidden><div class="quizbox" id="quiz"></div></div>
+</main>
+
+<aside id="card" aria-label="Wortkarte" hidden>
+ <svg id="thumb" aria-hidden="true"></svg>
+ <div class="top"><div style="min-width:0"><div id="cword" lang="en"></div><div class="ipa" id="cipa"></div></div><button id="close" aria-label="Wortkarte schließen">✕</button></div>
+ <div class="de tr" id="cde"></div>
+ <div class="btns"><button class="primary" id="say">🔊 Anhören</button><button id="saysyl">🐢 Langsam</button><button id="sayde">🇩🇪 Deutsch</button></div>
+ <div class="ex"><p lang="en" id="cex"></p><p class="d tr" id="cexde"></p><div class="btns"><button id="sayex">🔊 Satz anhören</button><button id="prev" aria-label="Voriges Wort">←</button><button id="next" aria-label="Nächstes Wort">→</button></div></div>
+</aside>
+</div>
+</div>
+
+<script>
+/* ---------- Zeichenhilfen (eigene 2D-Illustrationen) ---------- */
+const INK='#2a2238';
+const C=(x,y,r,f,e='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${e}/>`;
+const E=(x,y,rx,ry,f,e='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${e}/>`;
+const P=(d,f,e='')=>`<path d="${d}" fill="${f}" ${e}/>`;
+const R=(x,y,w,h,r,f,e='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" ${e}/>`;
+const L=(d,c,w,e='')=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${e}/>`;
+const O=(w=3)=>`stroke="${INK}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const o=O();
+const T=(x,y,s,inner,rot=0)=>`<g transform="translate(${x} ${y})${rot?` rotate(${rot})`:''}${s!==1?` scale(${s})`:''}">${inner}</g>`;
+const hitC=(x,y,r)=>C(x,y,r,'transparent','class="hit"');
+const hitR=(x,y,w,h)=>R(x,y,w,h,8,'transparent','class="hit"');
+const times=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join('');
+/* Szene sammeln: deco = reine Verzierung, add = anklickbares Ding */
+function mkScene(){
+ const parts=[],objs=[];
+ return {objs,parts,
+  deco(s){parts.push(`<g pointer-events="none">${s}</g>`);},
+  add(id,f,l,art,a){objs.push({id,f,l,a});parts.push(`<g class="obj" data-id="${id}">${art}</g>`);},
+  item(id,x,y,s,ly){this.add(id,[x,y,85*s],[x,ly],T(x,y,s,ART[id]())+hitR(x-85*s,y-60*s,170*s,120*s));}
+ };
+}
+function buildScene(){
+ const s=mkScene();LESSON.scene(s);
+ return {objs:s.objs,svg:`<svg id="scene" viewBox="0 0 ${LESSON.W} ${LESSON.H}" role="group" aria-label="Bild zum Anklicken"><g id="art">${s.parts.join('')}</g><g id="labels"></g><g id="marker" pointer-events="none" hidden><circle class="mk" r="50"/></g></svg>`};
+}
+/* Einfache Figur, Füße bei (0,0), ca. 170 hoch */
+function person(shirt,pants,hair,skin='#e8b48f',long=false){
+ return L('M-14 -70L-18 -8M14 -70L18 -8',pants,17)+E(-22,-5,15,7,INK)+E(22,-5,15,7,INK)+(long?P('M-27 -132Q-34 -170 0 -172Q34 -170 27 -132L24 -118H-24Z',hair,o):'')+L('M-24 -112L-42 -76M24 -112L42 -76',shirt,13)+C(-43,-73,7,skin,O(2))+C(43,-73,7,skin,O(2))+P('M-24 -118Q0 -130 24 -118L29 -64H-29Z',shirt,o)+C(0,-143,22,skin,o)+P('M-23 -146Q-22 -172 2 -167Q24 -168 23 -143Q8 -148 2 -156Q-8 -146 -23 -146Z',hair,O(2))+C(-8,-142,2.4,INK)+C(8,-142,2.4,INK)+L('M-6 -132q6 5 12 0',INK,2.2);
+}
+const ART={};
+
+const WORDS=[
+['chimney','chimney','der Schornstein','ˈtʃɪmni','Smoke is coming out of the chimney.','Aus dem Schornstein kommt Rauch.','house'],
+['roof','roof','das Dach','ruːf','A cat is sitting on the roof.','Eine Katze sitzt auf dem Dach.','house'],
+['aerial','aerial','die Antenne','ˈeəriəl','The aerial is on top of the house.','Die Antenne ist oben auf dem Haus.','house'],
+['attic','attic','der Dachboden','ˈætɪk','We keep old toys in the attic.','Wir bewahren altes Spielzeug auf dem Dachboden auf.','house'],
+['dormer','dormer window','die Dachgaube','ˌdɔːmə ˈwɪndəʊ','My room has a dormer window.','Mein Zimmer hat eine Dachgaube.','house'],
+['window','window','das Fenster','ˈwɪndəʊ','Please open the window.','Bitte mach das Fenster auf.','house'],
+['door','door','die Tür','dɔː','Someone is knocking at the door.','Jemand klopft an die Tür.','house'],
+['stairs','stairs','die Treppe','steəz','Be careful on the stairs.','Sei vorsichtig auf der Treppe.','house'],
+['cellar','cellar','der Keller','ˈselə','It is cold in the cellar.','Im Keller ist es kalt.','house'],
+['drainpipe','drainpipe','das Fallrohr / Regenrohr','ˈdreɪnpaɪp','Rain runs down the drainpipe.','Der Regen läuft das Fallrohr hinunter.','house'],
+['garden','garden','der Garten','ˈɡɑːdən','The children are playing in the garden.','Die Kinder spielen im Garten.','house'],
+
+['garage','garage','die Garage','ˈɡærɑːʒ','The car is in the garage.','Das Auto steht in der Garage.','street'],
+['terrace','terrace','die Terrasse','ˈterəs','We have breakfast on the terrace.','Wir frühstücken auf der Terrasse.','street'],
+['balcony','balcony','der Balkon','ˈbælkəni','There are flowers on the balcony.','Auf dem Balkon stehen Blumen.','street'],
+['sunshade','sunshade','der Sonnenschutz / die Markise','ˈsʌnʃeɪd','Pull down the sunshade. It is hot.','Lass die Markise herunter. Es ist heiß.','street'],
+['solar','solar panel','das Solarpanel','ˌsəʊlə ˈpænəl','The solar panels make electricity.','Die Solarpanels erzeugen Strom.','street'],
+['step','step','die Stufe','step','Mind the step!','Vorsicht, Stufe!','street'],
+
+['key','key','der Schlüssel','kiː','I cannot find my key.','Ich finde meinen Schlüssel nicht.','entry'],
+['intercom','intercom','die Gegensprechanlage','ˈɪntəkɒm','Speak into the intercom.','Sprich in die Gegensprechanlage.','entry'],
+['doorbell','doorbell','die Türklingel','ˈdɔːbel','Ring the doorbell twice.','Klingle zweimal.','entry'],
+['doormat','doormat','die Fußmatte','ˈdɔːmæt','Wipe your feet on the doormat.','Putz dir die Füße auf der Fußmatte ab.','entry'],
+['number','house number','die Hausnummer','ˈhaʊs ˌnʌmbə','Our house number is twelve.','Unsere Hausnummer ist zwölf.','entry'],
+['postbox','post box','der Briefkasten','ˈpəʊst bɒks','There is a letter in the post box.','Im Briefkasten liegt ein Brief.','entry'],
+
+['detached','detached house','das freistehende Haus','dɪˌtætʃt ˈhaʊs','A detached house stands on its own.','Ein freistehendes Haus steht für sich allein.','types'],
+['semi','semi-detached house','die Doppelhaushälfte','ˌsemidɪˌtætʃt ˈhaʊs','A semi-detached house shares one wall.','Eine Doppelhaushälfte teilt sich eine Wand.','types'],
+['terraced','terraced house','das Reihenhaus','ˌterəst ˈhaʊs','They live in a terraced house.','Sie wohnen in einem Reihenhaus.','types'],
+['block','block of flats','der Wohnblock','ˌblɒk əv ˈflæts','This block of flats has three floors.','Dieser Wohnblock hat drei Stockwerke.','types'],
+['flat','flat / apartment','die Wohnung','flæt','Our flat is on the second floor.','Unsere Wohnung ist im zweiten Stock.','types'],
+
+['entrance','entrance','der Eingang','ˈentrəns','The entrance is on the left.','Der Eingang ist links.','rooms'],
+['hall','hall','der Flur','hɔːl','Hang your coat in the hall.','Häng deine Jacke in den Flur.','rooms'],
+['kitchen','kitchen','die Küche','ˈkɪtʃɪn','Dad is cooking in the kitchen.','Papa kocht in der Küche.','rooms'],
+['dining','dining room','das Esszimmer','ˈdaɪnɪŋ ruːm','We eat in the dining room.','Wir essen im Esszimmer.','rooms'],
+['living','living room','das Wohnzimmer','ˈlɪvɪŋ ruːm','The sofa is in the living room.','Das Sofa steht im Wohnzimmer.','rooms'],
+['study','study','das Arbeitszimmer','ˈstʌdi','Mum works in the study.','Mama arbeitet im Arbeitszimmer.','rooms'],
+['bathroom','bathroom','das Badezimmer','ˈbɑːθruːm','The shower is in the bathroom.','Die Dusche ist im Badezimmer.','rooms'],
+['bedroom','bedroom','das Schlafzimmer','ˈbedruːm','I sleep in my bedroom.','Ich schlafe in meinem Schlafzimmer.','rooms'],
+
+['ceiling','ceiling','die Zimmerdecke','ˈsiːlɪŋ','The lamp hangs from the ceiling.','Die Lampe hängt an der Decke.','room'],
+['wall','wall','die Wand','wɔːl','There is a picture on the wall.','An der Wand hängt ein Bild.','room'],
+['floor','floor','der Fußboden','flɔː','The ball is on the floor.','Der Ball liegt auf dem Boden.','room']
+].map(a=>({id:a[0],en:a[1],de:a[2],ipa:a[3],ex:a[4],exde:a[5],g:a[6]}));
+
+/* ---------- Bausteine ---------- */
+const win=(x,y,w=54,h=74)=>R(x-5,y-5,w+10,h+10,3,'#fff6e8',o)+R(x,y,w,h,2,'#9fd3ee',O(2))+L(`M${x+w/2} ${y}v${h}M${x} ${y+h/2}h${w}`,'#fff6e8',4)+L(`M${x+8} ${y+22}l14 -14`,'#fff',3);
+const tree=(x,y,s,c)=>T(x,y,s,L('M0 0V-60','#7a5136',14)+C(-30,-82,34,c,o)+C(30,-84,32,c,o)+C(0,-118,42,c,o)+C(-6,-82,30,c));
+const bush=(x,y,s=1,c='#6aa84f')=>T(x,y,s,P('M-48 0Q-56 -30 -28 -32Q-22 -58 6 -46Q34 -60 38 -30Q58 -24 48 0Z',c,o));
+const chim=(x,y,w,h)=>R(x,y,w,h,2,'#c8603f',o)+R(x-5,y-8,w+10,12,2,'#8f3f2c',o)+L(`M${x+6} ${y+22}h${w-12}M${x+6} ${y+44}h${w-12}`,'#9c4630',3);
+/* Haus in Miniatur */
+const mini=(roof,wall)=>R(-48,-40,96,70,3,wall,o)+P('M-60 -38L0 -86L60 -38Z',roof,o)+R(-12,-4,24,34,2,'#8a5a3c',o)+R(-39,-24,20,20,2,'#9fd3ee',O(2))+R(19,-24,20,20,2,'#9fd3ee',O(2));
+
+function houseScene(s){
+ const sky=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8dcf5"/><stop offset="1" stop-color="#eaf8ff"/></linearGradient></defs>`+R(0,0,1800,1300,0,'url(#sky)');
+ const cloud=(x,y,k)=>T(x,y,k,P('M-70 20Q-90 -12 -48 -16Q-36 -52 6 -34Q44 -52 54 -14Q92 -14 76 20Z','#fff','opacity=".9"'));
+ s.deco(sky+cloud(850,300,1)+cloud(1650,330,.8)+cloud(90,330,.7)+
+  tree(70,930,1.5,'#e8b53a')+tree(800,940,1.7,'#8fbf4f')+tree(1160,950,1.2,'#e57a4a')+tree(1460,940,1.5,'#7fae4a')+tree(1775,945,1.6,'#e8b53a')+
+  R(0,940,1800,30,0,'#8fc45a')+R(0,960,1800,180,0,'#9c6a45')+times(90,i=>E((i*211)%1800,985+(i*67)%140,4+i%9,3+i%6,'#b98a62'))+R(0,1130,1800,170,0,'#dcefc4')+L('M0 1130H1800',INK,3));
+ /* Garten */
+ s.add('garden',[70,935,90],[75,1010],R(0,925,128,38,6,'#6fb34c',o)+bush(55,935,1)+times(5,i=>L(`M${18+i*24} 957v-16`,'#3f7d32',3)+C(18+i*24,938,7,['#e8486b','#ffd23f','#fff'][i%3],O(2)))+hitR(0,880,130,85),[60,945]);
+
+ /* Aufgeschnittenes Haus */
+ s.deco(P('M120 535L250 340H650L785 535Z','#d9533f',o)+R(150,525,190,435,0,'#d6e8bd',o)+L('M150 742h190','#fff6e8',9)+
+  win(175,590,48,80)+win(258,590,48,80)+R(205,860,70,100,3,'#9a5b34',o)+C(262,912,5,'#f3c34b')+P('M185 860L240 822L295 860Z','#d9533f',o)+
+  /* Innenräume */
+  P('M340 530L430 356H640L755 530Z','#f1e4dc',o)+P('M600 356H640L755 530H685Z','#d9c4bd')+R(340,530,420,215,0,'#efe0d6',o)+R(340,665,420,80,0,'#d9c08c')+R(340,745,420,215,0,'#f3e8da',o)+R(340,890,420,70,0,'#cfa873')+
+  L('M120 535L250 340H650L785 535M340 356V960M760 530V960M340 530H770M340 745H770','#3b2a2e',11)+L('M550 530V356M545 535V745','#3b2a2e',9)+
+  /* Maler auf dem Dachboden */
+  T(470,524,.72,person('#4f86c6','#47557a','#7a4a2b'))+L('M500 442L525 385','#7a5136',5)+R(508,372,36,16,5,'#f2cf4a',O(2))+R(515,500,30,24,4,'#e8ecf2',o)+
+  /* Zimmer oben */
+  R(380,605,72,140,3,'#9a5b34',o)+C(440,677,5,'#f3c34b')+R(470,712,52,32,3,'#c9965c',o)+R(482,686,36,26,3,'#d9a86e',o)+
+  /* Putzende Person */
+  T(645,952,.82,person('#8b6fb0','#3f6a9a','#2d2430','#b97d58',true))+L('M680 880L715 950','#7a5136',6)+E(718,952,20,7,'#d9d3c4',o));
+ s.add('roof',[200,420,90],[150,372],P('M120 535L250 340H340V535Z','#d9533f',o)+times(5,i=>L(`M${232-i*20} ${375+i*30}H338`,'#b43d30',3)),[225,420]);
+ s.add('chimney',[285,300,75],[190,262],chim(258,258,52,110)+hitR(250,245,70,130),[262,290]);
+ s.add('aerial',[570,270,80],[690,262],L('M570 340V215M535 232h70M542 252h56M549 272h42','#51586e',5)+E(618,310,28,22,'#e8ecf2',o)+L('M618 310l-30 22M618 310l20 -12','#51586e',4)+hitR(525,205,125,135),[600,235]);
+ s.add('attic',[690,485,80],[800,420],R(655,455,48,40,3,'#c9965c',o)+L('M679 455v40M655 475h48','#8a5a3c',3)+P('M600 356H640L755 530H560V365Z','transparent'),[668,440]);
+ s.add('dormer',[262,462,65],[110,465],R(232,455,62,66,2,'#fff6e8',o)+P('M220 458L263 415L306 458Z','#b43d30',o)+win(243,468,40,46)+hitR(218,410,92,115),[232,470]);
+ s.add('window',[655,625,75],[655,562],win(590,598,52,88)+win(668,598,52,88),null);
+ s.add('door',[708,855,85],[705,772],P('M672 825Q708 785 744 825Z','#bfe3f2',o)+R(672,825,72,135,2,'#a4623a',o)+C(685,895,5,'#f3c34b')+L('M686 845h44v35h-44z','#7d4526',3));
+ s.add('stairs',[460,860,105],[425,926],P('M360 955H600V935H570V910H540V885H510V860H480V835H450V810H420V785H390V760H360Z','#c8905a',o)+L('M365 725L605 900M390 745v38M450 788v45M510 832v50M570 876v55','#7d4526',6)+hitR(350,740,240,215),[480,875]);
+ s.add('drainpipe',[150,750,100],[72,690],L('M118 540H165L148 565V945l-18 12','#6d7c94',13)+L('M118 540H165L148 565V945l-18 12','#c3cfdd',5),[148,700]);
+
+ /* Keller */
+ s.add('cellar',[545,1045,110],[560,1020],R(350,972,400,142,0,'#d8bc92',o)+R(350,1075,400,39,0,'#b9986c')+L('M350 965V1118H750V965','#3b2a2e',12)+R(370,1048,70,60,3,'#c9965c',o)+R(388,1010,52,38,3,'#d9a86e',o)+L('M370 1078h70M405 1048v60','#8a5a3c',3)+R(640,1030,95,8,2,'#8a5a3c',o)+times(3,i=>R(648+i*30,1002,20,28,4,['#e57a4a','#7fae4a','#6d9fd6'][i],O(2)))+C(695,1085,24,'#d96b55',o));
+
+ /* Straße */
+ s.deco(P('M780 962L760 1060H1800V975Z','#8c8798',o)+L('M800 1018H1790','#f4f1e8',5,'stroke-dasharray="34 28"'));
+ /* Modernes Haus */
+ s.deco(R(860,655,280,305,3,'#e5e0e6',o)+R(895,690,215,100,3,'#5f6d9c',o)+L('M910 705l40 55M945 705l25 34','#b9c8ee',4)+R(850,800,300,22,3,'#bfb7c6',o));
+ s.add('terrace',[945,610,80],[880,535],R(852,625,296,34,3,'#cfc7d3',o)+L('M860 625v-30M900 625v-30M940 625v-30M980 625v-30M1020 625v-30M1060 625v-30M1100 625v-30M1140 625v-30M855 595h290','#4b4a66',4)+L('M920 625V550','#4b4a66',5)+P('M865 568Q920 515 975 568Z','#f2c14a',o)+bush(1100,628,.8)+T(1030,628,.45,person('#e8486b','#47557a','#f0c15a','#e8b48f',true))+hitR(855,520,290,140),[905,605]);
+ s.add('garage',[975,890,95],[1000,818],R(895,838,170,122,3,'#3d3a52',o)+R(895,838,170,34,2,'#9fb4c4',o)+L('M900 850h160M900 861h160','#6c8296',3)+P('M915 950V920Q920 900 945 898L965 878H1015L1038 900Q1052 905 1050 925V950Z','#d94a3d',o)+P('M955 897L970 886H1010L1024 897Z','#bfe3f2',O(2))+C(940,950,15,INK)+C(1025,950,15,INK)+C(940,950,6,'#ccd')+C(1025,950,6,'#ccd'));
+ /* Rosa Haus */
+ s.deco(R(1190,580,270,380,3,'#eaa29a',o)+chim(1375,385,34,110)+win(1270,858,0.1,0.1));
+ s.deco(R(1330,840,100,75,2,'#fff6e8',o)+R(1336,846,88,63,2,'#9fd3ee',O(2))+L('M1380 846v63M1336 877h88','#fff6e8',4));
+ s.add('roof',[1325,500,95],[1325,430],P('M1175 585L1225 455H1425L1475 585Z','#e9cf7a',o)+times(6,i=>L(`M${1240+i*36} 462L${1215+i*46} 578`,'#c9a94f',3))+win(1262,515,36,44)+win(1352,515,36,44)+P('M1250 515L1280 488L1310 515ZM1340 515L1370 488L1400 515Z','#c9a94f',o),[1300,468]);
+ s.deco(win(1235,640,60,80)+win(1355,640,60,80));
+ s.add('sunshade',[1325,615,80],[1325,590],P('M1200 592H1450L1472 640H1178Z','#fff0b8',o)+times(5,i=>P(`M${1222+i*50} 592h25l5 48h-30Z`,'#f2c14a'))+L('M1200 592H1450L1472 640H1178Z',INK,3),null);
+ s.add('balcony',[1325,735,95],[1325,790],R(1205,755,240,16,3,'#f4ece4',o)+L('M1212 755v-58h226v58'+times(11,i=>`M${1230+i*19} 700v53`),'#f4ece4',5)+L('M1210 697h230',INK,4)+hitR(1200,690,250,85),[1335,735]);
+ s.deco(R(1232,825,68,105,3,'#3f9d9a',o)+C(1288,880,5,'#f3c34b'));
+ s.add('step',[1266,943,55],[1170,905],P('M1226 930H1306V942H1318V954H1330V968H1200V954H1213V942H1226Z','#d9d3cc',o)+hitR(1200,925,132,48),[1218,948]);
+ /* Blaues Haus */
+ s.deco(R(1500,630,260,330,3,'#b9c4ea',o)+win(1535,675,75,70)+win(1655,675,75,70)+R(1590,830,150,130,3,'#eaa63c',o)+L('M1596 860h138M1596 890h138M1596 920h138','#c4831f',4)+R(1522,855,50,105,3,'#7a5a86',o)+P('M1485 632L1520 510H1745L1775 632Z','#a9825c',o));
+ s.add('solar',[1630,570,95],[1650,462],times(4,i=>P(`M${1535+i*54} 530h46l6 78h-50Z`,'#33477e',o)+L(`M${1560+i*54} 533l4 72M${1536+i*54} 568h48`,'#8fb0ee',2)),[1620,545]);
+ /* Radfahrerin */
+ s.deco(T(1620,1030,1,C(-45,0,28,'none','stroke="#2a2238" stroke-width="6"')+C(45,0,28,'none','stroke="#2a2238" stroke-width="6"')+L('M-45 0L-15 -34H25L45 0M-15 -34L5 0L25 -34M25 -34l-2 -14h14','#e8a63a',6)+L('M5 0L-8 -42L8 -70','#47557a',11)+L('M-6 -46L2 -78L25 -50','#d94a6d',10)+C(5,-95,16,'#e8b48f',o)+P('M-14 -98Q-8 -125 18 -112Q26 -100 20 -96Q8 -108 -2 -92L-22 -78Z','#f0c15a',O(2)))+bush(840,962,1)+bush(1170,962,.9,'#5a9a46')+bush(1480,962,.8)+bush(1755,962,.9,'#5a9a46'));
+
+ /* Rund um die Haustür */
+ const tile=(id,x,art,ly=190)=>s.add(id,[x,98,90],[x,ly],R(x-100,22,200,148,18,'#fff',o)+art);
+ tile('key',160,T(160,96,1,C(-38,-12,30,'#e3b440',o)+C(-45,-18,10,'#fff',o)+L('M-14 2L56 42M34 30l-10 17M50 39l-9 15','#2a2238',17)+L('M-14 2L56 42M34 30l-10 17M50 39l-9 15','#e3b440',10)));
+ tile('intercom',460,R(425,40,70,115,8,'#c8d0dc',o)+C(460,62,12,'#2a2238')+C(463,59,4,'#8fd0ff')+L('M442 88h36M442 98h36M442 108h36','#5b6478',4)+times(3,i=>R(440,118+i*11,40,7,2,'#fff',O(1.5))));
+ tile('doorbell',760,C(760,96,48,'#d9a441',o)+C(760,96,31,'#f6d98a',o)+C(760,96,14,'#d94a3d',o)+L('M700 70q-14 26 0 52M820 70q14 26 0 52','#2a2238',4));
+ tile('doormat',1060,P('M1000 65H1120L1145 135H975Z','#c98c4d',o)+L('M1008 78H1112L1128 122H992Z','#8a5a2c',4)+`<text x="1060" y="108" text-anchor="middle" font-size="22" font-weight="800" fill="#5c3818" font-family="sans-serif">HELLO</text>`);
+ tile('number',1360,R(1320,55,80,85,10,'#2f5f9e',o)+`<text x="1360" y="115" text-anchor="middle" font-size="50" font-weight="800" fill="#fff" font-family="sans-serif">12</text>`);
+ tile('postbox',1640,L('M1640 155V105','#6b5138',12)+P('M1595 108V75Q1595 50 1622 50H1668Q1692 50 1692 75V108Z','#f2c14a',o)+R(1610,72,42,7,3,'#2a2238')+L('M1692 80h14v-30','#d94a3d',5)+R(1688,42,22,15,2,'#d94a3d',O(2)));
+
+ /* Wohnformen */
+ const type=(id,x,art,w=250)=>s.add(id,[x,1195,105],[x,1270],E(x,1232,w/2,16,'#9fcb72')+art+hitR(x-w/2,1140,w,100));
+ type('detached',180,T(180,1205,1,mini('#d9533f','#fff0d8'))+bush(95,1232,.6)+bush(270,1232,.6));
+ type('semi',510,T(462,1205,1,mini('#4f9a8f','#f4c7c0'))+T(558,1205,1,mini('#4f9a8f','#d9d0ee'))+L('M510 1130v104','#2a2238',5),270);
+ type('terraced',900,times(4,i=>{const x=785+i*76;return R(x,1170,76,62,2,['#fff0d8','#cfe3b8','#f4c7c0','#cfe0f4'][i],o)+P(`M${x-3} 1172L${x+12} 1142H${x+64}L${x+79} 1172Z`,'#d97a3f',o)+R(x+12,1198,18,34,2,'#8a5a3c',O(2))+R(x+42,1184,22,18,2,'#9fd3ee',O(2));}),320);
+ s.add('block',[1280,1190,105],[1260,1270],E(1280,1232,130,16,'#9fcb72')+R(1195,1140,170,92,3,'#e2d6c4',o)+times(12,i=>R(1210+(i%4)*38,1150+Math.floor(i/4)*27,24,18,2,'#9fd3ee',O(2)))+L('M1195 1174h170M1195 1202h170','#b6a58e',4),null);
+ s.add('flat',[1500,1175,95],[1545,1270],R(1450,1140,130,76,10,'#fff',o)+R(1468,1152,94,52,3,'#ffe08a',o)+L('M1500 1152v52M1530 1178h32','#2a2238',3)+C(1483,1180,8,'#e57a4a',O(2))+R(1539,1187,16,12,2,'#6d9fd6',O(2))+hitR(1445,1135,140,90),[1325,1158]);
+}
+
+/* ---------- Wohnung (Grundriss) und Zimmer ---------- */
+function planSvg(){
+ const room=(id,x,y,w,h,c,f)=>`<g class="obj" data-id="${id}">${R(x,y,w,h,0,c,'stroke="#4a3540" stroke-width="8"')}${f}</g>`;
+ const bed=(x,y)=>R(x,y,120,100,8,'#fff',o)+R(x+8,y+10,34,34,6,'#cfe0f4',O(2))+R(x+8,y+56,34,34,6,'#cfe0f4',O(2))+R(x+50,y+4,66,92,6,'#7b9bd1',O(2));
+ return room('kitchen',20,20,220,210,'#e3f0d8',R(28,28,204,38,4,'#f6f1e6',o)+C(60,47,11,'#555')+C(90,47,11,'#555')+R(140,34,48,26,5,'#9fd3ee',O(2))+R(192,70,40,55,5,'#e8ecf2',o))+
+ room('dining',240,20,230,210,'#fbe9cf',R(305,70,100,100,50,'#b9794a',o)+times(4,i=>{const a=i*Math.PI/2;return C(355+Math.cos(a)*68,120+Math.sin(a)*68,17,'#e57a6a',o)}))+
+ room('living',470,20,310,210,'#f6dede',R(520,170,170,48,12,'#7fae6a',o)+R(690,95,48,123,12,'#7fae6a',o)+E(590,110,62,36,'#d98a5a',o)+R(560,95,60,30,6,'#8a5a3c',o)+R(545,28,110,16,4,'#333a55',o))+
+ room('hall',110,230,670,80,'#efe6da',times(8,i=>L(`M${150+i*80} 245v50`,'#d9cbb8',3)))+
+ room('entrance',20,230,90,80,'#d9cbb8',R(12,244,16,52,3,'#a4623a',o)+R(40,250,45,40,5,'#c98c4d',O(2))+P('M92 260l14 10l-14 10Z','#4a3540'))+
+ room('study',20,310,240,200,'#e0e6f6',R(35,325,30,170,3,'#a4623a',o)+times(9,i=>L(`M40 ${338+i*18}h20`,['#d94a3d','#3f9d9a','#f2c14a'][i%3],7))+R(130,440,100,45,5,'#b9794a',o)+R(160,448,40,24,3,'#333a55')+C(180,408,20,'#6d9fd6',o))+
+ room('bathroom',260,310,200,200,'#d6f0f2',R(278,425,164,68,30,'#fff',o)+C(298,459,7,'#9fb4c4')+E(300,355,22,28,'#fff',o)+R(375,325,70,34,14,'#fff',o)+C(410,342,6,'#9fb4c4'))+
+ room('bedroom',460,310,320,200,'#eadcf2',bed(640,350)+R(480,465,130,32,4,'#a4623a',o)+R(744,320,26,26,3,'#a4623a',o))+
+ R(20,20,760,490,0,'none','stroke="#4a3540" stroke-width="12" pointer-events="none"');
+}
+function roomSvg(){
+ const g=(id,s)=>`<g class="obj" data-id="${id}">${s}</g>`;
+ return g('ceiling',P('M10 10H790L600 110H200Z','#d9d3e8',o))+
+ g('wall',P('M10 10L200 110V350L10 490Z','#f4cbb5',o)+P('M790 10L600 110V350L790 490Z','#f4cbb5',o)+R(200,110,400,240,0,'#fae0cf',o))+
+ g('floor',P('M10 490L200 350H600L790 490Z','#c8905a',o)+L('M280 350L190 490M360 350L330 490M440 350L470 490M520 350L610 490','#a36f40',3))+
+ `<g pointer-events="none">${L('M400 70v70','#2a2238',4)+P('M365 175L378 138H422L435 175Z','#f2c14a',o)+R(250,150,100,100,3,'#fff6e8',o)+R(258,158,84,84,2,'#9fd3ee',O(2))+L('M300 158v84M258 200h84','#fff6e8',5)+R(455,195,110,155,3,'#a4623a',o)+times(12,i=>R(465+(i%4)*24,205+Math.floor(i/4)*45,16,34,2,['#d94a3d','#3f9d9a','#f2c14a','#6d9fd6'][(i*3)%4],O(1.5)))+E(380,425,130,35,'#d96a6a',o)+R(95,290,70,85,14,'#7fae6a',o)+R(80,345,100,45,12,'#6a9a58',o)}</g>`;
+}
+
+const LESSON={
+ key:'1',W:1800,H:1300,scene:houseScene,
+ groups:[['house','Das Haus'],['street','An der Straße'],['entry','Rund um die Haustür'],['types','Wohnformen']],
+ also:{window:['dormer'],roof:['solar','dormer','chimney','aerial'],door:['garage'],flat:['block'],block:['flat'],garden:[],intercom:['doorbell']},
+ details:[
+  {type:'figure',title:'Die Wohnung von oben',hint:'Tippe auf ein Zimmer.',viewBox:'0 0 800 530',maxWidth:800,font:27,ids:['entrance','hall','kitchen','dining','living','study','bathroom','bedroom'],svg:planSvg,
+   labels:[['kitchen',130,150],['dining',355,206],['living',625,150],['hall',445,270],['entrance',178,270,100,270],['study',150,365],['bathroom',360,390],['bedroom',545,410]],
+   boxes:{kitchen:[10,10,240,230],dining:[230,10,250,230],living:[460,10,330,230],hall:[110,160,670,220],entrance:[0,200,140,140],study:[10,300,260,220],bathroom:[250,300,220,220],bedroom:[450,300,340,220]}},
+  {type:'figure',title:'Das Zimmer',hint:'Decke, Wand und Fußboden: Tippe darauf.',viewBox:'0 0 800 500',font:30,ids:['ceiling','wall','floor'],svg:roomSvg,
+   labels:[['ceiling',400,45],['wall',690,230],['floor',400,467]],boxes:{ceiling:[0,0,800,150],wall:[0,0,800,500],floor:[0,320,800,180]}}
+ ],
+ story:{title:'Where is Biscuit?',voices:{Emma:1.3,Dad:.8},lines:[
+  ['Emma','Dad, I can’t find Biscuit! He isn’t in my [[bedroom|bedroom]].','Papa, ich finde Biscuit nicht! Er ist nicht in meinem Schlafzimmer.'],
+  ['Dad','That cat again. Did you look in the [[kitchen|kitchen]]?','Schon wieder dieser Kater. Hast du in der Küche nachgesehen?'],
+  ['Emma','Yes, and in the [[living|living room]] and the [[bathroom|bathroom]].','Ja, und im Wohnzimmer und im Badezimmer.'],
+  ['Dad','Maybe he is in the [[cellar|cellar]]. He loves old boxes.','Vielleicht ist er im Keller. Er liebt alte Kartons.'],
+  ['Emma','No. I went down the [[stairs|stairs]] twice.','Nein. Ich bin zweimal die Treppe hinuntergegangen.'],
+  ['Dad','What about the [[garden|garden]]? Or the [[garage|garage]]?','Und der Garten? Oder die Garage?'],
+  ['Emma','He isn’t there. Wait! I can hear something above the [[ceiling|ceiling]].','Da ist er nicht. Warte! Ich höre etwas über der Decke.'],
+  ['Dad','Then take a torch and check the [[attic|attic]].','Dann nimm eine Taschenlampe und sieh auf dem Dachboden nach.'],
+  ['Emma','The window is open… Dad, he is sitting on the [[roof|roof]]!','Das Fenster ist offen… Papa, er sitzt auf dem Dach!'],
+  ['Dad','Right next to the [[chimney|chimney]]. He looks very pleased with himself.','Direkt neben dem Schornstein. Er sieht sehr zufrieden aus.'],
+  ['Emma','Biscuit! Come inside! It’s dinner time!','Biscuit! Komm rein! Es gibt Abendessen!'],
+  ['Dad','Look how fast he comes back. He understands English after all.','Schau, wie schnell er zurückkommt. Er versteht also doch Englisch.']
+ ]},
+ idioms:[
+  ['as safe as houses','absolut sicher','Completely safe.','Vollkommen sicher.','Your secret is as safe as houses with me.','Dein Geheimnis ist bei mir absolut sicher.'],
+  ['to get on like a house on fire','sich auf Anhieb blendend verstehen','To become good friends very quickly.','Sehr schnell gute Freunde werden.','The two dogs got on like a house on fire.','Die beiden Hunde haben sich auf Anhieb blendend verstanden.'],
+  ['make yourself at home','fühl dich wie zu Hause','Relax and be comfortable here.','Entspann dich und mach es dir bequem.','Take off your shoes and make yourself at home.','Zieh die Schuhe aus und fühl dich wie zu Hause.'],
+  ['on the house','geht aufs Haus','Free. You do not have to pay.','Umsonst. Du musst nicht bezahlen.','It is your birthday, so the ice cream is on the house.','Du hast Geburtstag, also geht das Eis aufs Haus.'],
+  ['to hit the roof','an die Decke gehen','To get very angry suddenly.','Plötzlich sehr wütend werden.','Mum will hit the roof when she sees this mess.','Mama geht an die Decke, wenn sie dieses Chaos sieht.'],
+  ['home sweet home','trautes Heim, Glück allein','It is lovely to be home again.','Es ist schön, wieder zu Hause zu sein.','After two weeks away: home sweet home!','Nach zwei Wochen unterwegs: Trautes Heim, Glück allein!']
+ ]
+};
+
+/* ---------- Grundlagen ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const W=Object.fromEntries(WORDS.map(w=>[w.id,w]));
+const store={get(k,d){try{const v=localStorage.getItem('ww'+LESSON.key+'-'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ww'+LESSON.key+'-'+k,JSON.stringify(v))}catch(e){}}};
+const opt={accent:store.get('accent','en-GB'),slow:store.get('slow',false),showde:store.get('showde',true),lab:store.get('lab','en')};
+const seen=new Set(store.get('seen',[]));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---------- Vorlesen ---------- */
+const synth=window.speechSynthesis;let voices=[],run=0,keep=null;
+if(synth){const load=()=>voices=synth.getVoices();load();synth.addEventListener&&synth.addEventListener('voiceschanged',load);}else $('#nospeech').hidden=false;
+function voiceFor(lang){
+ const norm=v=>v.lang.replace('_','-');
+ const list=voices.filter(v=>norm(v)===lang);
+ const pool=list.length?list:voices.filter(v=>norm(v).startsWith(lang.slice(0,2)));
+ const nice=/Google|Natural|Premium|Enhanced|Daniel|Serena|Kate|Samantha|Anna|Karen/i;
+ return pool.find(v=>nice.test(v.name))||pool.find(v=>v.default)||pool[0];
+}
+function stopAll(){run++;if(synth)synth.cancel();stopTour(true);storyIdle();}
+/* Spricht einen Text; das Versprechen endet auch dann, wenn der Browser kein Ende meldet */
+function speak(text,{de=false,slow=opt.slow,pitch=1}={}){
+ return new Promise(res=>{
+  const est=1200+text.length*(slow?150:95);
+  if(!synth){setTimeout(res,est);return;}
+  const u=new SpeechSynthesisUtterance(text);keep=u;
+  u.lang=de?'de-DE':opt.accent;const v=voiceFor(u.lang);if(v)u.voice=v;
+  u.rate=slow?.6:.95;u.pitch=pitch;
+  let done=false;const end=()=>{if(!done){done=true;clearTimeout(t);res();}};
+  const t=setTimeout(end,est*1.8);u.onend=end;u.onerror=end;
+  synth.speak(u);
+ });
+}
+function say(text,o){stopAll();return speak(text,o);}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- Bild ---------- */
+const built=buildScene(),LW=LESSON.W,LH=LESSON.H;
+$('#stage').innerHTML=built.svg;
+renderDetails();
+const scene=$('#scene'),stage=$('#stage');
+const shared=document.createElementNS('http://www.w3.org/2000/svg','svg');
+shared.setAttribute('width','0');shared.setAttribute('height','0');shared.setAttribute('aria-hidden','true');shared.style.position='absolute';
+shared.append(...document.querySelectorAll('#scene linearGradient,#scene radialGradient,#scene clipPath,#v-detail linearGradient,#v-detail clipPath'));document.body.append(shared);
+const OBJ=Object.fromEntries(built.objs.map(o=>[o.id,o]));
+/* Reihenfolge der Wörter wie in der Wortliste */
+const SCENE_IDS=WORDS.filter(w=>OBJ[w.id]).map(w=>w.id);
+let current=null,revealed=new Set(),find=null,view='bild';
+
+function drawLabels(){
+ const ctx=document.createElement('canvas').getContext('2d');ctx.font="800 23px Nunito, sans-serif";
+ let lines='',tags='';
+ for(const id of SCENE_IDS){
+  const o=OBJ[id],w=W[id],[x,y]=o.l;
+  let t=w.en;
+  if(opt.lab==='de')t=(LESSON.short&&LESSON.short[id])||w.de.split(' / ')[0].replace(/^(der|die|das) /,'').replace(/ \(.*\)/,'');
+  if(opt.lab==='q'&&!revealed.has(id))t='?';
+  const wd=Math.max(44,ctx.measureText(t).width+24);
+  const cx=Math.min(LW-wd/2-6,Math.max(wd/2+6,x));
+  if(o.a){lines+=`<line class="lead" x1="${cx}" y1="${y}" x2="${o.a[0]}" y2="${o.a[1]}"/><circle class="leaddot" cx="${o.a[0]}" cy="${o.a[1]}" r="4.5"/>`;}
+  tags+=`<g class="lbl${current===id?' sel':''}" data-id="${id}" tabindex="0" role="button" aria-label="${t==='?'?'verdecktes Wort':esc(t)}"><rect x="${cx-wd/2}" y="${y-18}" width="${wd}" height="36" rx="11"/><text x="${cx}" y="${y+1}">${esc(t)}</text></g>`;
+ }
+ $('#labels').innerHTML=(opt.lab==='off'||find)?'':lines+tags;
+ $$('[data-lab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lab===opt.lab));
+}
+
+/* Zoom */
+let zoom=null,whole=true;
+/* "Ganzes Bild": die komplette Grafik passt in Breite und Höhe auf den Bildschirm */
+function fitWidth(){
+ const w=Math.max(280,stage.clientWidth),below=innerHeight-(stage.getBoundingClientRect().top+scrollY)-12;
+ const h=below>=innerHeight*.55?below:innerHeight-16;
+ return Math.min(w,Math.max(280,Math.floor((h-4)*LW/LH)));
+}
+function applyZoom(w){zoom=w;scene.style.width=w+'px';stage.style.maxHeight=whole?'none':'';$('#zfit').setAttribute('aria-pressed',whole);}
+function showWhole(){whole=true;applyZoom(fitWidth());stage.scrollLeft=stage.scrollTop=0;}
+function setZoom(w){
+ const cx=(stage.scrollLeft+stage.clientWidth/2)/zoom,cy=(stage.scrollTop+stage.clientHeight/2)/zoom,f=fitWidth();
+ const next=Math.min(3600,Math.max(f,w));whole=next<=f+1;applyZoom(next);
+ stage.scrollLeft=cx*next-stage.clientWidth/2;stage.scrollTop=cy*next-stage.clientHeight/2;
+}
+$('#zin').onclick=()=>setZoom(zoom*1.5);$('#zout').onclick=()=>setZoom(zoom/1.5);$('#zfit').onclick=showWhole;
+function focusOn(id){
+ const o=OBJ[id];if(!o||!zoom)return;const k=scene.getBoundingClientRect().width/LW;
+ const x=(o.f[0]+o.l[0])/2*k,y=(o.f[1]+o.l[1])/2*k;
+ if(!whole)stage.scrollTo({left:x-stage.clientWidth/2,top:y-stage.clientHeight/2,behavior:'smooth'});
+ const card=$('#card');
+ if(!card.hidden&&getComputedStyle(card).position==='fixed'){
+  const r=stage.getBoundingClientRect(),free=innerHeight-card.offsetHeight;
+  const bar=$$('#tourbar,#findbar').find(b=>!b.hidden);let delta;
+  if(whole&&stage.offsetHeight<=free-8){
+   const top=bar&&bar.offsetHeight+stage.offsetHeight+20<=free?bar:stage;delta=top.getBoundingClientRect().top-6;
+  }else delta=r.top+(whole?y:Math.min(stage.clientHeight/2,y))-Math.max(70,free/2);
+  window.scrollBy({top:delta,behavior:'smooth'});
+ }
+}
+function mark(id,cls=''){
+ const m=$('#marker'),c=m.firstElementChild,o=OBJ[id];
+ if(!o||(LESSON.nomark||[]).includes(id)){m.setAttribute('hidden','');return;}
+ m.removeAttribute('hidden');c.setAttribute('cx',o.f[0]);c.setAttribute('cy',o.f[1]);c.setAttribute('r',Math.min(o.f[2],150));c.setAttribute('class','mk '+cls);
+}
+function unmark(){$('#marker').setAttribute('hidden','');$$('.sel').forEach(e=>e.classList.remove('sel'));}
+
+/* ---------- Wortkarte ---------- */
+function updateCount(){$('#count').textContent=`${seen.size} / ${WORDS.length} entdeckt`;}
+function thumbFor(id){
+ const t=$('#thumb'),o=OBJ[id];t.style.display='';
+ if(o){const [x,y,r]=o.f;t.setAttribute('viewBox',`${x-r*1.15} ${y-r*1.15} ${r*2.3} ${r*2.3}`);t.innerHTML='<use href="#art"/>';return;}
+ for(let i=0;i<LESSON.details.length;i++){const s=LESSON.details[i];if(!s.ids.includes(id))continue;
+  if(s.type==='cards'){t.setAttribute('viewBox','-90 -75 180 150');t.innerHTML=ART[id]();return;}
+  t.setAttribute('viewBox',s.boxes[id].join(' '));t.innerHTML=`<use href="#fig${i}"/>`;return;}
+ t.style.display='none';
+}
+function openCard(id){
+ const w=W[id];current=id;
+ $('#card').hidden=false;$('#grid').classList.add('has');document.body.classList.add('sheet');
+ $('#cword').textContent=w.en;$('#cipa').textContent=opt.accent==='en-GB'?'/'+w.ipa+'/':'';
+ $('#cde').textContent=w.de;$('#cex').textContent=w.ex;$('#cexde').textContent=w.exde;
+ $$('#card .tr').forEach(e=>e.classList.remove('open'));
+ thumbFor(id);
+ seen.add(id);store.set('seen',[...seen]);updateCount();
+ $$('.chip').forEach(c=>c.classList.toggle('seen',seen.has(c.dataset.id)));
+}
+function select(id,{speakIt=true,scroll=false}={}){
+ const hadCard=!$('#card').hidden;
+ unmark();openCard(id);revealed.add(id);if(!hadCard)refit();
+ if(OBJ[id]){
+  if(opt.lab==='q')drawLabels();
+  $$(`#scene [data-id="${id}"]`).forEach(e=>e.classList.add('sel'));mark(id);
+  if(scroll&&view==='bild')focusOn(id);
+ }
+ $$(`#v-detail [data-id="${id}"]`).forEach(e=>e.classList.add('sel'));
+ if(speakIt)say(W[id].en);
+}
+function closeCard(){$('#card').hidden=true;$('#grid').classList.remove('has');document.body.classList.remove('sheet');current=null;unmark();refit();}
+$('#close').onclick=()=>{stopAll();closeCard();};
+$('#say').onclick=()=>say(W[current].en,{slow:false});
+$('#saysyl').onclick=()=>say(W[current].en,{slow:true});
+$('#sayde').onclick=()=>say(W[current].de.replace(' / ',' oder ').replace(/[()]/g,''),{de:true,slow:false});
+$('#sayex').onclick=()=>say(W[current].ex);
+function step(d){
+ const pool=OBJ[current]?SCENE_IDS:LESSON.details.find(s=>s.ids.includes(current)).ids;
+ select(pool[(pool.indexOf(current)+d+pool.length)%pool.length],{scroll:true});
+}
+$('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
+document.addEventListener('click',e=>{const t=e.target.closest('.hide-de .tr');if(t)t.classList.toggle('open');});
+
+scene.addEventListener('click',e=>{
+ const g=e.target.closest('[data-id]');if(!g)return;
+ if(find){answerFind(g.dataset.id);return;}
+ select(g.dataset.id);
+ if(getComputedStyle($('#card')).position==='fixed')requestAnimationFrame(()=>focusOn(g.dataset.id));
+});
+scene.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.id){e.preventDefault();select(e.target.dataset.id);}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&current){stopAll();closeCard();}});
+
+/* Kartenbreite ändert sich: Bild neu einpassen, solange nicht gezoomt wurde */
+function refit(){requestAnimationFrame(()=>{if(view==='bild'&&stage.clientWidth&&whole)showWhole();});}
+new ResizeObserver(refit).observe(stage);new ResizeObserver(refit).observe($('#v-bild'));addEventListener('resize',refit);
+
+/* ---------- Wortliste ---------- */
+const GROUPS=LESSON.groups;
+$('#chiplists').innerHTML=GROUPS.map(([g,n])=>`<div class="group" style="margin-bottom:14px"><h3>${n}</h3><div class="chips">${WORDS.filter(w=>w.g===g).map(w=>`<button class="chip${seen.has(w.id)?' seen':''}" data-id="${w.id}" data-s="${(w.en+' '+w.de).toLowerCase()}">${w.en}<small class="tr0">${w.de}</small></button>`).join('')}</div></div>`).join('');
+$('#chiplists').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){select(c.dataset.id,{scroll:true});if(innerWidth>=1100)stage.scrollIntoView({behavior:'smooth',block:'nearest'});}});
+$('#search').oninput=e=>{const q=e.target.value.trim().toLowerCase();$$('.chip').forEach(c=>c.hidden=!c.dataset.s.includes(q));$$('.group').forEach(g=>g.hidden=!g.querySelector('.chip:not([hidden])'));};
+
+/* ---------- Tour: alles abspielen ---------- */
+let tour=null;
+function stopTour(silent){if(!tour)return;tour=null;$('#tourbar').hidden=true;}
+async function tourStep(){
+ const me=++run;if(synth)synth.cancel();
+ const t=tour,id=t.ids[t.i];
+ select(id,{speakIt:false,scroll:true});
+ $('#tourpos').textContent=`${t.i+1} / ${t.ids.length}  ${W[id].en}`;
+ const alive=()=>me===run&&tour===t&&!t.paused;
+ await speak(W[id].en);if(!alive())return;await wait(450);if(!alive())return;
+ if(opt.showde){await speak(W[id].de.split(' / ')[0].replace(/[()]/g,''),{de:true,slow:false});if(!alive())return;await wait(350);if(!alive())return;}
+ await speak(W[id].ex);if(!alive())return;await wait(900);if(!alive())return;
+ if(t.i<t.ids.length-1){t.i++;tourStep();}else{stopTour();}
+}
+function startTour(ids,start=0){
+ stopAll();tour={ids,i:start,paused:false};
+ if(view==='bild'){$('#tourbar').hidden=false;$('#tpause').textContent='⏸ Pause';}
+ tourStep();
+}
+$('#tour').onclick=()=>startTour(SCENE_IDS,Math.max(0,SCENE_IDS.indexOf(current)));
+$('#tstop').onclick=()=>stopAll();
+$('#tpause').onclick=()=>{if(!tour)return;tour.paused=!tour.paused;$('#tpause').textContent=tour.paused?'▶ Weiter abspielen':'⏸ Pause';if(tour.paused){run++;synth&&synth.cancel();}else tourStep();};
+const jump=d=>{if(!tour)return;tour.i=(tour.i+d+tour.ids.length)%tour.ids.length;tour.paused=false;$('#tpause').textContent='⏸ Pause';tourStep();};
+$('#tprev').onclick=()=>jump(-1);$('#tnext').onclick=()=>jump(1);
+
+/* ---------- Einstellungen ---------- */
+$('#accent').value=opt.accent;
+$('#accent').onchange=e=>{opt.accent=e.target.value;store.set('accent',opt.accent);if(current)openCard(current);say('Hello! Let us learn some English.');};
+function applyToggles(){$('#slow').setAttribute('aria-pressed',opt.slow);$('#showde').setAttribute('aria-pressed',opt.showde);$('#showde').textContent=opt.showde?'Deutsch sichtbar':'Deutsch verdeckt';document.body.classList.toggle('hide-de',!opt.showde);$$('.tr0').forEach(e=>e.hidden=!opt.showde);$$('.tr').forEach(e=>e.classList.remove('open'));}
+$('#slow').onclick=()=>{opt.slow=!opt.slow;store.set('slow',opt.slow);applyToggles();};
+$('#showde').onclick=()=>{opt.showde=!opt.showde;store.set('showde',opt.showde);applyToggles();};
+$$('[data-lab]').forEach(b=>b.onclick=()=>{opt.lab=b.dataset.lab;revealed=new Set();store.set('lab',opt.lab);drawLabels();});
+
+/* ---------- Detailbereiche ---------- */
+function renderDetails(){
+ $('#v-detail').innerHTML=LESSON.details.map((s,i)=>{
+  let body;
+  if(s.type==='cards')body=`<div class="cards">${s.ids.map(id=>`<button data-id="${id}"><svg viewBox="-90 -75 180 150" aria-hidden="true">${ART[id]()}</svg><span lang="en">${W[id].en}</span><small class="tr" lang="de">${W[id].de}</small></button>`).join('')}</div>`;
+  else body=`<div class="figure"><svg viewBox="${s.viewBox}" style="max-width:${s.maxWidth||760}px"><g id="fig${i}">${s.svg()}</g>${s.labels.map(([id,x,y,ax,ay])=>`<g class="elbl" data-id="${id}" tabindex="0" role="button">${ax!==undefined?L(`M${ax} ${ay}L${Math.abs(ay-y)<30?x+(ax<x?-1:1)*W[id].en.length*(s.font||22)*.3:x} ${Math.abs(ay-y)<30?y:y+(ay>y?1:-1)*(s.font||22)*.75}`,'#33405c',2)+C(ax,ay,4,'#33405c'):''}<text x="${x}" y="${y}" style="font-size:${s.font||22}px">${W[id].en}</text></g>`).join('')}</svg></div>`;
+  return `<section class="block"><h2>${s.title}</h2><p class="hint">${s.hint}</p>${body}<div class="btns"><button class="primary" data-play="${i}">▶ Alle abspielen</button></div></section>`;
+ }).join('');
+}
+const detailPick=e=>{
+ const p=e.target.closest('[data-play]');if(p)return startTour(LESSON.details[p.dataset.play].ids);
+ const g=e.target.closest('[data-id]');if(g)select(g.dataset.id);
+};
+$('#v-detail').onclick=detailPick;
+$('#v-detail').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('g[data-id]')){e.preventDefault();detailPick(e);}};
+
+/* ---------- Hörgeschichte ---------- */
+const STORY=LESSON.story.lines,SPEAKERS=Object.keys(LESSON.story.voices);
+const plain=s=>s.replace(/\[\[\w+\|([^\]]+)\]\]/g,'$1');
+$('#story').innerHTML=STORY.map((l,i)=>`<div class="line-row s${SPEAKERS.indexOf(l[0])}" data-i="${i}"><button class="round" aria-label="Zeile anhören">▶</button><div><div class="who">${l[0]}</div><p lang="en">${l[1].replace(/\[\[(\w+)\|([^\]]+)\]\]/g,'<button class="vw" data-w="$1">$2</button>')}</p><p class="tr">${l[2]}</p></div></div>`).join('');
+let waiting=null;
+function storyIdle(){$$('.line-row').forEach(r=>r.classList.remove('now'));$('#sdone').hidden=true;waiting=null;}
+const voiceOpt=who=>({pitch:LESSON.story.voices[who]});
+$('#story-title').textContent=LESSON.story.title;
+$('#role').innerHTML='<option value="">Alles anhören</option>'+SPEAKERS.map(n=>`<option value="${n}">Ich spreche ${n}</option>`).join('');
+$('#story').onclick=e=>{
+ const v=e.target.closest('.vw');if(v){select(v.dataset.w);return;}
+ const b=e.target.closest('.round');if(!b)return;
+ const r=b.closest('.line-row'),l=STORY[r.dataset.i];
+ say(plain(l[1]),voiceOpt(l[0]));r.classList.add('now');const me=run;setTimeout(()=>{if(me===run)r.classList.remove('now')},1500+l[1].length*80);
+};
+async function playStory(from=0){
+ stopAll();const me=run,role=$('#role').value;
+ for(let i=from;i<STORY.length;i++){
+  const l=STORY[i],r=$(`.line-row[data-i="${i}"]`);
+  $$('.line-row').forEach(x=>x.classList.toggle('now',x===r));
+  r.scrollIntoView({behavior:'smooth',block:'center'});
+  if(l[0]===role){$('#sdone').hidden=false;$('#sdone').scrollIntoView({block:'nearest'});r.scrollIntoView({behavior:'smooth',block:'center'});
+   await new Promise(res=>waiting=res);if(me!==run)return;}
+  else{await speak(plain(l[1]),voiceOpt(l[0]));if(me!==run)return;await wait(500);if(me!==run)return;}
+ }
+ storyIdle();
+}
+$('#splay').onclick=()=>playStory();$('#sstop').onclick=()=>stopAll();
+/* Weiter-Knopf bleibt beim Rollenspiel unten sichtbar */
+Object.assign($('#sdone').style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'calc(env(safe-area-inset-bottom, 0px) + 16px)',zIndex:30,boxShadow:'0 6px 24px #000a'});
+$('#sdone').onclick=()=>{const w=waiting;waiting=null;$('#sdone').hidden=true;if(w)w();};
+
+/* ---------- Redewendungen ---------- */
+const IDIOMS=LESSON.idioms;
+$('#idioms').innerHTML=IDIOMS.map((d,i)=>`<article class="idiom"><h3 lang="en">${d[0]}</h3><p class="tr"><strong>${d[1]}</strong></p><p lang="en">${d[2]}</p><p class="tr">${d[3]}</p><p lang="en" style="margin-top:12px"><em>“${d[4]}”</em></p><p class="tr">${d[5]}</p><div class="btns"><button class="primary" data-i="${i}" data-p="0">🔊 Redewendung</button><button data-i="${i}" data-p="4">🔊 Beispiel</button></div></article>`).join('');
+$('#idioms').onclick=e=>{const b=e.target.closest('button[data-i]');if(b)say(IDIOMS[b.dataset.i][b.dataset.p]);};
+
+/* ---------- Quiz ---------- */
+const best=store.get('best',{});
+function quizMenu(){
+ const b=k=>best[k]!==undefined?` Bestwert: ${best[k]} / 10`:'';
+ $('#quiz').innerHTML=`<h2>Wähle ein Spiel</h2><div class="modes">
+ <button data-m="find">Finde es im Bild<small>Du hörst ein Wort und tippst auf das richtige Ding.${b('find')}</small></button>
+ <button data-m="choice">Übersetzen<small>Wähle die richtige Übersetzung.${b('choice')}</small></button>
+ <button data-m="spell">Hören und schreiben<small>Schreibe das englische Wort auf.${b('spell')}</small></button></div>`;
+}
+let q=null;
+function saveBest(m,s){if(best[m]===undefined||s>best[m]){best[m]=s;store.set('best',best);}}
+function result(m,score){saveBest(m,score);$('#quiz').innerHTML=`<h2>${score>=8?'Fantastisch!':score>=5?'Gut gemacht!':'Weiter üben!'}</h2><div class="qword">${score} / 10</div><div class="btns"><button class="primary" data-m="${m}">Nochmal spielen</button><button data-m="menu">Anderes Spiel</button></div>`;}
+$('#quiz').addEventListener('click',e=>{
+ const m=e.target.closest('[data-m]');
+ if(m){stopAll();const k=m.dataset.m;if(k==='menu')return quizMenu();if(k==='find')return startFind();q={m:k,list:shuffle(WORDS).slice(0,10),i:0,score:0};return ask();}
+});
+function ask(){
+ const w=q.list[q.i],head=`<div class="count">Frage ${q.i+1} / 10 · Punkte ${q.score}</div>`;
+ if(q.m==='choice'){
+  const en=q.i%2===0,key=en?'de':'en';
+  const opts=shuffle([w,...shuffle(WORDS.filter(x=>x.id!==w.id&&x[key]!==w[key])).slice(0,3)]);
+  $('#quiz').innerHTML=head+`<div class="qword">${en?w.en:w.de}</div>${en?'<div class="btns" style="margin:0 0 12px"><button id="qsay">🔊 Anhören</button></div>':''}<div class="opts">${opts.map(o=>`<button data-a="${o.id}">${o[key]}</button>`).join('')}</div><div class="fb" role="status"></div><div class="btns"><button class="primary" id="qnext" hidden>Weiter</button><button data-m="menu">Beenden</button></div>`;
+  if(en){$('#qsay').onclick=()=>say(w.en);say(w.en);}
+  $$('#quiz [data-a]').forEach(b=>b.onclick=()=>{
+   const ok=b.dataset.a===w.id;if(ok)q.score++;
+   $$('#quiz [data-a]').forEach(x=>{x.disabled=true;if(x.dataset.a===w.id)x.classList.add('right');});
+   if(!ok)b.classList.add('wrong');
+   $('#quiz .fb').textContent=ok?'Richtig!':`Leider nein. ${w.en} = ${w.de}`;
+   say(w.en);$('#qnext').hidden=false;
+  });
+ }else{
+  $('#quiz').innerHTML=head+`<div class="btns"><button class="primary" id="qsay">🔊 Wort anhören</button><button id="qslow">🐢 Langsam</button><button id="qhint">Tipp</button></div><div class="fb" id="hint"></div><form id="qform" class="bar"><input type="text" id="qin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Englisches Wort" aria-label="Englisches Wort"><button type="submit">Prüfen</button></form><div class="fb" id="res" role="status"></div><div class="btns"><button class="primary" id="qnext" hidden>Weiter</button><button data-m="menu">Beenden</button></div>`;
+  $('#qsay').onclick=()=>say(w.en,{slow:false});$('#qslow').onclick=()=>say(w.en,{slow:true});
+  $('#qhint').onclick=()=>$('#hint').textContent=`Deutsch: ${w.de}`;
+  let done=false;const norm=s=>s.toLowerCase().replace(/[’']/g,"'").replace(/[\s-]+/g,'').trim();
+  $('#qform').onsubmit=e=>{e.preventDefault();const v=$('#qin').value;if(done||!v.trim())return;done=true;
+   const ok=norm(v)===norm(w.en);if(ok)q.score++;
+   $('#res').textContent=ok?`Richtig! ${w.de}`:`So schreibt man es: ${w.en} (${w.de})`;$('#res').style.color=ok?'#15803d':'#b91c1c';
+   $('#qin').disabled=true;$('#qnext').hidden=false;$('#qnext').focus({preventScroll:true});};
+  say(w.en);
+ }
+ $('#qnext').onclick=()=>{stopAll();q.i++;q.i<10?ask():result(q.m,q.score);};
+}
+/* Spiel im Bild */
+const ALSO=LESSON.also||{};
+function startFind(){
+ closeCard();find={list:shuffle(SCENE_IDS).slice(0,10),i:0,score:0,tries:0,done:false};
+ show('bild');$('#findbar').hidden=false;$('#tools [data-lab]').parentElement.hidden=true;$('#tour').hidden=true;$('#lists').hidden=true;
+ drawLabels();askFind();$('#findbar').scrollIntoView({block:'start'});
+}
+function askFind(){
+ find.tries=0;find.done=false;unmark();const w=W[find.list[find.i]];
+ $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findword').textContent=`Find: ${w.en}`;$('#findfb').textContent='';$('#findnext').hidden=true;say(w.en);
+}
+function answerFind(id){
+ if(find.done)return;const target=find.list[find.i],ok=id===target||(ALSO[target]||[]).includes(id);
+ if(ok){find.done=true;if(!find.tries)find.score++;mark(target,'right');$('#findfb').textContent=`Richtig! ${W[target].de}`;say('Well done!');}
+ else{find.tries++;
+  if(find.tries<2){mark(id,'wrong');$('#findfb').textContent=`Das ist „${W[id].en}“. Versuch es noch einmal.`;say(W[id].en);return;}
+  find.done=true;mark(target,'right');focusOn(target);$('#findfb').textContent=`Hier ist es: ${W[target].de}`;say(W[target].en);}
+ $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findnext').hidden=false;
+}
+function endFind(){find=null;$('#findbar').hidden=true;$('#tools [data-lab]').parentElement.hidden=false;$('#tour').hidden=false;$('#lists').hidden=false;unmark();drawLabels();}
+$('#findplay').onclick=()=>say(W[find.list[find.i]].en);
+$('#findnext').onclick=()=>{find.i++;if(find.i<10)return askFind();const s=find.score;endFind();show('quiz');result('find',s);};
+$('#findstop').onclick=()=>{stopAll();endFind();show('quiz');quizMenu();};
+
+/* ---------- Reiter ---------- */
+const VIEWS=['bild','detail','geschichte','redensarten','quiz'];
+function show(v){
+ view=v;VIEWS.forEach(n=>$('#v-'+n).hidden=n!==v);
+ $$('nav [data-v]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+ if(v==='bild'){whole=true;refit();}
+}
+$$('nav [data-v]').forEach(b=>b.onclick=()=>{
+ stopAll();if(find)endFind();closeCard();show(b.dataset.v);if(b.dataset.v==='quiz')quizMenu();
+ try{history.replaceState(null,'','#'+b.dataset.v)}catch(e){}
+});
+function route(){const h=location.hash.slice(1);stopAll();if(find)endFind();closeCard();show(VIEWS.includes(h)?h:'bild');if(h==='quiz')quizMenu();}
+addEventListener('hashchange',route);
+
+drawLabels();applyToggles();updateCount();quizMenu();route();
+document.fonts&&document.fonts.ready.then(drawLabels);
+document.fonts&&document.fonts.load("800 23px Nunito").then(drawLabels).catch(()=>{});
+
+</script>
+</body>
+</html>

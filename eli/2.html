@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2 - Kitchen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: Kopfzeile mit Reitern, großes Bild als Bühne, Wortkarte rechts (Handy: unten) */
+:root{color-scheme:light;--bg:#f2f7ec;--panel:#fff;--panel2:#e5efdc;--line:#bbd0a9;--fg:#1d3321;--muted:#516c4c;--primary:#2c7340;--select:#a44d06;--sun:var(--primary);--teal:var(--select);
+--disp:'Baloo 2',ui-rounded,'Trebuchet MS',sans-serif;--body:'Nunito',system-ui,sans-serif;--ipa:'Lucida Sans Unicode','Segoe UI',system-ui,sans-serif}
+[hidden]{display:none!important}
+html,body{margin:0}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:500 16px/1.5 var(--body)}
+.wrap{max-width:1500px;margin:0 auto;padding-block:14px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--disp);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:800}h1 span{color:var(--primary)}
+h2{font-size:1.5rem}h3{font-size:1.15rem}
+header{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.count{color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+nav{display:flex;gap:6px;overflow-x:auto;padding:3px;margin-bottom:12px;scrollbar-width:none}
+button,select,input{font:700 .95rem var(--body);color:var(--fg)}
+button{background:var(--panel2);border:1.5px solid var(--line);border-radius:12px;padding:8px 14px;cursor:pointer;min-height:42px;touch-action:manipulation}
+button:hover{border-color:var(--teal)}
+button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+button[aria-pressed="true"]{background:var(--select);border-color:var(--select);color:#fff}
+nav button{white-space:nowrap;font-family:var(--disp);font-size:1.05rem}
+nav button[aria-selected="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+select,input[type=text],input[type=search]{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;min-height:42px;max-width:100%}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.seg{display:flex}.seg button{border-radius:0;margin-left:-1.5px}.seg button:first-child{border-radius:12px 0 0 12px;margin:0}.seg button:last-child{border-radius:0 12px 12px 0}
+.spacer{flex:1}
+.stagegrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+#stage{overflow:auto;border:2px solid var(--line);border-radius:18px;background:var(--panel);max-height:calc(82vh + 4px);-webkit-overflow-scrolling:touch}
+#scene{display:block;margin:0 auto;height:auto;user-select:none;-webkit-user-select:none}
+.obj{cursor:pointer}
+.obj:hover{filter:brightness(1.08) drop-shadow(0 0 5px #fff)}
+.obj.sel{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px #ff2f7d)}
+.lbl{cursor:pointer}.lbl rect{fill:#fff8e6;stroke:#10132f;stroke-width:2.5}
+.lbl text{font:800 23px var(--body);fill:#10132f;text-anchor:middle;dominant-baseline:central}
+.lbl:hover rect{fill:#ffd84d}.lbl.sel rect{fill:#ffd84d;stroke-width:4}.lbl.right rect{fill:#8cf0a8}.lbl.wrong rect{fill:var(--coral)}
+.lead{stroke:#10132f;stroke-width:2.2;opacity:.8;pointer-events:none}
+.leaddot{fill:#10132f;stroke:#fff;stroke-width:1.5;pointer-events:none}
+.mk{fill:none;stroke:#e11d62;stroke-width:5;stroke-dasharray:16 12;animation:spin 14s linear infinite;transform-box:fill-box;transform-origin:center}
+.mk.right{stroke:#16a34a;stroke-width:9}.mk.wrong{stroke:#dc2626;stroke-width:9}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tw{animation:tw 4s ease-in-out infinite}@keyframes tw{50%{opacity:.1}}
+@media (prefers-reduced-motion:reduce){.tw,.mk{animation:none}}
+.hint{color:var(--muted);font-size:.9rem;margin:8px 2px 0}
+/* Wortkarte */
+#card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+#card .top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+#thumb{width:100%;aspect-ratio:1.5;border-radius:12px;background:var(--panel2);display:block;margin-bottom:10px}
+#cword{font:800 2rem/1.1 var(--disp);overflow-wrap:anywhere}
+.ipa{font-family:var(--ipa);color:var(--muted)}
+.de{font-size:1.25rem;font-weight:800;color:var(--primary)}
+.ex{border-top:1.5px solid var(--line);margin-top:12px;padding-top:10px}
+.ex p{margin:0 0 4px}.ex .d{color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.hide-de .tr{filter:blur(6px);cursor:pointer;user-select:none}
+.hide-de .tr.open{filter:none}
+#close{min-height:36px;padding:4px 12px}
+@media (min-width:1100px){
+ .stagegrid.has{grid-template-columns:minmax(0,1fr) 320px}
+ #card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px)}
+}
+@media (max-width:1099px){
+ #card{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:20px 20px 0 0;border-width:2px 0 0;max-height:52%;overflow:auto;box-shadow:0 -10px 30px rgba(20,20,40,.25);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+ #thumb{width:92px;aspect-ratio:1;float:right;margin:0 0 6px 10px}
+ #cword{font-size:1.6rem}
+ body.sheet .wrap{padding-bottom:56vh}
+}
+/* Wortliste */
+.lists{margin-top:22px;display:grid;gap:14px}
+.lists h3{margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border-radius:999px;min-height:38px;padding:6px 14px}
+.chip small{color:var(--muted);font-weight:500;margin-left:6px}
+.chip.seen{border-color:var(--teal)}
+/* Tour-/Quizleiste */
+.banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel2);border:2px solid var(--primary);border-radius:16px;padding:10px 14px;margin-bottom:10px}
+.banner strong{font:700 1.3rem var(--disp)}
+/* Detailbereiche */
+section.block{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:14px}
+.cards button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;background:var(--panel2);line-height:1.25;justify-content:flex-start;min-width:0}
+.cards svg{width:100%;max-width:150px}.cards small{color:var(--muted);font-weight:500;overflow-wrap:anywhere;hyphens:auto}
+.cards button.sel,.cards button:hover{border-color:var(--select);box-shadow:0 0 0 2px var(--select)}
+.figure svg{display:block;width:100%;height:auto;margin:12px auto 0}
+.elbl{cursor:pointer}.elbl text{font-weight:800;font-family:var(--body);fill:#17213a;paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round;text-anchor:middle;dominant-baseline:central}
+.elbl:hover text,.elbl.sel text{stroke:#ffd84d}
+.elbl:focus:not(:focus-visible),.lbl:focus:not(:focus-visible){outline:none}
+/* Geschichte */
+.story{display:grid;gap:10px;max-width:760px}
+.line-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:12px}
+.line-row.now{border-color:var(--primary);background:var(--panel2)}
+.who{font:700 .95rem var(--disp);color:var(--primary)}.line-row.s1 .who{color:var(--select)}
+.line-row p{margin:0}.line-row .tr{color:var(--muted)}
+.vw{all:unset;cursor:pointer;color:var(--primary);font-weight:800;text-decoration:underline;text-underline-offset:3px;border-radius:3px}
+.vw:focus-visible{outline:3px solid var(--teal)}
+.round{width:46px;height:46px;border-radius:50%;padding:0}
+/* Redewendungen */
+.idioms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.idiom{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.idiom h3{color:var(--primary);font-size:1.35rem}.idiom p{margin:6px 0 0}.idiom .tr{color:var(--muted)}
+/* Quiz */
+.quizbox{max-width:640px;background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:20px}
+.modes{display:grid;gap:10px;margin-top:12px}.modes button{text-align:left;padding:14px 16px}
+.modes small{display:block;color:var(--muted);font-weight:500}
+.qword{font:800 2.2rem/1.2 var(--disp);margin:10px 0}
+.opts{display:grid;gap:8px}.opts button{text-align:left}
+.opts button.right{background:#bbf7d0;border-color:#16a34a}.opts button.wrong{background:#fecaca;border-color:#dc2626}
+button:disabled{cursor:default;color:var(--fg)}
+.fb{min-height:1.6em;font-weight:800;margin:10px 0}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 14px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--fg);font:700 .95rem var(--body);text-decoration:none}
+.back:hover{border-color:var(--teal)}.back:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div><a class="back" href="Index.html">← Zurück zum Menu</a></div>
+<header>
+ <h1>2 - <span>Kitchen</span></h1>
+ <div class="bar" style="margin:0">
+  <select id="accent" aria-label="Aussprache"><option value="en-GB">Britisches Englisch</option><option value="en-US">Amerikanisches Englisch</option></select>
+  <button id="slow" aria-pressed="false">Langsam sprechen</button>
+  <button id="showde" aria-pressed="true">Deutsch sichtbar</button>
+  <span class="count" id="count"></span>
+ </div>
+</header>
+<p id="nospeech" class="banner" hidden>Dieser Browser kann nicht vorlesen. Öffne die Seite in Safari oder Chrome, um die Wörter anzuhören.</p>
+<nav role="tablist" aria-label="Bereiche">
+ <button role="tab" data-v="bild">Bild</button>
+ <button role="tab" data-v="detail">Verben &amp; Brot</button>
+ <button role="tab" data-v="geschichte">Hörgeschichte</button>
+ <button role="tab" data-v="redensarten">Redewendungen</button>
+ <button role="tab" data-v="quiz">Quiz</button>
+</nav>
+
+<div class="stagegrid" id="grid">
+<main style="min-width:0">
+
+<div id="v-bild">
+ <div class="bar" id="tools">
+  <button class="primary" id="tour">▶ Alle Wörter abspielen</button>
+  <div class="seg" role="group" aria-label="Beschriftung im Bild">
+   <button data-lab="en">English</button><button data-lab="de">Deutsch</button><button data-lab="q">?</button><button data-lab="off">Aus</button>
+  </div>
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="Bildgröße"><button id="zout" aria-label="Verkleinern">−</button><button id="zfit">Ganzes Bild</button><button id="zin" aria-label="Vergrößern">+</button></div>
+ </div>
+ <div class="banner" id="tourbar" hidden><strong id="tourpos"></strong><span class="spacer"></span><button id="tprev">⏮ Zurück</button><button id="tpause">⏸ Pause</button><button id="tnext">Weiter ⏭</button><button id="tstop">⏹ Beenden</button></div>
+ <div class="banner" id="findbar" hidden><span id="findscore" class="count"></span><strong id="findword"></strong><button id="findplay">🔊 Nochmal</button><span id="findfb" role="status"></span><span class="spacer"></span><button id="findnext" class="primary" hidden>Weiter</button><button id="findstop">Beenden</button></div>
+ <div id="stage"></div>
+ <p class="hint">Tippe auf ein Ding oder sein Schild, um es zu hören. Wische im Bild, um dich umzusehen. Mit „?“ kannst du dich selbst testen.</p>
+ <div class="lists" id="lists">
+  <input type="search" id="search" placeholder="Wort suchen (Englisch oder Deutsch)" aria-label="Wort suchen">
+  <div id="chiplists"></div>
+ </div>
+</div>
+
+<div id="v-detail" hidden></div>
+
+<div id="v-geschichte" hidden>
+ <h2 id="story-title" lang="en"></h2>
+ <div class="bar" style="margin-top:10px">
+  <button class="primary" id="splay">▶ Geschichte abspielen</button><button id="sstop">⏹ Stopp</button>
+  <select id="role" aria-label="Rolle selbst sprechen"></select>
+  <button id="sdone" class="primary" hidden>Fertig gesprochen, weiter</button>
+ </div>
+ <div class="story" id="story"></div>
+</div>
+
+<div id="v-redensarten" hidden><div class="idioms" id="idioms"></div></div>
+
+<div id="v-quiz" hidden><div class="quizbox" id="quiz"></div></div>
+</main>
+
+<aside id="card" aria-label="Wortkarte" hidden>
+ <svg id="thumb" aria-hidden="true"></svg>
+ <div class="top"><div style="min-width:0"><div id="cword" lang="en"></div><div class="ipa" id="cipa"></div></div><button id="close" aria-label="Wortkarte schließen">✕</button></div>
+ <div class="de tr" id="cde"></div>
+ <div class="btns"><button class="primary" id="say">🔊 Anhören</button><button id="saysyl">🐢 Langsam</button><button id="sayde">🇩🇪 Deutsch</button></div>
+ <div class="ex"><p lang="en" id="cex"></p><p class="d tr" id="cexde"></p><div class="btns"><button id="sayex">🔊 Satz anhören</button><button id="prev" aria-label="Voriges Wort">←</button><button id="next" aria-label="Nächstes Wort">→</button></div></div>
+</aside>
+</div>
+</div>
+
+<script>
+/* ---------- Zeichenhilfen (eigene 2D-Illustrationen) ---------- */
+const INK='#2a2238';
+const C=(x,y,r,f,e='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${e}/>`;
+const E=(x,y,rx,ry,f,e='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${e}/>`;
+const P=(d,f,e='')=>`<path d="${d}" fill="${f}" ${e}/>`;
+const R=(x,y,w,h,r,f,e='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" ${e}/>`;
+const L=(d,c,w,e='')=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" ${e}/>`;
+const O=(w=3)=>`stroke="${INK}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const o=O();
+const T=(x,y,s,inner,rot=0)=>`<g transform="translate(${x} ${y})${rot?` rotate(${rot})`:''}${s!==1?` scale(${s})`:''}">${inner}</g>`;
+const hitC=(x,y,r)=>C(x,y,r,'transparent','class="hit"');
+const hitR=(x,y,w,h)=>R(x,y,w,h,8,'transparent','class="hit"');
+const times=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join('');
+/* Szene sammeln: deco = reine Verzierung, add = anklickbares Ding */
+function mkScene(){
+ const parts=[],objs=[];
+ return {objs,parts,
+  deco(s){parts.push(`<g pointer-events="none">${s}</g>`);},
+  add(id,f,l,art,a){objs.push({id,f,l,a});parts.push(`<g class="obj" data-id="${id}">${art}</g>`);},
+  item(id,x,y,s,ly){this.add(id,[x,y,85*s],[x,ly],T(x,y,s,ART[id]())+hitR(x-85*s,y-60*s,170*s,120*s));}
+ };
+}
+function buildScene(){
+ const s=mkScene();LESSON.scene(s);
+ return {objs:s.objs,svg:`<svg id="scene" viewBox="0 0 ${LESSON.W} ${LESSON.H}" role="group" aria-label="Bild zum Anklicken"><g id="art">${s.parts.join('')}</g><g id="labels"></g><g id="marker" pointer-events="none" hidden><circle class="mk" r="50"/></g></svg>`};
+}
+/* Einfache Figur, Füße bei (0,0), ca. 170 hoch */
+function person(shirt,pants,hair,skin='#e8b48f',long=false){
+ return L('M-14 -70L-18 -8M14 -70L18 -8',pants,17)+E(-22,-5,15,7,INK)+E(22,-5,15,7,INK)+(long?P('M-27 -132Q-34 -170 0 -172Q34 -170 27 -132L24 -118H-24Z',hair,o):'')+L('M-24 -112L-42 -76M24 -112L42 -76',shirt,13)+C(-43,-73,7,skin,O(2))+C(43,-73,7,skin,O(2))+P('M-24 -118Q0 -130 24 -118L29 -64H-29Z',shirt,o)+C(0,-143,22,skin,o)+P('M-23 -146Q-22 -172 2 -167Q24 -168 23 -143Q8 -148 2 -156Q-8 -146 -23 -146Z',hair,O(2))+C(-8,-142,2.4,INK)+C(8,-142,2.4,INK)+L('M-6 -132q6 5 12 0',INK,2.2);
+}
+const ART={};
+
+const WORDS=[
+['fridge','refrigerator','der Kühlschrank','rɪˈfrɪdʒəreɪtə','Put the milk in the refrigerator.','Stell die Milch in den Kühlschrank.','big'],
+['freezer','freezer','das Gefrierfach','ˈfriːzə','The ice cream is in the freezer.','Das Eis ist im Gefrierfach.','big'],
+['cupboard','cupboard','der Küchenschrank','ˈkʌbəd','The plates are in the cupboard.','Die Teller sind im Schrank.','big'],
+['drawer','drawer','die Schublade','drɔː','Forks are in the top drawer.','Die Gabeln sind in der obersten Schublade.','big'],
+['microwave','microwave oven','die Mikrowelle','ˌmaɪkrəweɪv ˈʌvən','Heat the soup in the microwave oven.','Wärm die Suppe in der Mikrowelle auf.','big'],
+['dishwasher','dishwasher','die Spülmaschine','ˈdɪʃˌwɒʃə','Can you empty the dishwasher?','Kannst du die Spülmaschine ausräumen?','big'],
+['sink','sink','die Spüle','sɪŋk','The dirty cups are in the sink.','Die schmutzigen Tassen sind in der Spüle.','big'],
+['tap','tap','der Wasserhahn','tæp','Turn off the tap.','Dreh den Wasserhahn zu.','big'],
+['oven','oven','der Backofen','ˈʌvən','The cake is in the oven.','Der Kuchen ist im Backofen.','big'],
+['hob','hob','das Kochfeld','hɒb','The pot is on the hob.','Der Topf steht auf dem Kochfeld.','big'],
+['fan','extractor fan','die Dunstabzugshaube','ɪkˈstræktə fæn','Switch on the extractor fan.','Schalte die Dunstabzugshaube ein.','big'],
+
+['toaster','toaster','der Toaster','ˈtəʊstə','The bread is in the toaster.','Das Brot ist im Toaster.','app'],
+['kettle','kettle','der Wasserkocher','ˈketəl','Put the kettle on, please.','Setz bitte Wasser auf.','app'],
+['coffeepot','coffee pot','die Kaffeekanne','ˈkɒfi pɒt','The coffee pot is full.','Die Kaffeekanne ist voll.','app'],
+['mixer','food mixer','die Küchenmaschine','ˈfuːd ˌmɪksə','The food mixer makes the dough.','Die Küchenmaschine knetet den Teig.','app'],
+['handblender','hand-held blender','der Pürierstab','ˌhændheld ˈblendə','Use the hand-held blender for the soup.','Nimm den Pürierstab für die Suppe.','app'],
+['blender','blender','der Standmixer','ˈblendə','I make smoothies in the blender.','Ich mache Smoothies im Mixer.','app'],
+['juicer','juicer','die Saftpresse','ˈdʒuːsə','The juicer is for oranges.','Die Saftpresse ist für Orangen.','app'],
+['timer','timer','die Küchenuhr / der Timer','ˈtaɪmə','Set the timer for ten minutes.','Stell den Timer auf zehn Minuten.','app'],
+
+['pan','pan','der Topf','pæn','Boil the pasta in a big pan.','Koch die Nudeln in einem großen Topf.','pots'],
+['fryingpan','frying pan','die Bratpfanne','ˈfraɪɪŋ pæn','Fry the eggs in the frying pan.','Brate die Eier in der Pfanne.','pots'],
+['lid','lid','der Deckel','lɪd','Put the lid on the pan.','Leg den Deckel auf den Topf.','pots'],
+['casserole','casserole dish','der Schmortopf / die Auflaufform','ˈkæsərəʊl dɪʃ','The stew is in the casserole dish.','Der Eintopf ist im Schmortopf.','pots'],
+['tray','oven tray','das Backblech','ˈʌvən treɪ','Put the biscuits on the oven tray.','Leg die Kekse auf das Backblech.','pots'],
+['jug','measuring jug','der Messbecher','ˈmeʒərɪŋ dʒʌɡ','Pour the milk into the measuring jug.','Gieß die Milch in den Messbecher.','pots'],
+['scales','scales','die Küchenwaage','skeɪlz','Weigh the flour on the scales.','Wieg das Mehl auf der Waage ab.','pots'],
+['colander','colander','das Nudelsieb','ˈkʌləndə','Drain the pasta in the colander.','Gieß die Nudeln im Sieb ab.','pots'],
+['sieve','sieve','das feine Sieb','sɪv','Shake the flour through the sieve.','Siebe das Mehl.','pots'],
+
+['knife','knife','das Messer','naɪf','This knife is very sharp.','Dieses Messer ist sehr scharf.','tools'],
+['board','chopping board','das Schneidebrett','ˈtʃɒpɪŋ bɔːd','Cut the onion on the chopping board.','Schneide die Zwiebel auf dem Brett.','tools'],
+['pin','rolling pin','das Nudelholz','ˈrəʊlɪŋ pɪn','Roll the dough with a rolling pin.','Roll den Teig mit dem Nudelholz aus.','tools'],
+['whisk','whisk','der Schneebesen','wɪsk','Beat the eggs with a whisk.','Verquirle die Eier mit dem Schneebesen.','tools'],
+['grater','grater','die Reibe','ˈɡreɪtə','Use the grater for the cheese.','Nimm die Reibe für den Käse.','tools'],
+['peeler','vegetable peeler','der Sparschäler','ˈvedʒtəbəl ˌpiːlə','Where is the vegetable peeler?','Wo ist der Sparschäler?','tools'],
+['corkscrew','corkscrew','der Korkenzieher','ˈkɔːkskruː','We need a corkscrew.','Wir brauchen einen Korkenzieher.','tools'],
+['opener','bottle opener','der Flaschenöffner','ˈbɒtəl ˌəʊpənə','Pass me the bottle opener.','Gib mir den Flaschenöffner.','tools'],
+['ladle','ladle','die Schöpfkelle','ˈleɪdəl','Serve the soup with a ladle.','Verteile die Suppe mit der Kelle.','tools'],
+['spoon','spoon','der Löffel','spuːn','Stir it with a spoon.','Rühr es mit einem Löffel um.','tools'],
+
+['glove','oven glove','der Ofenhandschuh','ˈʌvən ɡlʌv','Wear an oven glove. It is hot!','Nimm einen Ofenhandschuh. Es ist heiß!','help'],
+['potholder','pot holder','der Topflappen','ˈpɒt ˌhəʊldə','Hold the pan with a pot holder.','Fass den Topf mit einem Topflappen an.','help'],
+['apron','apron','die Schürze','ˈeɪprən','Dad is wearing an apron.','Papa trägt eine Schürze.','help'],
+['towel','tea towel','das Geschirrtuch','ˈtiː ˌtaʊəl','Dry the glasses with a tea towel.','Trockne die Gläser mit dem Geschirrtuch ab.','help'],
+['sponge','sponge','der Schwamm','spʌndʒ','Clean the table with a sponge.','Wisch den Tisch mit einem Schwamm ab.','help'],
+['liquid','washing-up liquid','das Spülmittel','ˌwɒʃɪŋ ˈʌp ˌlɪkwɪd','Add some washing-up liquid.','Gib etwas Spülmittel dazu.','help'],
+['paper','kitchen paper','das Küchenpapier','ˈkɪtʃɪn ˌpeɪpə','Wipe it up with kitchen paper.','Wisch es mit Küchenpapier auf.','help'],
+['ovenpaper','oven paper','das Backpapier','ˈʌvən ˌpeɪpə','Put oven paper on the tray.','Leg Backpapier auf das Blech.','help'],
+['film','cling film','die Frischhaltefolie','ˈklɪŋ fɪlm','Cover the bowl with cling film.','Deck die Schüssel mit Frischhaltefolie ab.','help'],
+['foil','aluminium foil','die Alufolie','ˌæljəˈmɪniəm fɔɪl','Wrap the potato in aluminium foil.','Wickle die Kartoffel in Alufolie.','help'],
+['jar','jar','das Einmachglas','dʒɑː','The biscuits are in a jar.','Die Kekse sind in einem Glas.','help'],
+['bin','bin','der Mülleimer','bɪn','Throw it in the bin.','Wirf es in den Mülleimer.','help'],
+['bag','rubbish bag','der Müllsack','ˈrʌbɪʃ bæɡ','Take the rubbish bag outside.','Bring den Müllsack nach draußen.','help'],
+
+['vpeel','peel','schälen','piːl','Peel the potatoes.','Schäl die Kartoffeln.','verb'],
+['vcut','cut','schneiden','kʌt','Cut the bread.','Schneide das Brot.','verb'],
+['vgrate','grate','reiben','ɡreɪt','Grate the cheese.','Reib den Käse.','verb'],
+['vcook','cook','kochen','kʊk','I like to cook.','Ich koche gern.','verb'],
+['vfry','fry','braten','fraɪ','Fry the egg for two minutes.','Brate das Ei zwei Minuten.','verb'],
+['vwhisk','whisk eggs','Eier verquirlen','ˌwɪsk ˈeɡz','Whisk the eggs in a bowl.','Verquirle die Eier in einer Schüssel.','verb'],
+['vseason','season','würzen','ˈsiːzən','Season the soup with salt.','Würz die Suppe mit Salz.','verb'],
+['vwash','wash','waschen / abspülen','wɒʃ','Wash the salad.','Wasch den Salat.','verb'],
+['vliquidize','liquidize','pürieren','ˈlɪkwɪdaɪz','Liquidize the fruit.','Püriere das Obst.','verb'],
+['vtoast','toast','toasten','təʊst','Toast two slices of bread.','Toaste zwei Scheiben Brot.','verb'],
+['vsqueeze','squeeze','auspressen','skwiːz','Squeeze the lemon.','Press die Zitrone aus.','verb'],
+['vweigh','weigh','abwiegen','weɪ','Weigh the sugar.','Wieg den Zucker ab.','verb'],
+
+['crust','crust','die Brotkruste','krʌst','I love the crispy crust.','Ich liebe die knusprige Kruste.','bread'],
+['crumb','crumb','die Krume (das weiche Innere)','krʌm','This bread has a soft crumb.','Dieses Brot hat eine weiche Krume.','bread'],
+['slice','slice','die Scheibe','slaɪs','Would you like a slice of bread?','Möchtest du eine Scheibe Brot?','bread'],
+['crumbs','crumbs','die Krümel','krʌmz','There are crumbs on the table.','Auf dem Tisch liegen Krümel.','bread']
+].map(a=>({id:a[0],en:a[1],de:a[2],ipa:a[3],ex:a[4],exde:a[5],g:a[6]}));
+
+/* ---------- Einzelne Dinge, gezeichnet um (0,0), ca. 170 x 120 ---------- */
+const STEEL='#c9d2de',DARK='#4a5368',WOOD='#d79a55',RED='#d9513f',YEL='#f2c14a',GRN='#5aa86a',BLU='#6aa9dc';
+const egg=(x,y)=>E(x,y,24,17,'#fff',O(2))+C(x+3,y,8,'#ffc02e');
+const steam=(x,y)=>L(`M${x-18} ${y}q-10 -12 0 -22t0 -22M${x+8} ${y}q-10 -12 0 -22t0 -22`,'#9fb4c9',4);
+Object.assign(ART,{
+ handblender:()=>T(0,0,1,R(-18,-58,32,66,14,'#fff',o)+R(-10,-46,16,18,5,RED,O(2))+R(-8,8,12,32,3,STEEL,o)+P('M-24 55Q-22 36 -2 38Q18 36 20 55Z',STEEL,o)+L('M-2 -58q4 -8 24 -4t30 22',DARK,5),28),
+ blender:()=>P('M-30 -48H30L22 12H-22Z','#dff2fb',o)+P('M-26 -18H26L22 10H-22Z','#f28a4a')+L('M30 -40h14v32h-18',DARK,6)+R(-32,-58,64,12,4,DARK,o)+R(-34,12,68,46,10,'#f6ecd8',o)+C(0,34,11,RED,o)+C(-20,34,3,DARK)+C(20,34,3,DARK),
+ juicer:()=>R(-44,14,88,40,12,YEL,o)+P('M-40 14L-46 -14H46L40 14Z','#eef8ff',o)+P('M-22 -14Q-12 -34 0 -54Q12 -34 22 -14Z',YEL,o)+L('M0 -48v32M-10 -30l-4 14M10 -30l4 14','#c99522',3)+L('M46 -10h16v28h-22',DARK,6),
+ toaster:()=>R(-34,-48,26,30,6,'#e9b56b',o)+R(8,-52,26,34,6,'#e9b56b',o)+R(-58,-28,116,76,22,YEL,o)+L('M-38 -28h32M6 -28h32',DARK,7)+R(40,-6,9,28,4,DARK)+C(-34,26,8,'#fff',o)+L('M-44 50v6M44 50v6',DARK,8),
+ kettle:()=>L('M-30 -30Q0 -70 30 -30',DARK,10)+P('M-42 40Q-50 -30 0 -34Q50 -30 42 40Z',RED,o)+P('M36 -8L66 -30L62 -12L42 12Z',RED,o)+R(-48,40,96,14,5,DARK,o)+C(0,-36,7,DARK)+L('M-26 -10q-6 12 -4 28','#fff',5,'opacity=".7"'),
+ coffeepot:()=>P('M-26 54L-18 4L-30 -34H30L18 4L26 54Z',STEEL,o)+P('M-30 -34Q0 -56 30 -34Z',STEEL,o)+C(0,-50,6,DARK)+L('M28 -26h22l-6 38l-22 8',DARK,9)+L('M-30 -32l-16 -6',DARK,6)+L('M-18 4h36M-8 12v34M8 12v34','#8390a8',3),
+ mixer:()=>R(-58,38,116,18,7,RED,o)+R(18,-30,34,70,8,RED,o)+R(-52,-52,106,32,14,RED,o)+L('M-22 -20v22','#4a5368',6)+P('M-50 -2H8Q8 38 -21 38Q-50 38 -50 -2Z',STEEL,o)+C(36,-36,6,'#fff'),
+ timer:()=>P('M-46 40Q-52 -46 0 -46Q52 -46 46 40Z','#4fae9c',o)+C(0,0,29,'#fff',o)+L('M0 0L0 -20M0 0L15 8',DARK,5)+times(12,i=>{const a=i*Math.PI/6;return C(Math.cos(a)*23,Math.sin(a)*23,1.8,DARK)})+R(-52,40,104,12,5,DARK,o),
+ pan:()=>R(-50,-30,100,82,10,STEEL,o)+R(-56,-38,112,14,6,'#e4eaf2',o)+L('M-50 -8h-18v14h18M50 -8h18v14h-18',DARK,7)+L('M-32 -12v50','#fff',7),
+ fryingpan:()=>L('M20 4L72 -34',DARK,14)+E(-22,16,56,30,DARK,o)+E(-22,12,46,22,'#8892a8')+L('M-52 6q14 -10 34 -9','#cfd6e4',4),
+ lid:()=>E(0,18,68,22,STEEL,o)+P('M-52 14Q-40 -22 0 -22Q40 -22 52 14Z','#e4eaf2',o)+L('M-16 -22v-16h32v16',DARK,9),
+ potholder:()=>`<g transform="rotate(10)">${R(-44,-44,88,88,12,YEL,o)}${times(8,i=>R(-44+((i*2+(Math.floor(i/2)%2))%4)*22,-44+Math.floor(i/2)*22,22,22,2,GRN))}${R(-44,-44,88,88,12,'none',O(5))}${C(48,-44,9,'none',`stroke="${RED}" stroke-width="5"`)}</g>`,
+ casserole:()=>L('M-52 -2h-18M52 -2h18',INK,16)+L('M-52 -2h-18M52 -2h18','#e8703f',10)+P('M-54 -14H54L48 34Q40 48 20 48H-20Q-40 48 -48 34Z','#e8703f',o)+P('M-56 -14Q0 -50 56 -14Z','#f28a55',o)+C(0,-38,9,DARK,o),
+ jug:()=>P('M-40 -48H34L30 50H-34L-36 -36L-48 -48Z','#e8f6fd',o)+P('M-33 0H32L30 48H-32Z','#bfe2f6')+L('M34 -32h22v44H32',DARK,7)+L('M4 -26h22M12 -8h14M4 10h22M12 28h14',RED,4),
+ scales:()=>P('M-52 -52H52L36 -30H-36Z',STEEL,o)+R(-6,-30,12,12,2,DARK)+P('M-34 -20H34L46 54H-46Z','#7cc4b0',o)+C(0,18,25,'#fff',o)+L('M0 18L13 4',RED,5)+C(0,18,4,DARK),
+ colander:()=>L('M-56 -18h-14M56 -18h14',DARK,9)+P('M-58 -22H58Q54 36 0 36Q-54 36 -58 -22Z',STEEL,o)+times(18,i=>C(-30+(i%6)*12,-6+Math.floor(i/6)*12,3,DARK))+L('M-24 34l-10 18M24 34l10 18',DARK,7),
+ corkscrew:()=>`<g transform="rotate(-8)">${R(-60,-36,120,26,13,WOOD,o)}${R(-8,-10,16,20,3,STEEL,o)}${L('M0 10q16 6 0 12t0 12t0 12t0 10',DARK,6)}${L('M-46 -10q-8 24 10 30',STEEL,7)}</g>`,
+ tray:()=>P('M-44 -28H70L44 34H-70Z',DARK,o)+P('M-34 -18H52L34 24H-52Z','#737d94',O(2)),
+ glove:()=>`<g transform="rotate(-14)">${P('M-26 36V-26Q-24 -58 6 -56Q32 -52 30 -22V-8Q54 -26 58 -6Q56 14 30 26V36Z',YEL,o)}${L('M-22 -30L22 14M-4 -50L28 -18M-24 -2L8 30M22 -40L-22 4M30 -14L-12 28',RED,3)}${R(-30,34,64,20,6,RED,o)}</g>`,
+ pin:()=>`<g transform="rotate(-18)">${R(-78,-8,30,16,8,'#b97a3c',o)}${R(48,-8,30,16,8,'#b97a3c',o)}${R(-52,-21,104,42,9,'#e8b673',o)}${L('M-40 -8h66M-30 8h50','#c9924e',3)}</g>`,
+ board:()=>P('M-70 -30H44Q50 -30 50 -24V-12H68Q80 0 68 12H50V28Q50 34 44 34H-70Q-76 34 -76 28V-24Q-76 -30 -70 -30Z',WOOD,o)+C(66,0,6,'#fff',O(2))+L('M-58 -12h86M-50 12h64','#b97a3c',3),
+ knife:()=>`<g transform="rotate(-22)">${P('M-76 6Q-50 -22 8 -18V8Z',STEEL,o)}${R(8,-18,66,26,9,'#8a4b2f',o)}${C(26,-5,3.5,'#fff')}${C(54,-5,3.5,'#fff')}</g>`,
+ whisk:()=>`<g transform="rotate(35)">${R(-9,-68,18,52,8,RED,o)}${L('M0 -16C-48 14 -34 62 0 62C34 62 48 14 0 -16M0 -16C-24 16 -16 60 0 62C16 60 24 16 0 -16M0 -16V62','#707b92',4)}</g>`,
+ grater:()=>L('M-20 -42Q0 -68 20 -42',DARK,9)+P('M-26 -42H26L44 54H-44Z',STEEL,o)+times(15,i=>E(-22+(i%3)*22,-22+Math.floor(i/3)*16,5,3.5,DARK)),
+ opener:()=>`<g transform="rotate(25)">${R(-4,-11,76,22,10,RED,o)}${C(-36,0,32,STEEL,o)}${P('M-54 -6Q-54 -20 -36 -20Q-18 -20 -18 -4L-30 4V-6Z','#fff',o)}</g>`,
+ peeler:()=>`<g transform="rotate(-20)">${R(-9,-2,18,62,8,GRN,o)}${L('M0 0L-26 -26V-48M0 0L26 -26V-48',GRN,12)}${R(-30,-56,60,18,5,STEEL,o)}${L('M-18 -47h36',DARK,4)}</g>`,
+ sieve:()=>L('M10 -14H74',DARK,12)+P('M-68 -18H22Q18 34 -23 34Q-64 34 -68 -18Z','#dfe6ef',o)+L('M-58 -6L-8 28M-38 -16L12 18M-52 16L-14 -16M-30 30L14 -8','#8e9ab0',2)+E(-23,-18,45,9,'none',O(4)),
+ ovenpaper:()=>P('M-52 -6H48L66 46Q40 38 24 48T-14 46T-56 48Z','#f3e3c4',o)+R(-60,-34,112,34,17,'#e3c996',o)+E(-44,-17,9,17,'#b99358',o),
+ film:()=>P('M-52 -6H48L66 46L20 40L-10 48L-58 40Z','#d8f0fb','stroke="#6f9db8" stroke-width="3" opacity=".85"')+R(-60,-34,112,34,17,'#bfe3f5',o)+E(-44,-17,9,17,'#7d5a3c',o)+L('M-20 -24h50','#fff',5),
+ foil:()=>P('M-52 -6H48L66 46l-14 -8l-14 12l-16 -12l-16 10l-18 -10l-16 10l-18 -6Z','#c4ccd8',o)+R(-60,-34,112,34,17,'#dfe5ee',o)+E(-44,-17,9,17,'#8892a8',o)+L('M-20 6l12 22M16 2l8 26M-34 20l8 12','#fff',4),
+ ladle:()=>L('M-30 18L36 -56q16 -12 20 6',STEEL,11)+P('M-72 14H-6Q-8 54 -39 54Q-70 54 -72 14Z',STEEL,o)+E(-39,14,33,9,'#8e9ab0',o),
+ spoon:()=>`<g transform="rotate(30)">${E(-48,0,30,20,STEEL,o)}${E(-52,-2,18,11,'#eef2f8')}${L('M-18 0H14',STEEL,10)}${R(10,-9,64,18,9,'#b04a78',o)}</g>`,
+ liquid:()=>R(-10,-60,20,18,4,DARK,o)+P('M-14 -44H14Q36 -30 34 -4V48Q34 56 24 56H-24Q-34 56 -34 48V-4Q-36 -30 -14 -44Z','#7bc96f',o)+R(-25,-6,50,40,8,'#fff',O(2))+C(-8,12,9,BLU,O(2))+C(10,18,6,BLU,O(2)),
+ sponge:()=>R(-52,-4,104,40,12,YEL,o)+R(-52,-26,104,26,9,'#3f8f5c',o)+times(6,i=>C(-36+i*15,14+(i%2)*10,3.5,'#c99522'))+C(-62,38,9,'#fff',O(2))+C(58,34,12,'#fff',O(2))+C(44,48,6,'#fff',O(2)),
+ towel:()=>L('M-34 -44q-26 -24 -4 -16',RED,5)+P('M-54 -44L46 -38L56 44L36 50L20 42L-44 48Z','#e8709a',o)+L('M-30 -40l6 82M-2 -39l6 82M24 -38l8 82M-50 -16l102 6M-47 14l101 8','#fbd3e0',4),
+ paper:()=>R(-36,-48,60,100,8,'#fff',o)+E(-6,-48,30,10,'#e8ecf2',o)+E(-6,-48,10,4,'#a77a4c',O(2))+P('M24 -40Q46 -10 40 20T52 50L24 46Z','#f4f6fa',o)+L('M-34 -10h56M-34 20h56','#c3cbd8',2,'stroke-dasharray="5 6"'),
+ jar:()=>R(-34,-34,68,90,16,'#dcf1f8',o)+R(-28,-52,56,20,5,RED,o)+times(9,i=>C(-16+(i%3)*17+(i%2)*4,40-Math.floor(i/3)*17,10,'#d99b58',O(2)))+L('M-23 -18v30','#fff',6),
+ apron:()=>L('M-18 -38Q0 -76 18 -38M-30 -6l-30 10M30 -6l30 10',RED,5)+P('M-22 -40H22L24 -14Q34 -6 40 -2L46 54H-46L-40 -2Q-34 -6 -24 -14Z',YEL,o)+R(-20,12,40,26,5,'#fff6dc',O(2))+P('M0 33Q-16 22 -8 17Q-3 15 0 20Q3 15 8 17Q16 22 0 33Z',RED),
+ bin:()=>P('M-38 -28H38L30 52H-30Z',RED,o)+R(-44,-46,88,20,7,YEL,o)+R(-12,52,24,8,3,DARK)+L('M-18 -12l4 50M0 -12v50M18 -12l-4 50','#a93a2c',4),
+ bag:()=>P('M-12 -30Q-40 -58 -18 -54L0 -38L20 -56Q38 -52 12 -30Q56 0 52 36Q48 56 0 56Q-50 56 -52 34Q-52 0 -12 -30Z','#4b4a57',o)+L('M-12 -30h24',YEL,7)+L('M-28 8q-12 20 0 34M20 0q18 18 12 38','#7b7a8c',4)
+});
+/* Tätigkeiten */
+const hand=(x,y,r=0)=>T(x,y,1,L('M0 0l34 -16',BLU,20)+C(0,0,13,'#eab391',O(2.5))+L('M-8 -4q-10 2 -10 10','#eab391',8),r);
+Object.assign(ART,{
+ vpeel:()=>E(-22,22,46,30,'#c99a5b',o)+E(-34,16,17,18,'#f4dc9a')+L('M-60 30q-26 10 -10 24q16 6 22 -4','#a8763c',8)+T(0,-12,.6,ART.peeler(),30)+hand(34,-6),
+ vcut:()=>T(-10,34,.85,ART.board())+E(-44,18,26,20,'#d99b58',o)+E(-12,20,10,19,'#f6dfb0',o)+E(8,22,10,19,'#f6dfb0',o)+T(24,-12,.7,ART.knife(),-18)+hand(52,-30),
+ vgrate:()=>T(-14,-6,.85,ART.grater())+P('M30 -44L72 -30L44 -10Z',YEL,o)+hand(60,-36)+times(14,i=>L(`M${-45+i*7} ${52+(i%3)*4}l7 ${(i%2)*5-2}`,'#e8a91e',4)),
+ vcook:()=>T(0,22,.78,ART.pan())+steam(0,-26)+steam(36,-30)+P('M-52 66q6 -16 12 -4q8 -14 14 0M20 66q6 -16 12 -4q8 -14 14 0','#ff8a2a',O(2)),
+ vfry:()=>T(0,14,1,ART.fryingpan())+egg(-24,24)+steam(-24,-18)+P('M-60 62q6 -14 12 -3q8 -14 14 0q8 -12 14 3Z','#ff8a2a',O(2)),
+ vwhisk:()=>P('M-62 6H62Q54 58 0 58Q-54 58 -62 6Z',BLU,o)+E(0,6,62,14,'#ffd84d',o)+T(8,-18,.72,ART.whisk())+hand(44,-52)+L('M-40 -12q-14 -8 -4 -20M-24 -22q-6 -14 6 -18','#e8a91e',4),
+ vseason:()=>T(-10,34,.62,ART.pan())+`<g transform="translate(24 -38) rotate(135)">${R(-17,-24,34,48,8,'#eef4fb',o)}${R(-19,22,38,14,5,DARK,o)}</g>`+times(9,i=>C(-14+(i%3)*9-i,-14+i*3.5,2.8,'#fff',O(1.5)))+hand(46,-48),
+ vwash:()=>R(-70,26,140,36,10,STEEL,o)+L('M-48 26V-38H-12V-26',DARK,10)+L('M-12 -20v30','#59b9ef',9,'stroke-dasharray="9 7"')+E(-8,22,34,17,'#7bc96f',o)+L('M-26 20q16 -14 34 2M-12 12v18','#3f8f5c',3)+hand(22,18)+C(-42,18,7,'#fff',O(2))+C(46,26,9,'#fff',O(2)),
+ vliquidize:()=>T(-8,6,.92,ART.blender())+hand(26,-50)+L('M-52 -30q-12 14 0 30M-66 -36q-18 22 0 44',DARK,4),
+ vtoast:()=>T(0,14,.86,ART.toaster())+L('M-44 -36l-8 -16M0 -46v-18M44 -36l8 -16','#f28a2a',5),
+ vsqueeze:()=>T(-6,18,.82,ART.juicer())+C(2,-36,27,'#ff9a2e',o)+L('M-22 -32h48','#ffd08a',4)+hand(30,-48),
+ vweigh:()=>T(-14,10,.9,ART.scales())+P('M-48 -40Q-14 -70 18 -40Z','#fff',o)+`<g transform="translate(40 -52) rotate(-35)">${R(-16,-10,32,22,6,'#e3b476',o)}</g>`+times(6,i=>C(24-i*5,-42+i*3,2.5,'#fff',O(1.2)))+hand(60,-52)
+});
+
+/* ---------- Großes Küchenbild ---------- */
+function kitchenScene(s){
+ const cab='#a9d6cf',cabD='#7fb7ae';
+ const door=(x,y,w,h,knobRight=true)=>R(x,y,w,h,6,cab,o)+R(x+12,y+12,w-24,h-24,4,'none',`stroke="${cabD}" stroke-width="4"`)+C(knobRight?x+w-20:x+20,y+h/2,7,'#fff',O(2.5));
+ s.deco(R(0,0,1800,740,0,'#fdf1d9')+times(60,i=>R(300+(i%30)*50,300+Math.floor(i/30)*50,46,46,4,(i+Math.floor(i/30))%2?'#cfe6f2':'#fff'))+R(0,660,1800,90,0,'#e0b98a')+times(18,i=>L(`M${i*110} 662l-40 86`,'#c79a66',3))+
+  /* Fenster */
+  R(630,70,250,190,6,'#fff',o)+R(642,82,226,166,3,'#a8def5',o)+C(820,125,24,'#ffd84d')+P('M642 248Q700 180 760 225Q820 190 868 220V248Z','#7fb85a')+L('M755 82v166M642 165h226','#fff',8)+P('M615 62H668Q655 180 622 275Z',RED,o)+P('M895 62H842Q855 180 888 275Z',RED,o)+
+  /* Unterschränke und Arbeitsplatte */
+  R(300,500,1480,170,4,cabD,o)+R(285,468,1505,34,6,WOOD,o)+door(1215,510,175,150)+door(1395,510,185,150,false)+door(1585,510,185,150));
+
+ /* Kühlschrank */
+ s.add('fridge',[150,300,130],[148,105],R(45,140,215,340,34,'#f8e7c4',o)+L('M225 230v110',DARK,12)+R(80,185,60,45,4,'#fff',O(2))+C(110,185,7,RED)+L('M92 205h36M92 216h24',DARK,3),[150,170]);
+ s.add('freezer',[150,575,110],[150,602],R(45,486,215,176,30,'#eed6a6',o)+L('M75 515h90',DARK,12)+L('M60 668h24M220 668h24',DARK,10)+C(215,630,3,'#fff')+L('M118 572v56M94 586l48 28M142 586l-48 28','#6aa9dc',5));
+ s.add('cupboard',[445,175,125],[445,262],door(300,55,145,235)+door(447,55,145,235,false));
+ s.add('microwave',[440,415,95],[440,332],R(350,365,185,104,10,'#e9eef5',o)+R(364,378,114,76,6,'#4d5b7a',o)+L('M378 440l30 -48','#b9c8ee',5)+R(490,378,32,18,3,'#8fe08a',O(2))+times(4,i=>C(498+(i%2)*18,415+Math.floor(i/2)*20,5,DARK)),null);
+ s.add('drawer',[445,580,95],[445,694],times(3,i=>R(350,512+i*51,190,45,6,cab,o)+L(`M420 ${534+i*51}h50`,'#fff',9)));
+ /* Spüle und Wasserhahn */
+ s.add('sink',[740,490,85],[860,436],P('M660 470H830L842 492H648Z','#dfe6ef',o)+P('M682 475H810L816 487H676Z','#8e9ab0')+R(668,502,154,10,3,STEEL,o)+hitR(645,460,200,55),[815,484]);
+ s.add('tap',[742,425,70],[655,362],L('M742 468V400Q742 378 768 378T794 402V414',STEEL,15)+L('M742 468V400Q742 378 768 378T794 402V414','#eef3f9',5)+L('M742 436h-26',DARK,9)+L('M794 428v22','#59b9ef',7,'stroke-dasharray="7 7"')+hitR(710,370,98,98),[722,400]);
+ s.add('dishwasher',[740,590,105],[740,694],R(635,512,212,150,6,'#e9eef5',o)+R(650,524,182,92,4,'#59657f',o)+times(6,i=>E(678+i*28,572,9,34,'#fff',O(2)))+L('M652 604h178M652 540h178',STEEL,4)+R(640,624,202,32,5,'#c3ccda',o)+C(668,640,6,GRN)+L('M740 640h70',DARK,6));
+ s.deco(R(860,512,115,150,5,cab,o)+C(952,587,7,'#fff',O(2.5)));
+ /* Herd */
+ s.add('hob',[1085,478,100],[955,425],P('M1000 466H1170L1188 498H982Z','#39405a',o)+[[1038,476],[1120,476],[1032,490],[1132,490]].map((p,i)=>E(p[0],p[1],25,i>1?6:5,'none','stroke="#ff7a4a" stroke-width="4"')).join('')+hitR(975,450,220,55),[1000,484]);
+ s.add('oven',[1085,585,105],[1085,694],R(985,512,200,150,8,'#d3dae6',o)+times(4,i=>C(1015+i*47,530,8,DARK))+R(1005,560,160,86,8,'#4d5b7a',o)+L('M1020 553h130',DARK,8)+E(1085,615,46,18,'#e9a64a',O(2))+L('M1020 635l36 -55','#b9c8ee',5));
+ s.add('fan',[1085,200,135],[1085,175],R(1043,30,84,140,4,STEEL,o)+P('M1043 170H1127L1200 275H970Z','#dde4ee',o)+R(970,275,230,26,6,STEEL,o)+times(3,i=>C(1060+i*25,288,5,DARK))+L('M1056 45v110','#fff',8),[1085,235]);
+ /* Kleine Geräte auf der Arbeitsplatte */
+ [['toaster',1275,422,.8],['kettle',1400,424,.78],['coffeepot',1515,422,.78],['mixer',1660,418,.85]].forEach(([id,x,y,k],i)=>s.item(id,x,y,k,i%2?292:350));
+
+ /* Vorratswand mit Regalen */
+ s.deco(R(0,745,1800,765,0,'#e9d3b2')+times(4,r=>R(0,885+r*190,1800,16,0,'#a86f3c',o)+R(0,901+r*190,1800,10,0,'#00000022'))+L('M0 746H1800',INK,5));
+ const shelf=[
+  ['handblender','blender','juicer','timer','pan','fryingpan','lid','casserole','tray'],
+  ['jug','scales','colander','sieve','knife','board','pin','whisk','grater'],
+  ['peeler','corkscrew','opener','ladle','spoon','glove','potholder','apron','towel'],
+  ['sponge','liquid','paper','ovenpaper','film','foil','jar','bin','bag']
+ ];
+ shelf.forEach((row,r)=>row.forEach((id,i)=>s.item(id,100+i*200,822+r*190,1,918+r*190)));
+}
+
+/* ---------- Brot ---------- */
+function breadSvg(){
+ const g=(id,x)=>`<g class="obj" data-id="${id}">${x}</g>`;
+ const crumbs=(x,y,n)=>times(n,i=>P(`M${x+(i*47)%150} ${y+(i*29)%48}l11 -6l7 9l-9 8Z`,'#e5bc78',O(2)));
+ return `<g pointer-events="none">${P('M40 190H610L660 360H90Z','#c4813f',o)}${L('M110 225H560M140 320H610','#a36427',4)}</g>`+
+ g('crust',P('M80 250Q60 110 190 105H330Q390 108 388 180V285H110Q82 282 80 250Z','#c9742f',o)+L('M130 135q22 22 20 52M200 126q26 24 24 58M272 128q26 24 24 54','#f0a95c',10))+
+ g('crumb',P('M345 125Q420 122 420 190V285H345Q310 270 310 190Q310 140 345 125Z','#fbe7bd','stroke="#a85a1f" stroke-width="12" stroke-linejoin="round"')+times(9,i=>E(338+(i%3)*25,165+Math.floor(i/3)*38+(i%2)*10,6,4,'#e5c27f')))+
+ g('slice',[0,1].map(i=>`<g transform="translate(${470+i*55} ${245+i*14}) rotate(14)">${P('M-42 55V-8Q-58 -52 0 -55Q58 -52 42 -8V55Z','#fbe7bd','stroke="#a85a1f" stroke-width="10" stroke-linejoin="round"')}${C(-12,-8,6,'#e5c27f')}${C(16,22,5,'#e5c27f')}</g>`).join(''))+
+ g('crumbs',crumbs(150,300,11)+crumbs(250,322,5)+hitR(140,290,260,75));
+}
+
+const LESSON={
+ key:'2',W:1800,H:1510,scene:kitchenScene,
+ groups:[['big','Große Geräte und Möbel'],['app','Kleine Geräte'],['pots','Töpfe und Gefäße'],['tools','Werkzeuge und Besteck'],['help','Textilien, Putzen und Verpacken']],
+ also:{fridge:['freezer'],oven:['hob'],sink:['tap'],drawer:[]},
+ details:[
+  {type:'cards',title:'Was man in der Küche tut',hint:'Küchenverben: Tippe auf ein Bild.',ids:['vpeel','vcut','vgrate','vcook','vfry','vwhisk','vseason','vwash','vliquidize','vtoast','vsqueeze','vweigh'],boxes:{}},
+  {type:'figure',title:'Das Brot',hint:'Tippe auf die Teile des Brotes.',viewBox:'0 0 700 430',font:30,ids:['crust','crumb','slice','crumbs'],svg:breadSvg,
+   labels:[['crust',150,50,190,115],['crumb',420,60,365,150],['slice',595,130,525,215],['crumbs',250,402,235,340]],
+   boxes:{crust:[60,80,360,230],crumb:[290,100,160,210],slice:[400,165,200,190],crumbs:[130,260,290,130]}}
+ ],
+ story:{title:'The pancake plan',voices:{Ben:.9,Lily:1.35},lines:[
+  ['Ben','Let’s make pancakes for breakfast. Have we got eggs?','Lass uns Pfannkuchen zum Frühstück machen. Haben wir Eier?'],
+  ['Lily','Yes, they are in the [[fridge|refrigerator]]. And the milk is next to them.','Ja, sie sind im Kühlschrank. Und die Milch steht daneben.'],
+  ['Ben','Great. And where are the [[scales|scales]]?','Super. Und wo ist die Waage?'],
+  ['Lily','In the [[cupboard|cupboard]], behind the big [[jar|jar]].','Im Schrank, hinter dem großen Glas.'],
+  ['Ben','I will [[vweigh|weigh]] the flour. You [[vwhisk|whisk the eggs]].','Ich wiege das Mehl ab. Du verquirlst die Eier.'],
+  ['Lily','I need the [[whisk|whisk]]. Is it in the [[drawer|drawer]]?','Ich brauche den Schneebesen. Ist er in der Schublade?'],
+  ['Ben','No, it is in the [[dishwasher|dishwasher]]. Wash it in the [[sink|sink]], please.','Nein, er ist in der Spülmaschine. Spül ihn bitte in der Spüle ab.'],
+  ['Lily','Done. Now put the [[fryingpan|frying pan]] on the [[hob|hob]].','Fertig. Jetzt stell die Pfanne auf das Kochfeld.'],
+  ['Ben','Watch this. I can flip a pancake very high!','Pass auf. Ich kann einen Pfannkuchen ganz hoch werfen!'],
+  ['Lily','Ben! It is on the [[fan|extractor fan]]!','Ben! Er klebt an der Dunstabzugshaube!'],
+  ['Ben','Oh. Can you pass me the [[glove|oven glove]]?','Oh. Kannst du mir den Ofenhandschuh geben?'],
+  ['Lily','Here you are. I think I will make the next one.','Bitte sehr. Ich glaube, den nächsten mache ich.']
+ ]},
+ idioms:[
+  ['everything but the kitchen sink','alles Mögliche, der halbe Hausrat','Far too many things.','Viel zu viele Dinge.','For one night away she packed everything but the kitchen sink.','Für eine Nacht hat sie den halben Hausrat eingepackt.'],
+  ['out of the frying pan into the fire','vom Regen in die Traufe','From a bad situation to an even worse one.','Von einer schlechten Lage in eine noch schlechtere.','He ran away from the dog and met the goose. Out of the frying pan into the fire!','Er lief vor dem Hund weg und traf auf die Gans. Vom Regen in die Traufe!'],
+  ['to grill someone','jemanden ausquetschen','To ask someone lots of difficult questions.','Jemandem viele schwierige Fragen stellen.','My sister grilled me about my new friend.','Meine Schwester hat mich über meinen neuen Freund ausgequetscht.'],
+  ['What’s cooking?','Was gibt’s Neues? Was ist los?','What is happening?','Was passiert gerade?','You all look excited. What’s cooking?','Ihr seht alle aufgeregt aus. Was ist los?'],
+  ['a piece of cake','ein Kinderspiel','Something very easy.','Etwas sehr Einfaches.','The English test was a piece of cake.','Der Englischtest war ein Kinderspiel.'],
+  ['Too many cooks spoil the broth.','Viele Köche verderben den Brei.','Too many helpers make things worse.','Zu viele Helfer machen alles schlimmer.','Let me do it alone. Too many cooks spoil the broth.','Lass mich das allein machen. Viele Köche verderben den Brei.']
+ ]
+};
+
+/* ---------- Grundlagen ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const W=Object.fromEntries(WORDS.map(w=>[w.id,w]));
+const store={get(k,d){try{const v=localStorage.getItem('ww'+LESSON.key+'-'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ww'+LESSON.key+'-'+k,JSON.stringify(v))}catch(e){}}};
+const opt={accent:store.get('accent','en-GB'),slow:store.get('slow',false),showde:store.get('showde',true),lab:store.get('lab','en')};
+const seen=new Set(store.get('seen',[]));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+/* ---------- Vorlesen ---------- */
+const synth=window.speechSynthesis;let voices=[],run=0,keep=null;
+if(synth){const load=()=>voices=synth.getVoices();load();synth.addEventListener&&synth.addEventListener('voiceschanged',load);}else $('#nospeech').hidden=false;
+function voiceFor(lang){
+ const norm=v=>v.lang.replace('_','-');
+ const list=voices.filter(v=>norm(v)===lang);
+ const pool=list.length?list:voices.filter(v=>norm(v).startsWith(lang.slice(0,2)));
+ const nice=/Google|Natural|Premium|Enhanced|Daniel|Serena|Kate|Samantha|Anna|Karen/i;
+ return pool.find(v=>nice.test(v.name))||pool.find(v=>v.default)||pool[0];
+}
+function stopAll(){run++;if(synth)synth.cancel();stopTour(true);storyIdle();}
+/* Spricht einen Text; das Versprechen endet auch dann, wenn der Browser kein Ende meldet */
+function speak(text,{de=false,slow=opt.slow,pitch=1}={}){
+ return new Promise(res=>{
+  const est=1200+text.length*(slow?150:95);
+  if(!synth){setTimeout(res,est);return;}
+  const u=new SpeechSynthesisUtterance(text);keep=u;
+  u.lang=de?'de-DE':opt.accent;const v=voiceFor(u.lang);if(v)u.voice=v;
+  u.rate=slow?.6:.95;u.pitch=pitch;
+  let done=false;const end=()=>{if(!done){done=true;clearTimeout(t);res();}};
+  const t=setTimeout(end,est*1.8);u.onend=end;u.onerror=end;
+  synth.speak(u);
+ });
+}
+function say(text,o){stopAll();return speak(text,o);}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ---------- Bild ---------- */
+const built=buildScene(),LW=LESSON.W,LH=LESSON.H;
+$('#stage').innerHTML=built.svg;
+renderDetails();
+const scene=$('#scene'),stage=$('#stage');
+const shared=document.createElementNS('http://www.w3.org/2000/svg','svg');
+shared.setAttribute('width','0');shared.setAttribute('height','0');shared.setAttribute('aria-hidden','true');shared.style.position='absolute';
+shared.append(...document.querySelectorAll('#scene linearGradient,#scene radialGradient,#scene clipPath,#v-detail linearGradient,#v-detail clipPath'));document.body.append(shared);
+const OBJ=Object.fromEntries(built.objs.map(o=>[o.id,o]));
+/* Reihenfolge der Wörter wie in der Wortliste */
+const SCENE_IDS=WORDS.filter(w=>OBJ[w.id]).map(w=>w.id);
+let current=null,revealed=new Set(),find=null,view='bild';
+
+function drawLabels(){
+ const ctx=document.createElement('canvas').getContext('2d');ctx.font="800 23px Nunito, sans-serif";
+ let lines='',tags='';
+ for(const id of SCENE_IDS){
+  const o=OBJ[id],w=W[id],[x,y]=o.l;
+  let t=w.en;
+  if(opt.lab==='de')t=(LESSON.short&&LESSON.short[id])||w.de.split(' / ')[0].replace(/^(der|die|das) /,'').replace(/ \(.*\)/,'');
+  if(opt.lab==='q'&&!revealed.has(id))t='?';
+  const wd=Math.max(44,ctx.measureText(t).width+24);
+  const cx=Math.min(LW-wd/2-6,Math.max(wd/2+6,x));
+  if(o.a){lines+=`<line class="lead" x1="${cx}" y1="${y}" x2="${o.a[0]}" y2="${o.a[1]}"/><circle class="leaddot" cx="${o.a[0]}" cy="${o.a[1]}" r="4.5"/>`;}
+  tags+=`<g class="lbl${current===id?' sel':''}" data-id="${id}" tabindex="0" role="button" aria-label="${t==='?'?'verdecktes Wort':esc(t)}"><rect x="${cx-wd/2}" y="${y-18}" width="${wd}" height="36" rx="11"/><text x="${cx}" y="${y+1}">${esc(t)}</text></g>`;
+ }
+ $('#labels').innerHTML=(opt.lab==='off'||find)?'':lines+tags;
+ $$('[data-lab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lab===opt.lab));
+}
+
+/* Zoom */
+let zoom=null,whole=true;
+/* "Ganzes Bild": die komplette Grafik passt in Breite und Höhe auf den Bildschirm */
+function fitWidth(){
+ const w=Math.max(280,stage.clientWidth),below=innerHeight-(stage.getBoundingClientRect().top+scrollY)-12;
+ const h=below>=innerHeight*.55?below:innerHeight-16;
+ return Math.min(w,Math.max(280,Math.floor((h-4)*LW/LH)));
+}
+function applyZoom(w){zoom=w;scene.style.width=w+'px';stage.style.maxHeight=whole?'none':'';$('#zfit').setAttribute('aria-pressed',whole);}
+function showWhole(){whole=true;applyZoom(fitWidth());stage.scrollLeft=stage.scrollTop=0;}
+function setZoom(w){
+ const cx=(stage.scrollLeft+stage.clientWidth/2)/zoom,cy=(stage.scrollTop+stage.clientHeight/2)/zoom,f=fitWidth();
+ const next=Math.min(3600,Math.max(f,w));whole=next<=f+1;applyZoom(next);
+ stage.scrollLeft=cx*next-stage.clientWidth/2;stage.scrollTop=cy*next-stage.clientHeight/2;
+}
+$('#zin').onclick=()=>setZoom(zoom*1.5);$('#zout').onclick=()=>setZoom(zoom/1.5);$('#zfit').onclick=showWhole;
+function focusOn(id){
+ const o=OBJ[id];if(!o||!zoom)return;const k=scene.getBoundingClientRect().width/LW;
+ const x=(o.f[0]+o.l[0])/2*k,y=(o.f[1]+o.l[1])/2*k;
+ if(!whole)stage.scrollTo({left:x-stage.clientWidth/2,top:y-stage.clientHeight/2,behavior:'smooth'});
+ const card=$('#card');
+ if(!card.hidden&&getComputedStyle(card).position==='fixed'){
+  const r=stage.getBoundingClientRect(),free=innerHeight-card.offsetHeight;
+  const bar=$$('#tourbar,#findbar').find(b=>!b.hidden);let delta;
+  if(whole&&stage.offsetHeight<=free-8){
+   const top=bar&&bar.offsetHeight+stage.offsetHeight+20<=free?bar:stage;delta=top.getBoundingClientRect().top-6;
+  }else delta=r.top+(whole?y:Math.min(stage.clientHeight/2,y))-Math.max(70,free/2);
+  window.scrollBy({top:delta,behavior:'smooth'});
+ }
+}
+function mark(id,cls=''){
+ const m=$('#marker'),c=m.firstElementChild,o=OBJ[id];
+ if(!o||(LESSON.nomark||[]).includes(id)){m.setAttribute('hidden','');return;}
+ m.removeAttribute('hidden');c.setAttribute('cx',o.f[0]);c.setAttribute('cy',o.f[1]);c.setAttribute('r',Math.min(o.f[2],150));c.setAttribute('class','mk '+cls);
+}
+function unmark(){$('#marker').setAttribute('hidden','');$$('.sel').forEach(e=>e.classList.remove('sel'));}
+
+/* ---------- Wortkarte ---------- */
+function updateCount(){$('#count').textContent=`${seen.size} / ${WORDS.length} entdeckt`;}
+function thumbFor(id){
+ const t=$('#thumb'),o=OBJ[id];t.style.display='';
+ if(o){const [x,y,r]=o.f;t.setAttribute('viewBox',`${x-r*1.15} ${y-r*1.15} ${r*2.3} ${r*2.3}`);t.innerHTML='<use href="#art"/>';return;}
+ for(let i=0;i<LESSON.details.length;i++){const s=LESSON.details[i];if(!s.ids.includes(id))continue;
+  if(s.type==='cards'){t.setAttribute('viewBox','-90 -75 180 150');t.innerHTML=ART[id]();return;}
+  t.setAttribute('viewBox',s.boxes[id].join(' '));t.innerHTML=`<use href="#fig${i}"/>`;return;}
+ t.style.display='none';
+}
+function openCard(id){
+ const w=W[id];current=id;
+ $('#card').hidden=false;$('#grid').classList.add('has');document.body.classList.add('sheet');
+ $('#cword').textContent=w.en;$('#cipa').textContent=opt.accent==='en-GB'?'/'+w.ipa+'/':'';
+ $('#cde').textContent=w.de;$('#cex').textContent=w.ex;$('#cexde').textContent=w.exde;
+ $$('#card .tr').forEach(e=>e.classList.remove('open'));
+ thumbFor(id);
+ seen.add(id);store.set('seen',[...seen]);updateCount();
+ $$('.chip').forEach(c=>c.classList.toggle('seen',seen.has(c.dataset.id)));
+}
+function select(id,{speakIt=true,scroll=false}={}){
+ const hadCard=!$('#card').hidden;
+ unmark();openCard(id);revealed.add(id);if(!hadCard)refit();
+ if(OBJ[id]){
+  if(opt.lab==='q')drawLabels();
+  $$(`#scene [data-id="${id}"]`).forEach(e=>e.classList.add('sel'));mark(id);
+  if(scroll&&view==='bild')focusOn(id);
+ }
+ $$(`#v-detail [data-id="${id}"]`).forEach(e=>e.classList.add('sel'));
+ if(speakIt)say(W[id].en);
+}
+function closeCard(){$('#card').hidden=true;$('#grid').classList.remove('has');document.body.classList.remove('sheet');current=null;unmark();refit();}
+$('#close').onclick=()=>{stopAll();closeCard();};
+$('#say').onclick=()=>say(W[current].en,{slow:false});
+$('#saysyl').onclick=()=>say(W[current].en,{slow:true});
+$('#sayde').onclick=()=>say(W[current].de.replace(' / ',' oder ').replace(/[()]/g,''),{de:true,slow:false});
+$('#sayex').onclick=()=>say(W[current].ex);
+function step(d){
+ const pool=OBJ[current]?SCENE_IDS:LESSON.details.find(s=>s.ids.includes(current)).ids;
+ select(pool[(pool.indexOf(current)+d+pool.length)%pool.length],{scroll:true});
+}
+$('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
+document.addEventListener('click',e=>{const t=e.target.closest('.hide-de .tr');if(t)t.classList.toggle('open');});
+
+scene.addEventListener('click',e=>{
+ const g=e.target.closest('[data-id]');if(!g)return;
+ if(find){answerFind(g.dataset.id);return;}
+ select(g.dataset.id);
+ if(getComputedStyle($('#card')).position==='fixed')requestAnimationFrame(()=>focusOn(g.dataset.id));
+});
+scene.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset.id){e.preventDefault();select(e.target.dataset.id);}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&current){stopAll();closeCard();}});
+
+/* Kartenbreite ändert sich: Bild neu einpassen, solange nicht gezoomt wurde */
+function refit(){requestAnimationFrame(()=>{if(view==='bild'&&stage.clientWidth&&whole)showWhole();});}
+new ResizeObserver(refit).observe(stage);new ResizeObserver(refit).observe($('#v-bild'));addEventListener('resize',refit);
+
+/* ---------- Wortliste ---------- */
+const GROUPS=LESSON.groups;
+$('#chiplists').innerHTML=GROUPS.map(([g,n])=>`<div class="group" style="margin-bottom:14px"><h3>${n}</h3><div class="chips">${WORDS.filter(w=>w.g===g).map(w=>`<button class="chip${seen.has(w.id)?' seen':''}" data-id="${w.id}" data-s="${(w.en+' '+w.de).toLowerCase()}">${w.en}<small class="tr0">${w.de}</small></button>`).join('')}</div></div>`).join('');
+$('#chiplists').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){select(c.dataset.id,{scroll:true});if(innerWidth>=1100)stage.scrollIntoView({behavior:'smooth',block:'nearest'});}});
+$('#search').oninput=e=>{const q=e.target.value.trim().toLowerCase();$$('.chip').forEach(c=>c.hidden=!c.dataset.s.includes(q));$$('.group').forEach(g=>g.hidden=!g.querySelector('.chip:not([hidden])'));};
+
+/* ---------- Tour: alles abspielen ---------- */
+let tour=null;
+function stopTour(silent){if(!tour)return;tour=null;$('#tourbar').hidden=true;}
+async function tourStep(){
+ const me=++run;if(synth)synth.cancel();
+ const t=tour,id=t.ids[t.i];
+ select(id,{speakIt:false,scroll:true});
+ $('#tourpos').textContent=`${t.i+1} / ${t.ids.length}  ${W[id].en}`;
+ const alive=()=>me===run&&tour===t&&!t.paused;
+ await speak(W[id].en);if(!alive())return;await wait(450);if(!alive())return;
+ if(opt.showde){await speak(W[id].de.split(' / ')[0].replace(/[()]/g,''),{de:true,slow:false});if(!alive())return;await wait(350);if(!alive())return;}
+ await speak(W[id].ex);if(!alive())return;await wait(900);if(!alive())return;
+ if(t.i<t.ids.length-1){t.i++;tourStep();}else{stopTour();}
+}
+function startTour(ids,start=0){
+ stopAll();tour={ids,i:start,paused:false};
+ if(view==='bild'){$('#tourbar').hidden=false;$('#tpause').textContent='⏸ Pause';}
+ tourStep();
+}
+$('#tour').onclick=()=>startTour(SCENE_IDS,Math.max(0,SCENE_IDS.indexOf(current)));
+$('#tstop').onclick=()=>stopAll();
+$('#tpause').onclick=()=>{if(!tour)return;tour.paused=!tour.paused;$('#tpause').textContent=tour.paused?'▶ Weiter abspielen':'⏸ Pause';if(tour.paused){run++;synth&&synth.cancel();}else tourStep();};
+const jump=d=>{if(!tour)return;tour.i=(tour.i+d+tour.ids.length)%tour.ids.length;tour.paused=false;$('#tpause').textContent='⏸ Pause';tourStep();};
+$('#tprev').onclick=()=>jump(-1);$('#tnext').onclick=()=>jump(1);
+
+/* ---------- Einstellungen ---------- */
+$('#accent').value=opt.accent;
+$('#accent').onchange=e=>{opt.accent=e.target.value;store.set('accent',opt.accent);if(current)openCard(current);say('Hello! Let us learn some English.');};
+function applyToggles(){$('#slow').setAttribute('aria-pressed',opt.slow);$('#showde').setAttribute('aria-pressed',opt.showde);$('#showde').textContent=opt.showde?'Deutsch sichtbar':'Deutsch verdeckt';document.body.classList.toggle('hide-de',!opt.showde);$$('.tr0').forEach(e=>e.hidden=!opt.showde);$$('.tr').forEach(e=>e.classList.remove('open'));}
+$('#slow').onclick=()=>{opt.slow=!opt.slow;store.set('slow',opt.slow);applyToggles();};
+$('#showde').onclick=()=>{opt.showde=!opt.showde;store.set('showde',opt.showde);applyToggles();};
+$$('[data-lab]').forEach(b=>b.onclick=()=>{opt.lab=b.dataset.lab;revealed=new Set();store.set('lab',opt.lab);drawLabels();});
+
+/* ---------- Detailbereiche ---------- */
+function renderDetails(){
+ $('#v-detail').innerHTML=LESSON.details.map((s,i)=>{
+  let body;
+  if(s.type==='cards')body=`<div class="cards">${s.ids.map(id=>`<button data-id="${id}"><svg viewBox="-90 -75 180 150" aria-hidden="true">${ART[id]()}</svg><span lang="en">${W[id].en}</span><small class="tr" lang="de">${W[id].de}</small></button>`).join('')}</div>`;
+  else body=`<div class="figure"><svg viewBox="${s.viewBox}" style="max-width:${s.maxWidth||760}px"><g id="fig${i}">${s.svg()}</g>${s.labels.map(([id,x,y,ax,ay])=>`<g class="elbl" data-id="${id}" tabindex="0" role="button">${ax!==undefined?L(`M${ax} ${ay}L${Math.abs(ay-y)<30?x+(ax<x?-1:1)*W[id].en.length*(s.font||22)*.3:x} ${Math.abs(ay-y)<30?y:y+(ay>y?1:-1)*(s.font||22)*.75}`,'#33405c',2)+C(ax,ay,4,'#33405c'):''}<text x="${x}" y="${y}" style="font-size:${s.font||22}px">${W[id].en}</text></g>`).join('')}</svg></div>`;
+  return `<section class="block"><h2>${s.title}</h2><p class="hint">${s.hint}</p>${body}<div class="btns"><button class="primary" data-play="${i}">▶ Alle abspielen</button></div></section>`;
+ }).join('');
+}
+const detailPick=e=>{
+ const p=e.target.closest('[data-play]');if(p)return startTour(LESSON.details[p.dataset.play].ids);
+ const g=e.target.closest('[data-id]');if(g)select(g.dataset.id);
+};
+$('#v-detail').onclick=detailPick;
+$('#v-detail').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('g[data-id]')){e.preventDefault();detailPick(e);}};
+
+/* ---------- Hörgeschichte ---------- */
+const STORY=LESSON.story.lines,SPEAKERS=Object.keys(LESSON.story.voices);
+const plain=s=>s.replace(/\[\[\w+\|([^\]]+)\]\]/g,'$1');
+$('#story').innerHTML=STORY.map((l,i)=>`<div class="line-row s${SPEAKERS.indexOf(l[0])}" data-i="${i}"><button class="round" aria-label="Zeile anhören">▶</button><div><div class="who">${l[0]}</div><p lang="en">${l[1].replace(/\[\[(\w+)\|([^\]]+)\]\]/g,'<button class="vw" data-w="$1">$2</button>')}</p><p class="tr">${l[2]}</p></div></div>`).join('');
+let waiting=null;
+function storyIdle(){$$('.line-row').forEach(r=>r.classList.remove('now'));$('#sdone').hidden=true;waiting=null;}
+const voiceOpt=who=>({pitch:LESSON.story.voices[who]});
+$('#story-title').textContent=LESSON.story.title;
+$('#role').innerHTML='<option value="">Alles anhören</option>'+SPEAKERS.map(n=>`<option value="${n}">Ich spreche ${n}</option>`).join('');
+$('#story').onclick=e=>{
+ const v=e.target.closest('.vw');if(v){select(v.dataset.w);return;}
+ const b=e.target.closest('.round');if(!b)return;
+ const r=b.closest('.line-row'),l=STORY[r.dataset.i];
+ say(plain(l[1]),voiceOpt(l[0]));r.classList.add('now');const me=run;setTimeout(()=>{if(me===run)r.classList.remove('now')},1500+l[1].length*80);
+};
+async function playStory(from=0){
+ stopAll();const me=run,role=$('#role').value;
+ for(let i=from;i<STORY.length;i++){
+  const l=STORY[i],r=$(`.line-row[data-i="${i}"]`);
+  $$('.line-row').forEach(x=>x.classList.toggle('now',x===r));
+  r.scrollIntoView({behavior:'smooth',block:'center'});
+  if(l[0]===role){$('#sdone').hidden=false;$('#sdone').scrollIntoView({block:'nearest'});r.scrollIntoView({behavior:'smooth',block:'center'});
+   await new Promise(res=>waiting=res);if(me!==run)return;}
+  else{await speak(plain(l[1]),voiceOpt(l[0]));if(me!==run)return;await wait(500);if(me!==run)return;}
+ }
+ storyIdle();
+}
+$('#splay').onclick=()=>playStory();$('#sstop').onclick=()=>stopAll();
+/* Weiter-Knopf bleibt beim Rollenspiel unten sichtbar */
+Object.assign($('#sdone').style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'calc(env(safe-area-inset-bottom, 0px) + 16px)',zIndex:30,boxShadow:'0 6px 24px #000a'});
+$('#sdone').onclick=()=>{const w=waiting;waiting=null;$('#sdone').hidden=true;if(w)w();};
+
+/* ---------- Redewendungen ---------- */
+const IDIOMS=LESSON.idioms;
+$('#idioms').innerHTML=IDIOMS.map((d,i)=>`<article class="idiom"><h3 lang="en">${d[0]}</h3><p class="tr"><strong>${d[1]}</strong></p><p lang="en">${d[2]}</p><p class="tr">${d[3]}</p><p lang="en" style="margin-top:12px"><em>“${d[4]}”</em></p><p class="tr">${d[5]}</p><div class="btns"><button class="primary" data-i="${i}" data-p="0">🔊 Redewendung</button><button data-i="${i}" data-p="4">🔊 Beispiel</button></div></article>`).join('');
+$('#idioms').onclick=e=>{const b=e.target.closest('button[data-i]');if(b)say(IDIOMS[b.dataset.i][b.dataset.p]);};
+
+/* ---------- Quiz ---------- */
+const best=store.get('best',{});
+function quizMenu(){
+ const b=k=>best[k]!==undefined?` Bestwert: ${best[k]} / 10`:'';
+ $('#quiz').innerHTML=`<h2>Wähle ein Spiel</h2><div class="modes">
+ <button data-m="find">Finde es im Bild<small>Du hörst ein Wort und tippst auf das richtige Ding.${b('find')}</small></button>
+ <button data-m="choice">Übersetzen<small>Wähle die richtige Übersetzung.${b('choice')}</small></button>
+ <button data-m="spell">Hören und schreiben<small>Schreibe das englische Wort auf.${b('spell')}</small></button></div>`;
+}
+let q=null;
+function saveBest(m,s){if(best[m]===undefined||s>best[m]){best[m]=s;store.set('best',best);}}
+function result(m,score){saveBest(m,score);$('#quiz').innerHTML=`<h2>${score>=8?'Fantastisch!':score>=5?'Gut gemacht!':'Weiter üben!'}</h2><div class="qword">${score} / 10</div><div class="btns"><button class="primary" data-m="${m}">Nochmal spielen</button><button data-m="menu">Anderes Spiel</button></div>`;}
+$('#quiz').addEventListener('click',e=>{
+ const m=e.target.closest('[data-m]');
+ if(m){stopAll();const k=m.dataset.m;if(k==='menu')return quizMenu();if(k==='find')return startFind();q={m:k,list:shuffle(WORDS).slice(0,10),i:0,score:0};return ask();}
+});
+function ask(){
+ const w=q.list[q.i],head=`<div class="count">Frage ${q.i+1} / 10 · Punkte ${q.score}</div>`;
+ if(q.m==='choice'){
+  const en=q.i%2===0,key=en?'de':'en';
+  const opts=shuffle([w,...shuffle(WORDS.filter(x=>x.id!==w.id&&x[key]!==w[key])).slice(0,3)]);
+  $('#quiz').innerHTML=head+`<div class="qword">${en?w.en:w.de}</div>${en?'<div class="btns" style="margin:0 0 12px"><button id="qsay">🔊 Anhören</button></div>':''}<div class="opts">${opts.map(o=>`<button data-a="${o.id}">${o[key]}</button>`).join('')}</div><div class="fb" role="status"></div><div class="btns"><button class="primary" id="qnext" hidden>Weiter</button><button data-m="menu">Beenden</button></div>`;
+  if(en){$('#qsay').onclick=()=>say(w.en);say(w.en);}
+  $$('#quiz [data-a]').forEach(b=>b.onclick=()=>{
+   const ok=b.dataset.a===w.id;if(ok)q.score++;
+   $$('#quiz [data-a]').forEach(x=>{x.disabled=true;if(x.dataset.a===w.id)x.classList.add('right');});
+   if(!ok)b.classList.add('wrong');
+   $('#quiz .fb').textContent=ok?'Richtig!':`Leider nein. ${w.en} = ${w.de}`;
+   say(w.en);$('#qnext').hidden=false;
+  });
+ }else{
+  $('#quiz').innerHTML=head+`<div class="btns"><button class="primary" id="qsay">🔊 Wort anhören</button><button id="qslow">🐢 Langsam</button><button id="qhint">Tipp</button></div><div class="fb" id="hint"></div><form id="qform" class="bar"><input type="text" id="qin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Englisches Wort" aria-label="Englisches Wort"><button type="submit">Prüfen</button></form><div class="fb" id="res" role="status"></div><div class="btns"><button class="primary" id="qnext" hidden>Weiter</button><button data-m="menu">Beenden</button></div>`;
+  $('#qsay').onclick=()=>say(w.en,{slow:false});$('#qslow').onclick=()=>say(w.en,{slow:true});
+  $('#qhint').onclick=()=>$('#hint').textContent=`Deutsch: ${w.de}`;
+  let done=false;const norm=s=>s.toLowerCase().replace(/[’']/g,"'").replace(/[\s-]+/g,'').trim();
+  $('#qform').onsubmit=e=>{e.preventDefault();const v=$('#qin').value;if(done||!v.trim())return;done=true;
+   const ok=norm(v)===norm(w.en);if(ok)q.score++;
+   $('#res').textContent=ok?`Richtig! ${w.de}`:`So schreibt man es: ${w.en} (${w.de})`;$('#res').style.color=ok?'#15803d':'#b91c1c';
+   $('#qin').disabled=true;$('#qnext').hidden=false;$('#qnext').focus({preventScroll:true});};
+  say(w.en);
+ }
+ $('#qnext').onclick=()=>{stopAll();q.i++;q.i<10?ask():result(q.m,q.score);};
+}
+/* Spiel im Bild */
+const ALSO=LESSON.also||{};
+function startFind(){
+ closeCard();find={list:shuffle(SCENE_IDS).slice(0,10),i:0,score:0,tries:0,done:false};
+ show('bild');$('#findbar').hidden=false;$('#tools [data-lab]').parentElement.hidden=true;$('#tour').hidden=true;$('#lists').hidden=true;
+ drawLabels();askFind();$('#findbar').scrollIntoView({block:'start'});
+}
+function askFind(){
+ find.tries=0;find.done=false;unmark();const w=W[find.list[find.i]];
+ $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findword').textContent=`Find: ${w.en}`;$('#findfb').textContent='';$('#findnext').hidden=true;say(w.en);
+}
+function answerFind(id){
+ if(find.done)return;const target=find.list[find.i],ok=id===target||(ALSO[target]||[]).includes(id);
+ if(ok){find.done=true;if(!find.tries)find.score++;mark(target,'right');$('#findfb').textContent=`Richtig! ${W[target].de}`;say('Well done!');}
+ else{find.tries++;
+  if(find.tries<2){mark(id,'wrong');$('#findfb').textContent=`Das ist „${W[id].en}“. Versuch es noch einmal.`;say(W[id].en);return;}
+  find.done=true;mark(target,'right');focusOn(target);$('#findfb').textContent=`Hier ist es: ${W[target].de}`;say(W[target].en);}
+ $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findnext').hidden=false;
+}
+function endFind(){find=null;$('#findbar').hidden=true;$('#tools [data-lab]').parentElement.hidden=false;$('#tour').hidden=false;$('#lists').hidden=false;unmark();drawLabels();}
+$('#findplay').onclick=()=>say(W[find.list[find.i]].en);
+$('#findnext').onclick=()=>{find.i++;if(find.i<10)return askFind();const s=find.score;endFind();show('quiz');result('find',s);};
+$('#findstop').onclick=()=>{stopAll();endFind();show('quiz');quizMenu();};
+
+/* ---------- Reiter ---------- */
+const VIEWS=['bild','detail','geschichte','redensarten','quiz'];
+function show(v){
+ view=v;VIEWS.forEach(n=>$('#v-'+n).hidden=n!==v);
+ $$('nav [data-v]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+ if(v==='bild'){whole=true;refit();}
+}
+$$('nav [data-v]').forEach(b=>b.onclick=()=>{
+ stopAll();if(find)endFind();closeCard();show(b.dataset.v);if(b.dataset.v==='quiz')quizMenu();
+ try{history.replaceState(null,'','#'+b.dataset.v)}catch(e){}
+});
+function route(){const h=location.hash.slice(1);stopAll();if(find)endFind();closeCard();show(VIEWS.includes(h)?h:'bild');if(h==='quiz')quizMenu();}
+addEventListener('hashchange',route);
+
+drawLabels();applyToggles();updateCount();quizMenu();route();
+document.fonts&&document.fonts.ready.then(drawLabels);
+document.fonts&&document.fonts.load("800 23px Nunito").then(drawLabels).catch(()=>{});
+
+</script>
+</body>
+</html>
