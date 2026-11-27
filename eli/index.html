@@ -45,6 +45,7 @@ main{padding:16px 20px 60px;max-width:1100px;margin:0 auto}
 .pl{display:inline-block;background:var(--bubA);border-radius:12px;padding:2px 10px;font-size:15px;margin:6px 0}
 .sent{display:block;text-align:left;margin-top:8px;padding:10px 12px;border-radius:16px;background:var(--bubB);color:var(--ink);font-size:17px}
 .sent::before{content:"🔊 "}
+.exde{margin:6px 4px 0;font-size:15px;line-height:1.35;color:var(--soft);font-style:italic}
 .forms{font-size:15px;color:var(--soft);margin-top:8px}
 .pg{margin-top:8px;font-size:14px;color:var(--soft)}
 h2{font-size:26px;font-weight:900;margin:8px 0 14px}
@@ -255,6 +256,7 @@ function inner(w,showDe){
     ${w[3]?`<div class="pl">${w[3]}</div>`:""}
     ${z?`<div class="forms">${z.inf} · ${z.pres}<br>past: ${z.past} · participle: ${z.pp} · ${z.ing}</div>`:""}
     ${w[4]?`<button class="sent" data-say="${w[4].replace(/"/g,"&quot;")}">${w[4]}</button>`:""}
+    ${w[7]?`<div class="exde">${w[7]}</div>`:""}
     <div class="pg">Kapitel ${w[1].join(", ")}</div>`;
 }
 function card(i){return `<article class="card">${inner(W[i],st.de)}</article>`}
@@ -859,6 +861,908 @@ const ALL="abdomen|26|Bauch, Unterleib;access barrier|23|Zugangsschranke;accesso
     const [en,ch,de]=r.split("|"),c=ch.split(",").map(Number),k=en.toLowerCase();
     if(idx.has(k))W[idx.get(k)][1]=c;                       // Karte mit allen Details: Kapitel aus dem Buch übernehmen
     else W.push([en,c,de||"",null,"",emojiFor(en,c)]);       // einfache Karte
+  });
+})();
+// ---- Beispielsätze: Wort|Deutsch (leer = bleibt)|englischer Satz (leer = bleibt)|deutscher Satz ----
+const EX=`apartment|||Sie haben eine helle Zwei-Zimmer-Wohnung in der Nähe der Innenstadt gemietet.
+attic|||Wir bewahren unsere alten Fotoalben auf dem Dachboden auf.
+aerial|||Der starke Wind hat die Fernsehantenne auf unserem Dach beschädigt.
+balcony|||Im Sommer trinken wir Tee auf dem Balkon.
+bathroom|||Sie putzt sich im Badezimmer die Zähne.
+bedroom|||Mein Schlafzimmer hat ein großes blaues Bett.
+cellar|||Die alten Fahrräder stehen im Keller.
+chimney|||Rauch steigt aus dem roten Schornstein auf.
+door|||Bitte schließe die Tür hinter dir.
+garage|||Papa parkt das Auto in der Garage.
+garden|||Die Kinder spielen im Garten.
+kitchen|||Mama kocht in der Küche Suppe.
+living room|||Wir schauen im Wohnzimmer Filme.
+roof|||Eine Katze sitzt auf dem Dach.
+window|||Bitte öffne das Fenster; es ist heiß.
+acorn|||Eichhörnchen sammeln im Herbst Eicheln.
+applaud|||Das Publikum stand auf, um dem Orchester zu applaudieren.
+astronaut|||Der Astronaut schwebte in der Raumstation.
+astronomer|||Der Astronom entdeckte einen neuen Kometen.
+comet|||Ein heller Komet flog an der Erde vorbei.
+constellations|||Wir fanden drei Sternbilder am Nachthimmel.
+equator|||In der Nähe des Äquators ist es immer warm.
+galaxy|||Unsere Galaxie heißt Milchstraße.
+helmet|||Ein Astronaut trägt im Weltraum einen Helm.
+Jupiter|||Jupiter ist der größte Planet.
+Mars|||Der Mars ist der rote Planet.
+Moon|||Der Mond scheint nachts.
+radio telescope|||Das Radioteleskop horcht auf die Sterne.
+rocket|||Die Rakete flog ins Weltall.
+Saturn|||Saturn hat wunderschöne Ringe.
+space station|||Astronauten leben auf der Raumstation.
+block of flats|Mehrfamilienhaus, Wohnblock|There are forty families in this block of flats.|In diesem Wohnblock leben vierzig Familien.
+ceiling|Decke|A small lamp hangs from the ceiling.|Eine kleine Lampe hängt von der Decke.
+detached house|Einfamilienhaus, freistehendes Haus|They live in a detached house with a big garden.|Sie wohnen in einem freistehenden Haus mit großem Garten.
+dining room|Esszimmer|We eat dinner in the dining room.|Wir essen im Esszimmer zu Abend.
+doorbell|Türklingel|Someone is ringing the doorbell.|Jemand drückt auf die Türklingel.
+doormat|Fußmatte|Wipe your shoes on the doormat.|Wische dir die Schuhe auf der Fußmatte ab.
+dormer window|Dachgaube, Gaubenfenster|The dormer window lets light into the attic.|Das Gaubenfenster lässt Licht auf den Dachboden.
+drainpipe|Regenrohr, Fallrohr|Rainwater runs down the drainpipe.|Regenwasser fließt durch das Regenrohr nach unten.
+entrance|Eingang|The entrance is on the left side of the building.|Der Eingang ist auf der linken Seite des Gebäudes.
+flat/apartment|Wohnung|Their flat is on the third floor.|Ihre Wohnung liegt im dritten Stock.
+floor|Boden, Fußboden|The wooden floor is very clean.|Der Holzboden ist sehr sauber.
+hall|Flur, Diele|Please leave your coat in the hall.|Bitte lass deinen Mantel im Flur.
+house|Haus|Our house has a red door.|Unser Haus hat eine rote Tür.
+house number|Hausnummer|What is your house number?|Wie lautet deine Hausnummer?
+intercom|Gegensprechanlage|Press the button and speak into the intercom.|Drücke den Knopf und sprich in die Gegensprechanlage.
+key|Schlüssel|I can't find my front door key.|Ich finde meinen Haustürschlüssel nicht.
+post box|Briefkasten|The postman puts the letters in the post box.|Der Briefträger wirft die Briefe in den Briefkasten.
+room|Zimmer, Raum|My room is small but cosy.|Mein Zimmer ist klein, aber gemütlich.
+semi-detached house|Doppelhaushälfte|They bought a semi-detached house.|Sie haben eine Doppelhaushälfte gekauft.
+wall|Wand, Mauer|There is a poster on the wall.|An der Wand hängt ein Poster.
+sunshade|Sonnenschirm, Sonnensegel|The sunshade keeps the terrace cool.|Der Sonnenschirm hält die Terrasse kühl.
+terrace|Terrasse|We have breakfast on the terrace.|Wir frühstücken auf der Terrasse.
+terraced house|Reihenhaus|Their terraced house is next to ours.|Ihr Reihenhaus steht neben unserem.
+aluminium foil||Wrap the sandwich in aluminium foil.|Wickle das Sandwich in Alufolie.
+apron||She puts on an apron before cooking.|Sie zieht vor dem Kochen eine Schürze an.
+bin|Mülleimer|The bin is under the sink.|Der Mülleimer steht unter der Spüle.
+blender|Mixer, Standmixer|I make smoothies in the blender.|Ich mache Smoothies im Mixer.
+bottle opener|Flaschenöffner|Do you have a bottle opener?|Hast du einen Flaschenöffner?
+bread|Brot|We eat fresh bread for breakfast.|Wir essen zum Frühstück frisches Brot.
+casserole dish|Auflaufform, Schmortopf|Put the pasta in the casserole dish.|Gib die Nudeln in die Auflaufform.
+chopping board|Schneidebrett|Cut the onions on the chopping board.|Schneide die Zwiebeln auf dem Schneidebrett.
+coffee pot|Kaffeekanne|The coffee pot is empty.|Die Kaffeekanne ist leer.
+colander|Sieb, Abtropfsieb|Drain the pasta in the colander.|Gieße die Nudeln im Sieb ab.
+cook|kochen; Koch, Köchin|My dad likes to cook on Sundays.|Mein Papa kocht gern sonntags.
+corkscrew|Korkenzieher|He opens the wine with a corkscrew.|Er öffnet den Wein mit einem Korkenzieher.
+crumb|Krümel|There is a crumb on your chin.|Du hast einen Krümel am Kinn.
+crumbs|Krümel (Mehrzahl), Brösel|The birds eat the bread crumbs.|Die Vögel fressen die Brotkrümel.
+crust|Kruste, Rinde|I don't like the crust of the bread.|Ich mag die Brotrinde nicht.
+cupboard|Schrank, Küchenschrank|The plates are in the cupboard.|Die Teller stehen im Schrank.
+cut|schneiden|Please cut the cake into eight pieces.|Bitte schneide den Kuchen in acht Stücke.
+dishwasher|Geschirrspüler, Spülmaschine|The dishwasher is full of dirty plates.|Die Spülmaschine ist voll mit schmutzigen Tellern.
+drawer|Schublade|The spoons are in the top drawer.|Die Löffel liegen in der obersten Schublade.
+extractor fan|Dunstabzug, Abzugshaube|The extractor fan removes the smell of fried fish.|Der Dunstabzug entfernt den Geruch von gebratenem Fisch.
+film|Frischhaltefolie, Folie|Cover the bowl with cling film.|Decke die Schüssel mit Frischhaltefolie ab.
+food mixer|Küchenmaschine, Rührgerät|The food mixer makes the dough.|Die Küchenmaschine knetet den Teig.
+freezer|Gefrierschrank, Tiefkühltruhe|The ice cream is in the freezer.|Das Eis liegt im Gefrierfach.
+fry|braten|Fry the eggs for two minutes.|Brate die Eier zwei Minuten lang.
+frying pan|Bratpfanne|The frying pan is very hot.|Die Bratpfanne ist sehr heiß.
+grate|reiben, raspeln|Grate some cheese on the pasta.|Reibe etwas Käse über die Nudeln.
+grater|Reibe|Use the grater for the carrots.|Nimm die Reibe für die Karotten.
+hand-held blender|Pürierstab|I use a hand-held blender for soup.|Ich benutze einen Pürierstab für Suppe.
+hob|Kochfeld, Herdplatte|Don't touch the hob; it's hot.|Fass das Kochfeld nicht an; es ist heiß.
+jar|Glas, Einmachglas|There is jam in the jar.|Im Glas ist Marmelade.
+juicer|Entsafter, Saftpresse|She makes orange juice with a juicer.|Sie macht Orangensaft mit einer Saftpresse.
+kettle|Wasserkocher, Teekessel|Put the kettle on, please.|Mach bitte den Wasserkocher an.
+kitchen paper|Küchenpapier, Küchenrolle|Dry the lettuce with kitchen paper.|Trockne den Salat mit Küchenpapier ab.
+knife|Messer|Be careful with the sharp knife.|Sei vorsichtig mit dem scharfen Messer.
+ladle|Schöpfkelle, Suppenkelle|Serve the soup with a ladle.|Serviere die Suppe mit einer Kelle.
+lid|Deckel|Put the lid on the pot.|Setze den Deckel auf den Topf.
+liquidize|pürieren|Liquidize the soup until it is smooth.|Püriere die Suppe, bis sie glatt ist.
+measuring jug|Messbecher|Fill the measuring jug with milk.|Fülle den Messbecher mit Milch.
+microwave oven|Mikrowelle|The microwave oven warms the milk quickly.|Die Mikrowelle erwärmt die Milch schnell.
+oven|Backofen, Ofen|The cake is in the oven.|Der Kuchen ist im Backofen.
+oven glove|Topfhandschuh, Ofenhandschuh|Wear an oven glove; the dish is hot.|Trag einen Ofenhandschuh; die Form ist heiß.
+oven paper|Backpapier|Put oven paper on the tray.|Lege Backpapier auf das Blech.
+oven tray|Backblech|The cookies are on the oven tray.|Die Kekse liegen auf dem Backblech.
+pan|Pfanne, Topf|Heat the oil in the pan.|Erhitze das Öl in der Pfanne.
+peel|schälen; Schale|Peel the potatoes, please.|Schäle bitte die Kartoffeln.
+pot holder|Topflappen|Use the pot holder to lift the pot.|Benutze den Topflappen, um den Topf anzuheben.
+refrigerator|Kühlschrank|The milk is in the refrigerator.|Die Milch steht im Kühlschrank.
+rolling pin|Nudelholz, Teigrolle|Roll out the dough with a rolling pin.|Rolle den Teig mit einem Nudelholz aus.
+rubbish bag|Müllbeutel, Müllsack|Take the rubbish bag outside.|Bring den Müllbeutel nach draußen.
+scales|Waage|Weigh the flour on the scales.|Wiege das Mehl auf der Waage ab.
+season|würzen|Season the soup with salt and pepper.|Würze die Suppe mit Salz und Pfeffer.
+vegetable peeler|Gemüseschäler|The vegetable peeler is in the drawer.|Der Gemüseschäler liegt in der Schublade.
+wash|waschen, spülen|Wash your hands before you cook.|Wasche dir vor dem Kochen die Hände.
+washing-up liquid|Spülmittel|We need more washing-up liquid.|Wir brauchen mehr Spülmittel.
+weigh|wiegen|Weigh the sugar first.|Wiege zuerst den Zucker ab.
+whisk (eggs)|Eier verquirlen|Whisk the eggs with a fork.|Verquirle die Eier mit einer Gabel.
+whisk|Schneebesen; schlagen|Use a whisk to beat the cream.|Schlage die Sahne mit einem Schneebesen.
+tap|Wasserhahn|Turn off the tap, please.|Dreh bitte den Wasserhahn zu.
+tea towel|Geschirrtuch|Dry the glasses with a tea towel.|Trockne die Gläser mit einem Geschirrtuch ab.
+timer|Küchenwecker, Zeitschaltuhr|Set the timer for ten minutes.|Stell den Küchenwecker auf zehn Minuten.
+toast|Toast|I have toast and jam for breakfast.|Zum Frühstück esse ich Toast mit Marmelade.
+toaster|Toaster|The toaster is on the counter.|Der Toaster steht auf der Arbeitsplatte.
+armchair||My grandfather sits in his armchair.|Mein Großvater sitzt in seinem Sessel.
+armrest||I put my cup on the armrest.|Ich stelle meine Tasse auf die Armlehne.
+base|Sockel, Fuß, Untergestell|The lamp has a heavy base.|Die Lampe hat einen schweren Fuß.
+bookcase|Bücherregal|The bookcase is full of old books.|Das Bücherregal ist voller alter Bücher.
+bottle|Flasche|Put the bottle of water on the table.|Stell die Wasserflasche auf den Tisch.
+bowl|Schüssel, Schale|She fills the bowl with fruit.|Sie füllt die Schale mit Obst.
+cabinet|Schrank, Vitrine|The glasses are in the glass cabinet.|Die Gläser stehen in der Vitrine.
+candle|Kerze|We light a candle at dinner.|Wir zünden beim Abendessen eine Kerze an.
+carpet|Teppich, Teppichboden|The carpet in the living room is soft.|Der Teppich im Wohnzimmer ist weich.
+central stand|Mittelfuß, Ständer|The table has a central stand.|Der Tisch hat einen Mittelfuß.
+coffee table|Couchtisch|The magazines are on the coffee table.|Die Zeitschriften liegen auf dem Couchtisch.
+cup|Tasse|Would you like a cup of tea?|Möchtest du eine Tasse Tee?
+curtain|Vorhang, Gardine|Close the curtain; the sun is too bright.|Zieh den Vorhang zu; die Sonne ist zu hell.
+cushion|Kissen, Sofakissen|The red cushion is on the sofa.|Das rote Kissen liegt auf dem Sofa.
+cutlery|Besteck|Put the cutlery on the table.|Lege das Besteck auf den Tisch.
+dish|Schüssel, Gericht, Teller|Please carry the dish to the table.|Bitte trag die Schüssel zum Tisch.
+fireplace|Kamin|We sit by the fireplace in winter.|Im Winter sitzen wir am Kamin.
+foot-stool|Fußhocker|Put your feet on the foot-stool.|Leg die Füße auf den Fußhocker.
+fork|Gabel|I need a knife and a fork.|Ich brauche ein Messer und eine Gabel.
+glass|Glas|He drinks a glass of milk.|Er trinkt ein Glas Milch.
+jug|Krug, Kanne|The jug is full of lemonade.|Der Krug ist voll Limonade.
+lamp|Lampe|Switch on the lamp, please.|Mach bitte die Lampe an.
+lampshade|Lampenschirm|The lampshade is blue.|Der Lampenschirm ist blau.
+light bulb|Glühbirne|The light bulb is broken.|Die Glühbirne ist kaputt.
+magazine rack|Zeitschriftenständer|The magazine rack is next to the sofa.|Der Zeitschriftenständer steht neben dem Sofa.
+mug|Becher, Tasse|My favourite mug is yellow.|Mein Lieblingsbecher ist gelb.
+napkin|Serviette|Use a napkin, please.|Nimm bitte eine Serviette.
+ornament|Zierstück, Dekoration|There is a small ornament on the shelf.|Auf dem Regal steht eine kleine Dekofigur.
+parquet|Parkett|We have a parquet floor.|Wir haben einen Parkettboden.
+photo-frame|Bilderrahmen, Fotorahmen|The photo-frame is on the piano.|Der Bilderrahmen steht auf dem Klavier.
+picture|Bild|A big picture hangs above the sofa.|Ein großes Bild hängt über dem Sofa.
+plant|Pflanze|The plant needs more water.|Die Pflanze braucht mehr Wasser.
+plant pot|Blumentopf|The plant pot is on the windowsill.|Der Blumentopf steht auf der Fensterbank.
+plate|Teller|Please put a plate on the table.|Bitte stell einen Teller auf den Tisch.
+plug|Stecker, Steckdose|The plug is in the wall.|Der Stecker steckt in der Wand.
+remote control|Fernbedienung|Where is the remote control?|Wo ist die Fernbedienung?
+rug|Teppich, Vorleger|The cat sleeps on the rug.|Die Katze schläft auf dem Teppich.
+shelf|Regal, Regalbrett|The books are on the top shelf.|Die Bücher stehen im obersten Regal.
+vase of flowers|Blumenvase|A vase of flowers stands on the table.|Eine Vase mit Blumen steht auf dem Tisch.
+wallpaper|Tapete|The wallpaper has a pattern of stars.|Die Tapete hat ein Sternenmuster.
+table|Tisch|We eat at the round table.|Wir essen am runden Tisch.
+tablecloth|Tischdecke|The tablecloth is white.|Die Tischdecke ist weiß.
+teaspoon|Teelöffel|Add one teaspoon of sugar.|Gib einen Teelöffel Zucker dazu.
+television|Fernseher, Fernsehen|The television is too loud.|Der Fernseher ist zu laut.
+alarm clock||My alarm clock rings at seven.|Mein Wecker klingelt um sieben.
+bath|Bad, Badewanne|I take a bath on Sunday evenings.|Sonntagabends nehme ich ein Bad.
+bathrobe|Bademantel|He wears a bathrobe after the shower.|Er trägt nach dem Duschen einen Bademantel.
+bed|Bett|The bed is big and soft.|Das Bett ist groß und weich.
+bedside mat|Bettvorleger|The bedside mat is warm for my feet.|Der Bettvorleger ist schön warm für meine Füße.
+bedside table|Nachttisch|My book is on the bedside table.|Mein Buch liegt auf dem Nachttisch.
+blanket|Decke, Wolldecke|She covers the baby with a blanket.|Sie deckt das Baby mit einer Decke zu.
+brush|Bürste, Pinsel|Use a brush for your hair.|Benutze eine Bürste für deine Haare.
+brush one's hair|sich die Haare bürsten|I brush my hair every morning.|Ich bürste mir jeden Morgen die Haare.
+brush one's teeth|sich die Zähne putzen|Brush your teeth twice a day.|Putz dir zweimal am Tag die Zähne.
+chest of drawers|Kommode|My socks are in the chest of drawers.|Meine Socken liegen in der Kommode.
+coat hanger|Kleiderbügel|Hang the shirt on a coat hanger.|Häng das Hemd auf einen Kleiderbügel.
+cold water|kaltes Wasser|Cold water wakes me up.|Kaltes Wasser macht mich wach.
+comb|Kamm|Use a comb for your curly hair.|Benutze einen Kamm für deine Locken.
+conditioner|Spülung, Haarspülung|After shampoo, I use conditioner.|Nach dem Shampoo benutze ich Spülung.
+daily routine|Tagesablauf|My daily routine starts at six.|Mein Tagesablauf beginnt um sechs.
+dream|Traum; träumen|I had a strange dream last night.|Ich hatte letzte Nacht einen seltsamen Traum.
+dressing gown|Morgenmantel|Mum wears a dressing gown at breakfast.|Mama trägt beim Frühstück einen Morgenmantel.
+dry one's hair|sich die Haare trocknen|I dry my hair with a towel.|Ich trockne mir die Haare mit einem Handtuch.
+get up|aufstehen|I get up at half past six.|Ich stehe um halb sieben auf.
+hairdryer|Haartrockner, Föhn|The hairdryer is very loud.|Der Föhn ist sehr laut.
+have a bath|ein Bad nehmen|I have a bath when I am cold.|Ich nehme ein Bad, wenn mir kalt ist.
+have a shower|duschen|He has a shower every morning.|Er duscht jeden Morgen.
+have a wash|sich waschen|Have a wash before dinner.|Wasch dich vor dem Abendessen.
+hot water|heißes Wasser|There is no hot water today.|Heute gibt es kein heißes Wasser.
+lightweight blanket|leichte Decke|In summer I use a lightweight blanket.|Im Sommer benutze ich eine leichte Decke.
+mat|Matte, Vorleger|Stand on the mat, please.|Stell dich bitte auf die Matte.
+mattress|Matratze|This mattress is very comfortable.|Diese Matratze ist sehr bequem.
+mirror|Spiegel|She looks at herself in the mirror.|Sie betrachtet sich im Spiegel.
+nail file|Nagelfeile|She files her nails with a nail file.|Sie feilt ihre Nägel mit einer Nagelfeile.
+nail scissors|Nagelschere|Use the nail scissors for your nails.|Benutze die Nagelschere für deine Nägel.
+nightdress|Nachthemd|She sleeps in a long nightdress.|Sie schläft in einem langen Nachthemd.
+personal items|persönliche Gegenstände|Please take your personal items with you.|Bitte nimm deine persönlichen Sachen mit.
+pillow|Kopfkissen, Kissen|I need a softer pillow.|Ich brauche ein weicheres Kissen.
+pillowcase|Kopfkissenbezug|The pillowcase is clean.|Der Kopfkissenbezug ist sauber.
+put on make-up|sich schminken|She puts on make-up before the party.|Sie schminkt sich vor der Party.
+pyjamas|Schlafanzug, Pyjama|The children are already in their pyjamas.|Die Kinder sind schon im Schlafanzug.
+quilt|Steppdecke, Bettdecke|The quilt keeps me warm.|Die Bettdecke hält mich warm.
+quilt cover|Bettbezug|Change the quilt cover every week.|Wechsle jede Woche den Bettbezug.
+razor|Rasierer|Dad uses a razor every morning.|Papa benutzt jeden Morgen einen Rasierer.
+shampoo|Shampoo|This shampoo smells of apples.|Dieses Shampoo riecht nach Äpfeln.
+shave|sich rasieren|He shaves before work.|Er rasiert sich vor der Arbeit.
+shaving cream|Rasiercreme, Rasierschaum|Put shaving cream on your face.|Trag Rasiercreme auf dein Gesicht auf.
+sheet|Bettlaken, Laken|The sheet is blue and white.|Das Laken ist blau-weiß.
+wake up|aufwachen|I wake up when the sun rises.|Ich wache auf, wenn die Sonne aufgeht.
+wardrobe/closet|Kleiderschrank|My clothes are in the wardrobe.|Meine Kleidung hängt im Kleiderschrank.
+wash basin|Waschbecken|The wash basin is white.|Das Waschbecken ist weiß.
+washing basket|Wäschekorb|Put your dirty socks in the washing basket.|Wirf deine schmutzigen Socken in den Wäschekorb.
+toilet|Toilette|The toilet is down the hall.|Die Toilette ist am Ende des Flurs.
+toilet paper|Toilettenpapier|We need more toilet paper.|Wir brauchen mehr Toilettenpapier.
+toothbrush|Zahnbürste|My toothbrush is green.|Meine Zahnbürste ist grün.
+toothpaste|Zahnpasta|The toothpaste tastes of mint.|Die Zahnpasta schmeckt nach Minze.
+towel|Handtuch|Take a clean towel from the shelf.|Nimm ein sauberes Handtuch aus dem Regal.
+tweezers|Pinzette|She uses tweezers for the splinter.|Sie benutzt eine Pinzette für den Splitter.
+adult||An adult must come with the children.|Ein Erwachsener muss mit den Kindern kommen.
+aunt||My aunt lives in London.|Meine Tante wohnt in London.
+baby|Baby, Säugling|The baby is sleeping.|Das Baby schläft.
+birthday card|Geburtstagskarte|I wrote a birthday card for Grandma.|Ich habe Oma eine Geburtstagskarte geschrieben.
+birthday party|Geburtstagsparty|The birthday party starts at three.|Die Geburtstagsparty beginnt um drei.
+boy|Junge|The boy plays football.|Der Junge spielt Fußball.
+boyfriend|(fester) Freund|Her boyfriend is very kind.|Ihr Freund ist sehr nett.
+bride|Braut|The bride wears a white dress.|Die Braut trägt ein weißes Kleid.
+brother|Bruder|My brother is two years older than me.|Mein Bruder ist zwei Jahre älter als ich.
+cake|Kuchen, Torte|Grandma bakes a chocolate cake.|Oma backt einen Schokoladenkuchen.
+child|Kind|Every child gets a present.|Jedes Kind bekommt ein Geschenk.
+children|Kinder|The children are in the garden.|Die Kinder sind im Garten.
+couple|Paar|The couple is dancing.|Das Paar tanzt.
+cousin|Cousin, Cousine|My cousin is coming to visit.|Mein Cousin kommt zu Besuch.
+cousins|Cousins, Cousinen|My cousins live in Spain.|Meine Cousins leben in Spanien.
+daughter|Tochter|Their daughter is five years old.|Ihre Tochter ist fünf Jahre alt.
+elderly person|älterer Mensch|Please help the elderly person with the bag.|Bitte hilf der älteren Person mit der Tasche.
+fall in love|sich verlieben|They fell in love in Paris.|Sie haben sich in Paris verliebt.
+family|Familie|We are a big family.|Wir sind eine große Familie.
+father/dad|Vater, Papa|My dad cooks dinner.|Mein Papa kocht das Abendessen.
+get engaged|sich verloben|They got engaged in June.|Sie haben sich im Juni verlobt.
+get married|heiraten|They get married next summer.|Sie heiraten nächsten Sommer.
+girl|Mädchen|The girl is reading a book.|Das Mädchen liest ein Buch.
+girlfriend|(feste) Freundin|His girlfriend plays the violin.|Seine Freundin spielt Geige.
+grandfather/granddad|Großvater, Opa|My granddad tells funny stories.|Mein Opa erzählt lustige Geschichten.
+grandmother/grandma|Großmutter, Oma|Grandma makes the best soup.|Oma macht die beste Suppe.
+grandparents|Großeltern|My grandparents live in the country.|Meine Großeltern leben auf dem Land.
+groom|Bräutigam|The groom smiles at the bride.|Der Bräutigam lächelt die Braut an.
+husband|Ehemann, Mann|Her husband is a pilot.|Ihr Mann ist Pilot.
+man|Mann|The man is waiting at the bus stop.|Der Mann wartet an der Bushaltestelle.
+Mark|Mark (Vorname)|Mark is my best friend.|Mark ist mein bester Freund.
+mother/mum|Mutter, Mama|My mum works at a hospital.|Meine Mama arbeitet in einem Krankenhaus.
+parents|Eltern|My parents are at work.|Meine Eltern sind bei der Arbeit.
+present|Geschenk|I bought a present for my sister.|Ich habe ein Geschenk für meine Schwester gekauft.
+relatives|Verwandte|All our relatives come to the party.|Alle unsere Verwandten kommen zur Party.
+wife|Ehefrau, Frau|His wife is a teacher.|Seine Frau ist Lehrerin.
+woman|Frau|The woman has a red bag.|Die Frau hat eine rote Tasche.
+teenager|Teenager, Jugendlicher|My brother is a teenager.|Mein Bruder ist ein Teenager.
+uncle|Onkel|My uncle has a big car.|Mein Onkel hat ein großes Auto.
+uncle and aunt|Onkel und Tante|My uncle and aunt live next door.|Mein Onkel und meine Tante wohnen nebenan.
+accessories for the dog||We buy accessories for the dog.|Wir kaufen Zubehör für den Hund.
+basin|Becken, Schüssel, Waschbecken|Fill the basin with warm water.|Fülle die Schüssel mit warmem Wasser.
+broom|Besen|Sweep the floor with the broom.|Fege den Boden mit dem Besen.
+bucket|Eimer|I fill the bucket with water.|Ich fülle den Eimer mit Wasser.
+change the lightbulb|die Glühbirne wechseln|Dad changes the lightbulb in the hall.|Papa wechselt die Glühbirne im Flur.
+clean|sauber, putzen|Please clean your room.|Bitte putz dein Zimmer.
+clean the windows|die Fenster putzen|We clean the windows in spring.|Wir putzen im Frühling die Fenster.
+clear the table|den Tisch abräumen|After dinner I clear the table.|Nach dem Essen räume ich den Tisch ab.
+close the window|das Fenster schließen|Close the window; it's cold.|Schließ das Fenster; es ist kalt.
+clothes airer|Wäscheständer|The socks are on the clothes airer.|Die Socken hängen auf dem Wäscheständer.
+collar|Halsband; Kragen|The dog has a red collar.|Der Hund hat ein rotes Halsband.
+do the shopping|einkaufen gehen|I do the shopping on Saturdays.|Ich gehe samstags einkaufen.
+do the washing up|abspülen, Geschirr spülen|Who does the washing up today?|Wer spült heute das Geschirr?
+dry|trocknen; trocken|Dry the dishes with a cloth.|Trockne das Geschirr mit einem Tuch ab.
+dust|Staub; Staub wischen|There is dust on the shelf.|Auf dem Regal liegt Staub.
+duster|Staubwedel, Staubtuch|Use a duster for the shelves.|Benutze ein Staubtuch für die Regale.
+dustpan|Kehrschaufel|Sweep the crumbs into the dustpan.|Fege die Krümel auf die Kehrschaufel.
+feed the dog|den Hund füttern|My sister feeds the dog.|Meine Schwester füttert den Hund.
+fold|falten, zusammenlegen|Fold the towels, please.|Lege bitte die Handtücher zusammen.
+hand wash|mit der Hand waschen|I hand wash my wool sweater.|Ich wasche meinen Wollpullover mit der Hand.
+hang out the washing|die Wäsche aufhängen|Mum hangs out the washing in the garden.|Mama hängt die Wäsche im Garten auf.
+household items|Haushaltsgegenstände|The shop sells household items.|Das Geschäft verkauft Haushaltswaren.
+housework|Hausarbeit|We share the housework.|Wir teilen uns die Hausarbeit.
+iron|bügeln; Bügeleisen|I iron my shirt every morning.|Ich bügele jeden Morgen mein Hemd.
+ironing board|Bügelbrett|Put the ironing board in the corner.|Stell das Bügelbrett in die Ecke.
+kennel|Hundehütte|The dog sleeps in the kennel.|Der Hund schläft in der Hundehütte.
+lay the table|den Tisch decken|Please lay the table for four.|Bitte deck den Tisch für vier Personen.
+lead|Leine|Take the lead when you go out.|Nimm die Leine mit, wenn du rausgehst.
+light the hob|das Kochfeld anzünden|He lights the hob with a match.|Er zündet das Kochfeld mit einem Streichholz an.
+load the dishwasher|die Spülmaschine einräumen|I load the dishwasher after lunch.|Ich räume nach dem Mittagessen die Spülmaschine ein.
+load the washing machine|die Waschmaschine befüllen|She loads the washing machine.|Sie befüllt die Waschmaschine.
+make the bed|das Bett machen|Make your bed every morning.|Mach jeden Morgen dein Bett.
+open the window|das Fenster öffnen|Open the window; the air is stuffy.|Öffne das Fenster; die Luft ist stickig.
+peg|Wäscheklammer|Use a peg for the sock.|Nimm eine Wäscheklammer für die Socke.
+pick up|aufheben, aufsammeln|Please pick up your clothes.|Bitte heb deine Kleidung auf.
+plug in|einstecken|Plug in the vacuum cleaner.|Steck den Staubsauger ein.
+repair|reparieren|Dad repairs the old chair.|Papa repariert den alten Stuhl.
+rubber gloves|Gummihandschuhe|I wear rubber gloves when I clean.|Beim Putzen trage ich Gummihandschuhe.
+sew|nähen|Grandma sews a new dress.|Oma näht ein neues Kleid.
+sew on a button|einen Knopf annähen|Can you sew on a button?|Kannst du einen Knopf annähen?
+vacuum|staubsaugen|I vacuum the carpet on Fridays.|Freitags sauge ich den Teppich.
+vacuum cleaner|Staubsauger|The vacuum cleaner is very noisy.|Der Staubsauger ist sehr laut.
+wash the floor|den Boden wischen|We wash the floor on Saturdays.|Samstags wischen wir den Boden.
+sweep|fegen, kehren|Sweep the leaves from the path.|Fege die Blätter vom Weg.
+take the dog out|den Hund ausführen|I take the dog out after school.|Nach der Schule gehe ich mit dem Hund raus.
+take the rubbish out|den Müll rausbringen|He takes the rubbish out every evening.|Er bringt jeden Abend den Müll raus.
+tidy up|aufräumen|Tidy up your room, please.|Räum bitte dein Zimmer auf.
+unplug|ausstecken, den Stecker ziehen|Unplug the iron when you finish.|Zieh den Stecker des Bügeleisens, wenn du fertig bist.
+automatic grasscutter||The automatic grasscutter works alone.|Der Mähroboter arbeitet allein.
+bark|Rinde, Baumrinde|The bark of the old tree is rough.|Die Rinde des alten Baums ist rau.
+branch|Ast, Zweig|A bird sits on the branch.|Ein Vogel sitzt auf dem Ast.
+bud|Knospe|The first bud opens in March.|Die erste Knospe öffnet sich im März.
+bush|Busch, Strauch|There is a nest in the bush.|In dem Busch ist ein Nest.
+cactus|Kaktus|A cactus needs very little water.|Ein Kaktus braucht sehr wenig Wasser.
+carnation|Nelke|She wears a red carnation.|Sie trägt eine rote Nelke.
+chrysanthemum|Chrysantheme|Chrysanthemums bloom in autumn.|Chrysanthemen blühen im Herbst.
+composter|Komposter|Vegetable peel goes in the composter.|Gemüseschalen kommen in den Komposter.
+crate|Kiste, Steige|The apples are in a wooden crate.|Die Äpfel liegen in einer Holzkiste.
+cut the grass|den Rasen mähen|Dad cuts the grass on Saturdays.|Papa mäht samstags den Rasen.
+daffodil|Osterglocke, Narzisse|Yellow daffodils are a sign of spring.|Gelbe Osterglocken sind ein Zeichen für den Frühling.
+fertilizer|Dünger|The roses need some fertilizer.|Die Rosen brauchen etwas Dünger.
+flower|Blume, Blüte|She picks a flower for her mum.|Sie pflückt eine Blume für ihre Mama.
+flowerbed|Blumenbeet|The flowerbed is full of tulips.|Das Blumenbeet ist voller Tulpen.
+flowerbeds|Blumenbeete|There are two flowerbeds in the garden.|Im Garten gibt es zwei Blumenbeete.
+flowers|Blumen|We bought flowers for Grandma.|Wir haben Blumen für Oma gekauft.
+gardener|Gärtner, Gärtnerin|The gardener plants new trees.|Der Gärtner pflanzt neue Bäume.
+gardening|Gartenarbeit, Gärtnern|Gardening is my grandma's hobby.|Gärtnern ist das Hobby meiner Oma.
+gardening gloves|Gartenhandschuhe|Wear gardening gloves for the thorns.|Trag Gartenhandschuhe wegen der Dornen.
+grass|Gras|The children sit on the grass.|Die Kinder sitzen im Gras.
+greenhouse|Gewächshaus|Tomatoes grow in the greenhouse.|Tomaten wachsen im Gewächshaus.
+hedge|Hecke|The hedge is green all year.|Die Hecke ist das ganze Jahr grün.
+hoe|Hacke|He loosens the soil with a hoe.|Er lockert die Erde mit einer Hacke.
+hosepipe|Gartenschlauch|Use the hosepipe to water the lawn.|Benutze den Gartenschlauch, um den Rasen zu gießen.
+hyacinth|Hyazinthe|The hyacinth smells wonderful.|Die Hyazinthe duftet wunderbar.
+iris|Schwertlilie, Iris|A blue iris grows by the pond.|Eine blaue Schwertlilie wächst am Teich.
+ladder|Leiter|Dad climbs the ladder to pick cherries.|Papa steigt auf die Leiter, um Kirschen zu pflücken.
+lawn|Rasen|The lawn is wet after the rain.|Der Rasen ist nach dem Regen nass.
+lawnmower|Rasenmäher|The lawnmower is in the tool shed.|Der Rasenmäher steht im Geräteschuppen.
+leaf|Blatt|A red leaf falls from the tree.|Ein rotes Blatt fällt vom Baum.
+orchard|Obstgarten|Apples grow in the orchard.|Im Obstgarten wachsen Äpfel.
+path|Weg, Pfad|The path leads to the pond.|Der Weg führt zum Teich.
+pebbles|Kieselsteine|We collect pebbles by the river.|Wir sammeln Kieselsteine am Fluss.
+petal|Blütenblatt|The wind blows the petals away.|Der Wind weht die Blütenblätter fort.
+pond|Teich|There are goldfish in the pond.|Im Teich schwimmen Goldfische.
+pot|Topf, Blumentopf|Put the plant in a bigger pot.|Setz die Pflanze in einen größeren Topf.
+rake|Rechen, Harke|Take a rake and clean the lawn.|Nimm einen Rechen und säubere den Rasen.
+rake the leaves|das Laub zusammenrechen|We rake the leaves in autumn.|Im Herbst rechen wir das Laub zusammen.
+root|Wurzel|The roots of the tree are deep.|Die Wurzeln des Baums sind tief.
+rose|Rose|The rose has a lovely smell.|Die Rose hat einen herrlichen Duft.
+seed|Samen, Korn|Plant the seed in the soil.|Pflanze den Samen in die Erde.
+shears|Gartenschere, Heckenschere|Cut the hedge with the shears.|Schneide die Hecke mit der Heckenschere.
+water|Wasser; gießen|Water the plants every morning.|Gieße die Pflanzen jeden Morgen.
+watering can|Gießkanne|She fills the watering can at the tap.|Sie füllt die Gießkanne am Wasserhahn.
+waterlily|Seerose|A pink waterlily floats on the pond.|Eine rosa Seerose schwimmt auf dem Teich.
+wheel barrow|Schubkarre|He carries the soil in a wheel barrow.|Er trägt die Erde in einer Schubkarre.
+thorn|Dorn, Stachel|The rose has sharp thorns.|Die Rose hat scharfe Dornen.
+tool shed|Geräteschuppen|The spade is in the tool shed.|Der Spaten steht im Geräteschuppen.
+tree|Baum|We sit under the old tree.|Wir sitzen unter dem alten Baum.
+trowel|Pflanzkelle, Handschaufel|Dig a hole with the trowel.|Grab mit der Pflanzkelle ein Loch.
+trunk|Stamm, Baumstamm|The trunk is very thick.|Der Stamm ist sehr dick.
+tulip|Tulpe|The tulip is red and yellow.|Die Tulpe ist rot und gelb.
+alley||The cat walks down the narrow alley.|Die Katze läuft durch die schmale Gasse.
+avenue||Tall trees stand along the avenue.|Hohe Bäume stehen entlang der Allee.
+bank|Bank|I go to the bank on Monday.|Ich gehe am Montag zur Bank.
+bench|Bank, Sitzbank|We sit on a bench in the park.|Wir sitzen auf einer Bank im Park.
+bike-share parking|Fahrradverleihstation|Leave the bike at the bike-share parking.|Stell das Fahrrad an der Fahrradverleihstation ab.
+bridge|Brücke|The bridge goes over the river.|Die Brücke führt über den Fluss.
+building|Gebäude|The old building is a library.|Das alte Gebäude ist eine Bibliothek.
+bus stop|Bushaltestelle|I wait at the bus stop.|Ich warte an der Bushaltestelle.
+café|Café|We meet in a small café.|Wir treffen uns in einem kleinen Café.
+canal|Kanal|Boats float on the canal.|Boote fahren auf dem Kanal.
+car park|Parkplatz, Parkhaus|The car park is full.|Der Parkplatz ist voll.
+cashpoint|Geldautomat|I get money from the cashpoint.|Ich hole Geld am Geldautomaten.
+cinema|Kino|Let's go to the cinema tonight.|Lass uns heute Abend ins Kino gehen.
+city|Stadt, Großstadt|London is a big city.|London ist eine große Stadt.
+city centre|Stadtzentrum, Innenstadt|The shops are in the city centre.|Die Geschäfte sind in der Innenstadt.
+city hall|Rathaus|The mayor works in the city hall.|Der Bürgermeister arbeitet im Rathaus.
+crossroads|Kreuzung|Turn left at the crossroads.|Biege an der Kreuzung links ab.
+cycle path|Radweg|The cycle path is safe for children.|Der Radweg ist sicher für Kinder.
+disabled parking|Behindertenparkplatz|This is a disabled parking space.|Das ist ein Behindertenparkplatz.
+fountain|Brunnen|Children play near the fountain.|Kinder spielen am Brunnen.
+gate|Tor, Gartentor|Please close the gate.|Bitte schließ das Tor.
+hospital|Krankenhaus|My aunt works in the hospital.|Meine Tante arbeitet im Krankenhaus.
+hotel|Hotel|We stay at a hotel by the sea.|Wir wohnen in einem Hotel am Meer.
+industrial estate|Industriegebiet, Gewerbegebiet|The factory is on the industrial estate.|Die Fabrik liegt im Industriegebiet.
+library|Bibliothek, Bücherei|I borrow books from the library.|Ich leihe Bücher aus der Bibliothek aus.
+metropolis|Metropole, Großstadt|Tokyo is a huge metropolis.|Tokio ist eine riesige Metropole.
+monument|Denkmal|The monument is in the main square.|Das Denkmal steht auf dem Hauptplatz.
+museum|Museum|The museum opens at ten.|Das Museum öffnet um zehn.
+park|Park|We have a picnic in the park.|Wir machen ein Picknick im Park.
+parking meter|Parkscheinautomat|Put a coin in the parking meter.|Wirf eine Münze in den Parkscheinautomaten.
+pavement|Bürgersteig, Gehweg|Walk on the pavement.|Geh auf dem Bürgersteig.
+pedestrian crossing|Fußgängerüberweg|Cross at the pedestrian crossing.|Überquere die Straße am Fußgängerüberweg.
+pedestrian zone|Fußgängerzone|There are many shops in the pedestrian zone.|In der Fußgängerzone gibt es viele Geschäfte.
+police station|Polizeiwache|The police station is next to the bank.|Die Polizeiwache liegt neben der Bank.
+post office|Postamt, Post|I send the letter at the post office.|Ich schicke den Brief auf der Post ab.
+residential area|Wohngebiet|They live in a quiet residential area.|Sie wohnen in einem ruhigen Wohngebiet.
+restaurant|Restaurant|We eat at an Italian restaurant.|Wir essen in einem italienischen Restaurant.
+road sign|Verkehrsschild|The road sign says stop.|Das Verkehrsschild zeigt Stopp.
+roundabout|Kreisverkehr|Take the second exit at the roundabout.|Nimm im Kreisverkehr die zweite Ausfahrt.
+rubbish bin|Mülleimer|Put the paper in the rubbish bin.|Wirf das Papier in den Mülleimer.
+urban centres|Stadtzentren|Urban centres are very busy.|Stadtzentren sind sehr belebt.
+urban spaces|städtische Räume|Parks are important urban spaces.|Parks sind wichtige städtische Räume.
+videocamera|Videokamera, Überwachungskamera|A videocamera watches the entrance.|Eine Kamera überwacht den Eingang.
+village|Dorf|My grandparents live in a small village.|Meine Großeltern leben in einem kleinen Dorf.
+taxi rank|Taxistand|Wait at the taxi rank.|Warte am Taxistand.
+theatre|Theater|We watch a play at the theatre.|Wir sehen uns ein Stück im Theater an.
+town|Stadt, Kleinstadt|Our town has a market on Fridays.|Unsere Stadt hat freitags einen Markt.
+traffic lights|Ampel|Stop at the red traffic lights.|Halte an der roten Ampel an.
+tram|Straßenbahn|The tram stops here.|Die Straßenbahn hält hier.
+underground|U-Bahn|I take the underground to work.|Ich fahre mit der U-Bahn zur Arbeit.
+university|Universität|She studies biology at university.|Sie studiert Biologie an der Universität.
+Art||My favourite lesson is Art.|Mein Lieblingsfach ist Kunst.
+author||The author signs her new book.|Die Autorin signiert ihr neues Buch.
+blackboard|Tafel, Schultafel|The teacher writes on the blackboard.|Der Lehrer schreibt an die Tafel.
+book|Buch|I read a book every week.|Ich lese jede Woche ein Buch.
+calculator|Taschenrechner|Use a calculator for this sum.|Benutze für diese Aufgabe einen Taschenrechner.
+calendar|Kalender|Look at the calendar for the date.|Sieh im Kalender nach dem Datum.
+canteen|Kantine, Mensa|We have lunch in the canteen.|Wir essen in der Kantine zu Mittag.
+Chemistry|Chemie|In Chemistry we do experiments.|In Chemie machen wir Experimente.
+classroom|Klassenzimmer|The classroom is on the first floor.|Das Klassenzimmer ist im ersten Stock.
+clock|Uhr, Wanduhr|The clock on the wall is fast.|Die Uhr an der Wand geht vor.
+coloured pencil|Buntstift|I draw with a coloured pencil.|Ich zeichne mit einem Buntstift.
+compass|Zirkel, Kompass|Draw a circle with a compass.|Zeichne mit einem Zirkel einen Kreis.
+computer|Computer|The computer is in the corner.|Der Computer steht in der Ecke.
+cover|Umschlag, Einband|The book has a blue cover.|Das Buch hat einen blauen Einband.
+desk|Schreibtisch, Pult|My desk is next to the window.|Mein Pult steht neben dem Fenster.
+felt-tip pen|Filzstift|Write the title with a felt-tip pen.|Schreibe den Titel mit einem Filzstift.
+Foreign languages|Fremdsprachen|I like foreign languages.|Ich mag Fremdsprachen.
+Geography|Erdkunde, Geografie|In Geography we study maps.|In Erdkunde lernen wir Karten.
+globe|Globus|Find Germany on the globe.|Finde Deutschland auf dem Globus.
+glue|Klebstoff, Kleber|I need glue for my project.|Ich brauche Kleber für mein Projekt.
+gym|Turnhalle, Fitnessstudio|We play basketball in the gym.|Wir spielen in der Turnhalle Basketball.
+highlighter|Textmarker|Use a highlighter for key words.|Benutze einen Textmarker für Schlüsselwörter.
+History|Geschichte (Fach)|History is about the past.|Geschichte handelt von der Vergangenheit.
+I.T. (Information Technology)|Informatik, IT|I.T. is my favourite subject.|Informatik ist mein Lieblingsfach.
+interactive whiteboard|interaktives Whiteboard|The teacher uses an interactive whiteboard.|Der Lehrer benutzt ein interaktives Whiteboard.
+laboratory|Labor|The experiment is in the laboratory.|Das Experiment findet im Labor statt.
+locker|Schließfach, Spind|My jacket is in my locker.|Meine Jacke ist in meinem Spind.
+Maths|Mathe, Mathematik|Maths is easy for me.|Mathe fällt mir leicht.
+music|Musik|We sing in music lessons.|Im Musikunterricht singen wir.
+notebook|Heft, Notizbuch|Write the words in your notebook.|Schreib die Wörter in dein Heft.
+P.E. (Physical Education)|Sport, Sportunterricht|We have P.E. on Tuesday.|Wir haben dienstags Sport.
+page|Seite|Open your book at page ten.|Schlag dein Buch auf Seite zehn auf.
+paintbrush|Pinsel|Wash the paintbrush in water.|Wasche den Pinsel im Wasser aus.
+pen|Stift, Kugelschreiber|Can I borrow your pen?|Kann ich deinen Stift leihen?
+pencil|Bleistift|Write it in pencil first.|Schreib es zuerst mit Bleistift.
+pencil case|Federmäppchen|My pencil case is full.|Mein Federmäppchen ist voll.
+pencil sharpener|Bleistiftspitzer|The pencil sharpener is on my desk.|Der Bleistiftspitzer liegt auf meinem Pult.
+projector|Beamer, Projektor|The projector shows the film.|Der Beamer zeigt den Film.
+publisher|Verlag, Verleger|The publisher prints new books.|Der Verlag druckt neue Bücher.
+rubber|Radiergummi|I need a rubber to correct this.|Ich brauche einen Radiergummi, um das zu verbessern.
+ruler|Lineal|Draw a line with a ruler.|Zieh mit einem Lineal eine Linie.
+school|Schule|School starts at eight.|Die Schule beginnt um acht.
+school bag|Schultasche|My school bag is heavy.|Meine Schultasche ist schwer.
+school subjects|Schulfächer|Maths and Art are school subjects.|Mathe und Kunst sind Schulfächer.
+Science|Naturwissenschaften|In Science we study plants.|In Naturwissenschaften lernen wir Pflanzen kennen.
+scissors|Schere|Cut the paper with scissors.|Schneide das Papier mit einer Schere.
+set square|Geodreieck, Winkel|Use a set square for the right angle.|Benutze ein Geodreieck für den rechten Winkel.
+sheet of paper|Blatt Papier|Take a sheet of paper.|Nimm ein Blatt Papier.
+watercolours|Wasserfarben|We paint with watercolours.|Wir malen mit Wasserfarben.
+world map|Weltkarte|The world map hangs on the wall.|Die Weltkarte hängt an der Wand.
+tablet|Tablet|The students work on a tablet.|Die Schüler arbeiten an einem Tablet.
+teacher|Lehrer, Lehrerin|Our teacher is very kind.|Unsere Lehrerin ist sehr nett.
+teacher's desk|Lehrerpult|The books are on the teacher's desk.|Die Bücher liegen auf dem Lehrerpult.
+title|Titel|The title of the book is long.|Der Titel des Buches ist lang.
+bag|Tasche, Beutel|She puts her laptop in the bag.|Sie steckt ihren Laptop in die Tasche.
+boss|Chef, Chefin|My boss is friendly.|Mein Chef ist freundlich.
+business card|Visitenkarte|Here is my business card.|Hier ist meine Visitenkarte.
+charger|Ladegerät|I forgot my phone charger.|Ich habe mein Handy-Ladegerät vergessen.
+colleague|Kollege, Kollegin|My colleague helps me with the report.|Meine Kollegin hilft mir mit dem Bericht.
+contract of work|Arbeitsvertrag|She signs the contract of work.|Sie unterschreibt den Arbeitsvertrag.
+CV|Lebenslauf|Send your CV to the company.|Schick deinen Lebenslauf an die Firma.
+delivery man|Lieferant, Zusteller|The delivery man brings a parcel.|Der Zusteller bringt ein Paket.
+director|Direktor, Leiter|The director has a meeting at ten.|Der Direktor hat um zehn eine Besprechung.
+dismissal|Entlassung, Kündigung|The dismissal was a shock.|Die Kündigung war ein Schock.
+document tray|Ablagekorb, Dokumentenablage|Put the letters in the document tray.|Leg die Briefe in den Ablagekorb.
+elastic band|Gummiband|Put an elastic band around the papers.|Binde ein Gummiband um die Papiere.
+email address|E-Mail-Adresse|What is your email address?|Wie lautet deine E-Mail-Adresse?
+envelope|Briefumschlag|Put the letter in an envelope.|Steck den Brief in einen Umschlag.
+folder|Ordner, Mappe|The contracts are in the blue folder.|Die Verträge sind im blauen Ordner.
+food/drinks dispenser|Getränke-/Snackautomat|There is a food/drinks dispenser in the hall.|Im Flur steht ein Snack- und Getränkeautomat.
+hole-punch|Locher|Use a hole-punch for the sheets.|Benutze einen Locher für die Blätter.
+holidays|Urlaub, Ferien|I take my holidays in August.|Ich nehme meinen Urlaub im August.
+job advertisements|Stellenanzeigen|She reads the job advertisements.|Sie liest die Stellenanzeigen.
+logo|Logo|The company logo is green.|Das Firmenlogo ist grün.
+maternity/paternity leave|Elternzeit|He takes paternity leave in May.|Er nimmt im Mai Elternzeit.
+meeting room|Besprechungsraum|The meeting is in the meeting room.|Die Besprechung findet im Besprechungsraum statt.
+memory stick|USB-Stick|Save the file on a memory stick.|Speichere die Datei auf einem USB-Stick.
+mobile phone|Handy|Turn off your mobile phone.|Schalte dein Handy aus.
+office|Büro|My office is on the second floor.|Mein Büro ist im zweiten Stock.
+office chair|Bürostuhl|The office chair is comfortable.|Der Bürostuhl ist bequem.
+office worker|Büroangestellte(r)|An office worker uses a computer all day.|Ein Büroangestellter benutzt den ganzen Tag einen Computer.
+paper clip|Büroklammer|Put a paper clip on the pages.|Steck eine Büroklammer an die Seiten.
+pen holder|Stiftehalter|The pen holder is on the desk.|Der Stiftehalter steht auf dem Schreibtisch.
+photocopier|Kopierer|The photocopier is out of paper.|Dem Kopierer ist das Papier ausgegangen.
+pin|Stecknadel, Pinnnadel|Fix the note with a pin.|Befestige den Zettel mit einer Pinnnadel.
+post-it|Haftnotiz|I wrote a note on a post-it.|Ich habe eine Notiz auf eine Haftnotiz geschrieben.
+postal address|Postanschrift|Write your postal address here.|Schreib hier deine Postanschrift hin.
+printer|Drucker|The printer is broken.|Der Drucker ist kaputt.
+recruitment|Personalsuche, Einstellung|The company starts a recruitment.|Die Firma startet eine Personalsuche.
+retire|in Rente gehen|My dad will retire next year.|Mein Vater geht nächstes Jahr in Rente.
+ring-binder|Ordner, Ringbuch|The papers are in a ring-binder.|Die Blätter sind in einem Ordner.
+safe|Safe, Tresor|The money is in the safe.|Das Geld ist im Tresor.
+salary|Gehalt|Her salary is paid monthly.|Ihr Gehalt wird monatlich gezahlt.
+shelving unit|Regal, Regalsystem|The files are on the shelving unit.|Die Akten stehen im Regalsystem.
+water dispenser|Wasserspender|Fill your bottle at the water dispenser.|Füll deine Flasche am Wasserspender.
+website|Webseite|The company has a new website.|Die Firma hat eine neue Webseite.
+work|Arbeit; arbeiten|I work from nine to five.|Ich arbeite von neun bis fünf.
+telephone|Telefon|The telephone is ringing.|Das Telefon klingelt.
+telephone number|Telefonnummer|What is your telephone number?|Wie lautet deine Telefonnummer?
+beans|Bohnen|We have beans with rice.|Wir essen Bohnen mit Reis.
+beer|Bier|He orders a cold beer.|Er bestellt ein kaltes Bier.
+bill|Rechnung|Could we have the bill, please?|Könnten wir bitte die Rechnung haben?
+bread basket|Brotkorb|The bread basket is on the table.|Der Brotkorb steht auf dem Tisch.
+cheese|Käse|I like cheese on my pizza.|Ich mag Käse auf meiner Pizza.
+chef|Küchenchef, Koch|The chef cooks the fish.|Der Koch brät den Fisch.
+chicken|Hähnchen, Huhn|I'll have the roast chicken.|Ich nehme das Brathähnchen.
+chips|Pommes frites|Fish and chips, please.|Fisch mit Pommes, bitte.
+cocktail|Cocktail|She orders a fruit cocktail.|Sie bestellt einen Fruchtcocktail.
+coffee|Kaffee|A coffee with milk, please.|Einen Kaffee mit Milch, bitte.
+courses|Gänge, Gerichte|The menu has three courses.|Das Menü hat drei Gänge.
+customer|Kunde, Gast|The customer is waiting for the waiter.|Der Gast wartet auf den Kellner.
+dairy products|Milchprodukte|Dairy products are in the fridge.|Milchprodukte sind im Kühlschrank.
+dessert|Nachtisch, Dessert|What is for dessert?|Was gibt es zum Nachtisch?
+desserts|Desserts|The desserts look delicious.|Die Desserts sehen köstlich aus.
+dried fruit|Trockenobst|I eat dried fruit as a snack.|Ich esse Trockenobst als Snack.
+drinks|Getränke|The drinks are on the menu.|Die Getränke stehen auf der Speisekarte.
+eggs|Eier|Scrambled eggs for breakfast, please.|Rührei zum Frühstück, bitte.
+fish|Fisch|The fish is fresh today.|Der Fisch ist heute frisch.
+fruit salad|Obstsalat|The fruit salad has apples and grapes.|Der Obstsalat enthält Äpfel und Trauben.
+green tea|grüner Tee|I prefer green tea.|Ich trinke lieber grünen Tee.
+hamburger|Hamburger|He eats a hamburger with chips.|Er isst einen Hamburger mit Pommes.
+head waiter|Oberkellner|The head waiter shows us our table.|Der Oberkellner zeigt uns unseren Tisch.
+highchair|Kinderhochstuhl|The baby sits in a highchair.|Das Baby sitzt in einem Hochstuhl.
+ice bucket|Eiskühler, Sektkühler|The wine is in an ice bucket.|Der Wein steht in einem Eiskühler.
+ice cream|Eis, Speiseeis|The children want ice cream.|Die Kinder möchten Eis.
+legumes|Hülsenfrüchte|Lentils and peas are legumes.|Linsen und Erbsen sind Hülsenfrüchte.
+main dish|Hauptgericht|The main dish is roast beef.|Das Hauptgericht ist Rinderbraten.
+meat|Fleisch|I don't eat meat.|Ich esse kein Fleisch.
+menu|Speisekarte|Can I see the menu, please?|Kann ich bitte die Speisekarte sehen?
+mousse|Mousse|The chocolate mousse is delicious.|Die Schokoladenmousse ist köstlich.
+oil|Öl|Add a little oil to the salad.|Gib etwas Öl an den Salat.
+pasta|Nudeln, Pasta|We eat pasta on Fridays.|Freitags essen wir Nudeln.
+pepper|Pfeffer; Paprika|Could you pass the pepper?|Könntest du mir den Pfeffer reichen?
+pizza|Pizza|She orders a big pizza.|Sie bestellt eine große Pizza.
+red wine|Rotwein|He drinks a glass of red wine.|Er trinkt ein Glas Rotwein.
+reserved|reserviert|This table is reserved.|Dieser Tisch ist reserviert.
+rice|Reis|The chicken comes with rice.|Das Hähnchen kommt mit Reis.
+salad|Salat|I would like a green salad.|Ich möchte einen grünen Salat.
+salt|Salz|The soup needs more salt.|Die Suppe braucht mehr Salz.
+sauces|Soßen|There are three sauces to choose from.|Es gibt drei Soßen zur Auswahl.
+sausages|Würstchen|The sausages are on the grill.|Die Würstchen liegen auf dem Grill.
+seasonal fruit|Obst der Saison|We serve seasonal fruit.|Wir servieren Obst der Saison.
+vegetables|Gemüse|The vegetables are fresh.|Das Gemüse ist frisch.
+vegetarian menu|vegetarisches Menü|Do you have a vegetarian menu?|Haben Sie ein vegetarisches Menü?
+vinegar|Essig|Add oil and vinegar to the salad.|Gib Öl und Essig an den Salat.
+waiter|Kellner|The waiter brings the soup.|Der Kellner bringt die Suppe.
+white wine|Weißwein|A glass of white wine, please.|Ein Glas Weißwein, bitte.
+wine list|Weinkarte|The waiter brings the wine list.|Der Kellner bringt die Weinkarte.
+tip|Trinkgeld|We leave a tip for the waiter.|Wir geben dem Kellner Trinkgeld.
+air conditioning||The air conditioning cools the room.|Die Klimaanlage kühlt den Raum.
+bar|Bar, Theke|We have a drink at the bar.|Wir trinken etwas an der Bar.
+coffee machine|Kaffeemaschine|The coffee machine is in the lobby.|Die Kaffeemaschine steht in der Lobby.
+conference room|Konferenzraum|The conference room is on the ground floor.|Der Konferenzraum ist im Erdgeschoss.
+do not disturb|Bitte nicht stören|The sign says do not disturb.|Auf dem Schild steht „Bitte nicht stören“.
+double room|Doppelzimmer|We booked a double room.|Wir haben ein Doppelzimmer gebucht.
+electronic key|elektronischer Schlüssel, Schlüsselkarte|Use the electronic key to open the door.|Benutze die Schlüsselkarte, um die Tür zu öffnen.
+fitness room|Fitnessraum|The fitness room is open all day.|Der Fitnessraum ist den ganzen Tag geöffnet.
+guests|Gäste|The hotel has many guests.|Das Hotel hat viele Gäste.
+hotel staff|Hotelpersonal|The hotel staff is very polite.|Das Hotelpersonal ist sehr höflich.
+I.D.|Ausweis|Please show your I.D.|Bitte zeigen Sie Ihren Ausweis.
+items for the shower|Duschutensilien|The hotel gives you items for the shower.|Das Hotel stellt dir Duschutensilien bereit.
+lift|Aufzug, Fahrstuhl|Take the lift to the fifth floor.|Nimm den Aufzug in den fünften Stock.
+luggage|Gepäck|Where is my luggage?|Wo ist mein Gepäck?
+luggage trolley|Gepäckwagen|Put the cases on the luggage trolley.|Stell die Koffer auf den Gepäckwagen.
+maid|Zimmermädchen|The maid cleans the room.|Das Zimmermädchen reinigt das Zimmer.
+manager|Manager, Geschäftsführer|The manager welcomes the guests.|Der Geschäftsführer begrüßt die Gäste.
+mini-bar|Minibar|There are drinks in the mini-bar.|In der Minibar sind Getränke.
+parking space|Parkplatz|Is there a parking space for the car?|Gibt es einen Parkplatz für das Auto?
+porter|Portier, Gepäckträger|The porter carries our bags.|Der Gepäckträger trägt unsere Taschen.
+reception|Rezeption|Ask at reception for the key.|Frag an der Rezeption nach dem Schlüssel.
+receptionist|Rezeptionist(in)|The receptionist speaks three languages.|Die Rezeptionistin spricht drei Sprachen.
+room number|Zimmernummer|Our room number is 214.|Unsere Zimmernummer ist 214.
+rooms|Zimmer|The hotel has fifty rooms.|Das Hotel hat fünfzig Zimmer.
+room service|Zimmerservice|We order breakfast from room service.|Wir bestellen das Frühstück beim Zimmerservice.
+viewing terrace|Aussichtsterrasse|The viewing terrace has a great view.|Die Aussichtsterrasse hat eine tolle Aussicht.
+wellness room|Wellnessbereich|After the walk we relax in the wellness room.|Nach dem Spaziergang entspannen wir im Wellnessbereich.
+Wi-Fi|WLAN|Is there free Wi-Fi in the hotel?|Gibt es im Hotel kostenloses WLAN?
+swimming pool|Schwimmbad, Pool|The swimming pool is on the roof.|Das Schwimmbad ist auf dem Dach.
+towels|Handtücher|Fresh towels are in the bathroom.|Frische Handtücher liegen im Bad.
+twin room|Zweibettzimmer|A twin room has two single beds.|Ein Zweibettzimmer hat zwei Einzelbetten.
+actor||The actor plays a king.|Der Schauspieler spielt einen König.
+architect||The architect draws a new house.|Der Architekt zeichnet ein neues Haus.
+baker|Bäcker, Bäckerin|The baker starts work at four.|Der Bäcker beginnt um vier Uhr zu arbeiten.
+ballerina|Ballerina, Balletttänzerin|The ballerina dances on stage.|Die Ballerina tanzt auf der Bühne.
+beautician|Kosmetiker(in)|The beautician does her nails.|Die Kosmetikerin macht ihre Nägel.
+bodyguard|Leibwächter|A bodyguard protects the singer.|Ein Leibwächter beschützt den Sänger.
+builder|Bauarbeiter, Bauunternehmer|The builder repairs the roof.|Der Bauarbeiter repariert das Dach.
+bus driver|Busfahrer(in)|The bus driver greets us.|Der Busfahrer begrüßt uns.
+carpenter|Tischler, Zimmermann|The carpenter makes a table.|Der Tischler baut einen Tisch.
+child-minder|Tagesmutter, Kinderbetreuer(in)|The child-minder looks after three children.|Die Tagesmutter betreut drei Kinder.
+courier|Kurier|The courier brings a parcel.|Der Kurier bringt ein Paket.
+electrician|Elektriker(in)|The electrician fixes the light.|Der Elektriker repariert das Licht.
+engineer|Ingenieur(in)|The engineer builds bridges.|Die Ingenieurin baut Brücken.
+entrepreneur|Unternehmer(in)|The entrepreneur opens a new shop.|Die Unternehmerin eröffnet ein neues Geschäft.
+estate agent|Immobilienmakler(in)|The estate agent shows us the flat.|Der Makler zeigt uns die Wohnung.
+fireman|Feuerwehrmann|The fireman climbs the ladder.|Der Feuerwehrmann steigt die Leiter hinauf.
+fisherman|Fischer|The fisherman catches fish.|Der Fischer fängt Fische.
+florist|Florist(in), Blumenhändler(in)|The florist makes a bouquet.|Die Floristin bindet einen Strauß.
+hairdresser|Friseur(in)|The hairdresser cuts my hair.|Der Friseur schneidet mir die Haare.
+interpreter|Dolmetscher(in)|The interpreter translates the speech.|Die Dolmetscherin übersetzt die Rede.
+judge|Richter(in)|The judge listens carefully.|Der Richter hört aufmerksam zu.
+labourer|Arbeiter, Hilfsarbeiter|The labourer carries heavy bricks.|Der Arbeiter trägt schwere Ziegel.
+lawyer|Anwalt, Anwältin|The lawyer helps her client.|Die Anwältin hilft ihrem Mandanten.
+librarian|Bibliothekar(in)|The librarian recommends a book.|Die Bibliothekarin empfiehlt ein Buch.
+lifeguard|Bademeister(in), Rettungsschwimmer(in)|The lifeguard watches the swimmers.|Der Bademeister beobachtet die Schwimmer.
+model|Model|The model walks on the catwalk.|Das Model läuft über den Laufsteg.
+musician|Musiker(in)|The musician plays the guitar.|Der Musiker spielt Gitarre.
+needle|Nadel|Thread the needle first.|Fädle zuerst die Nadel ein.
+painter|Maler(in)|The painter paints the wall white.|Der Maler streicht die Wand weiß.
+photographer|Fotograf(in)|The photographer takes a photo.|Der Fotograf macht ein Foto.
+pins|Stecknadeln|The tailor has pins in her mouth.|Die Schneiderin hat Stecknadeln im Mund.
+plumber|Klempner, Installateur|The plumber fixes the tap.|Der Klempner repariert den Wasserhahn.
+police officer|Polizist(in)|The police officer helps the tourists.|Der Polizist hilft den Touristen.
+politician|Politiker(in)|The politician gives a speech.|Der Politiker hält eine Rede.
+post woman|Postbotin|The post woman delivers the letters.|Die Postbotin trägt die Briefe aus.
+professions|Berufe|There are many different professions.|Es gibt viele verschiedene Berufe.
+reporter|Reporter(in)|The reporter asks a question.|Der Reporter stellt eine Frage.
+road sweeper|Straßenkehrer(in)|The road sweeper cleans the street.|Der Straßenkehrer reinigt die Straße.
+safety pin|Sicherheitsnadel|Close it with a safety pin.|Schließe es mit einer Sicherheitsnadel.
+scientist|Wissenschaftler(in)|The scientist works in a laboratory.|Die Wissenschaftlerin arbeitet in einem Labor.
+sculptor|Bildhauer(in)|The sculptor carves a statue.|Der Bildhauer meißelt eine Statue.
+seamstress|Näherin, Schneiderin|The seamstress mends my coat.|Die Näherin flickt meinen Mantel.
+sewing machine|Nähmaschine|She sews the curtain on a sewing machine.|Sie näht den Vorhang mit einer Nähmaschine.
+working people|arbeitende Menschen|Working people need a lunch break.|Arbeitende Menschen brauchen eine Mittagspause.
+switchboard operator|Telefonist(in)|The switchboard operator answers the calls.|Die Telefonistin nimmt die Anrufe an.
+tape measure|Maßband|Use a tape measure for the length.|Benutze ein Maßband für die Länge.
+taxi driver|Taxifahrer(in)|The taxi driver knows the city.|Der Taxifahrer kennt die Stadt.
+technician|Techniker(in)|The technician repairs the computer.|Der Techniker repariert den Computer.
+thread|Faden, Garn|I need blue thread.|Ich brauche blauen Faden.
+tourist guide|Fremdenführer(in)|The tourist guide explains the castle.|Der Fremdenführer erklärt das Schloss.
+actress||The actress forgets her lines.|Die Schauspielerin vergisst ihren Text.
+aisle||Walk down the aisle to your seat.|Geh den Gang entlang zu deinem Platz.
+backstage|hinter der Bühne|The actors wait backstage.|Die Schauspieler warten hinter der Bühne.
+ballet shoes|Ballettschuhe|Her ballet shoes are pink.|Ihre Ballettschuhe sind rosa.
+binoculars|Fernglas, Opernglas|I watch the stage with binoculars.|Ich betrachte die Bühne mit einem Opernglas.
+box|Loge|We have a box at the theatre.|Wir haben eine Loge im Theater.
+carnival|Karneval, Fasching|Children wear costumes at carnival.|Kinder tragen an Karneval Kostüme.
+carnival parade|Karnevalsumzug|The carnival parade passes our street.|Der Karnevalsumzug zieht durch unsere Straße.
+classical ballet|klassisches Ballett|Swan Lake is a classical ballet.|Schwanensee ist ein klassisches Ballett.
+cloakroom|Garderobe|Leave your coat in the cloakroom.|Gib deinen Mantel an der Garderobe ab.
+comedy|Komödie|We laughed a lot at the comedy.|Wir haben bei der Komödie viel gelacht.
+conductor|Dirigent(in)|The conductor raises his baton.|Der Dirigent hebt seinen Taktstock.
+contemporary dance|zeitgenössischer Tanz|Contemporary dance is modern and free.|Zeitgenössischer Tanz ist modern und frei.
+costume|Kostüm|Her costume is red and gold.|Ihr Kostüm ist rot und golden.
+dance company|Tanzensemble, Ballettkompanie|The dance company tours Europe.|Das Tanzensemble geht auf Europatournee.
+dancer|Tänzer(in)|The dancer jumps high.|Der Tänzer springt hoch.
+dressing room|Umkleideraum, Künstlergarderobe|The star is in her dressing room.|Der Star ist in ihrer Garderobe.
+emergency exit|Notausgang|The emergency exit is on the right.|Der Notausgang ist rechts.
+fan|Fan, Anhänger|The fan waits for the actor.|Der Fan wartet auf den Schauspieler.
+foyer|Foyer|We meet in the foyer.|Wir treffen uns im Foyer.
+gallery|Galerie, Rang|Our seats are in the gallery.|Unsere Plätze sind auf der Galerie.
+lighting technician|Beleuchter(in)|The lighting technician changes the lights.|Der Beleuchter wechselt die Scheinwerfer.
+lights|Scheinwerfer, Licht|The lights go out.|Das Licht geht aus.
+lower circle|erster Rang|They sit in the lower circle.|Sie sitzen im ersten Rang.
+mask|Maske|The dancer wears a gold mask.|Die Tänzerin trägt eine goldene Maske.
+mime|Pantomime|The mime acts without words.|Der Pantomime spielt ohne Worte.
+monologue|Monolog|The actor performs a long monologue.|Der Schauspieler spricht einen langen Monolog.
+musical|Musical|We saw a famous musical in London.|Wir haben in London ein berühmtes Musical gesehen.
+orchestra pit|Orchestergraben|The orchestra plays in the orchestra pit.|Das Orchester spielt im Orchestergraben.
+poster|Plakat, Poster|A big poster hangs outside the theatre.|Ein großes Plakat hängt vor dem Theater.
+programme|Programm, Programmheft|I buy a programme for the play.|Ich kaufe ein Programmheft für das Stück.
+recital (solo concert)|Solokonzert, Konzert|The pianist gives a recital.|Der Pianist gibt ein Solokonzert.
+row|Reihe|Our seats are in the third row.|Unsere Plätze sind in der dritten Reihe.
+scenery|Kulisse, Bühnenbild|The scenery looks like a forest.|Das Bühnenbild sieht aus wie ein Wald.
+school recital|Schulaufführung|Parents come to the school recital.|Die Eltern kommen zur Schulaufführung.
+seat|Sitzplatz, Platz|Is this seat free?|Ist dieser Platz frei?
+usher|Platzanweiser(in)|The usher shows us our seats.|Der Platzanweiser zeigt uns unsere Plätze.
+wig|Perücke|The actor wears a grey wig.|Der Schauspieler trägt eine graue Perücke.
+ticket|Eintrittskarte, Fahrkarte|I have two tickets for the show.|Ich habe zwei Karten für die Vorstellung.
+tragedy|Tragödie|Romeo and Juliet is a tragedy.|Romeo und Julia ist eine Tragödie.
+upper circle|zweiter Rang|The upper circle has a great view.|Der zweite Rang hat eine tolle Aussicht.
+accordion||He plays the accordion at parties.|Er spielt auf Festen Akkordeon.
+acoustic guitar||She plays an acoustic guitar.|Sie spielt eine Akustikgitarre.
+amplifier||Turn up the amplifier a little.|Dreh den Verstärker etwas lauter.
+bass drum|große Trommel, Basstrommel|The bass drum is very loud.|Die große Trommel ist sehr laut.
+bass guitar|Bassgitarre|He plays the bass guitar in a band.|Er spielt in einer Band Bassgitarre.
+bass guitarist|Bassist(in)|The bass guitarist stands on the left.|Der Bassist steht links.
+baton|Taktstock|The conductor holds a baton.|Der Dirigent hält einen Taktstock.
+body|Korpus, Resonanzkörper|The body of the guitar is made of wood.|Der Korpus der Gitarre ist aus Holz.
+brass instruments|Blechblasinstrumente|Trumpets are brass instruments.|Trompeten sind Blechblasinstrumente.
+cello|Cello|The cello has a deep sound.|Das Cello hat einen tiefen Klang.
+clarinet|Klarinette|She learns to play the clarinet.|Sie lernt Klarinette spielen.
+concert|Konzert|The concert starts at eight.|Das Konzert beginnt um acht.
+conduct|dirigieren|He conducts the school orchestra.|Er dirigiert das Schulorchester.
+cornet|Kornett|The cornet sounds like a small trumpet.|Das Kornett klingt wie eine kleine Trompete.
+cymbals|Becken, Tschinellen|The drummer hits the cymbals.|Der Schlagzeuger schlägt auf die Becken.
+dance|tanzen; Tanz|Let's dance to this song.|Lass uns zu diesem Lied tanzen.
+double bass|Kontrabass|The double bass is taller than the player.|Der Kontrabass ist größer als der Spieler.
+drummer|Schlagzeuger(in)|The drummer keeps the beat.|Der Schlagzeuger hält den Takt.
+drums|Schlagzeug, Trommeln|My brother plays the drums.|Mein Bruder spielt Schlagzeug.
+electric guitar|E-Gitarre|The electric guitar is connected to the amplifier.|Die E-Gitarre ist an den Verstärker angeschlossen.
+fingerboard|Griffbrett|Press the strings on the fingerboard.|Drücke die Saiten auf das Griffbrett.
+flute|Flöte|She plays the flute beautifully.|Sie spielt wunderschön Flöte.
+follow the beat|dem Takt folgen|Follow the beat and clap your hands.|Folge dem Takt und klatsche in die Hände.
+guitarist|Gitarrist(in)|The guitarist plays a solo.|Der Gitarrist spielt ein Solo.
+harp|Harfe|The harp has many strings.|Die Harfe hat viele Saiten.
+headstock|Kopfplatte|The tuning keys are on the headstock.|Die Wirbel sind an der Kopfplatte.
+kettledrum|Pauke|The kettledrum rolls softly.|Die Pauke wirbelt leise.
+keyboard|Keyboard, Tastatur, Klaviatur|He plays the keyboard in the band.|Er spielt in der Band Keyboard.
+keyboard player|Keyboarder(in)|The keyboard player sings too.|Der Keyboarder singt auch.
+light|Licht, Beleuchtung|The stage light is blue.|Das Bühnenlicht ist blau.
+listen|zuhören|Listen to the melody.|Hör dir die Melodie an.
+making music|Musizieren, Musik machen|We love making music together.|Wir lieben es, zusammen Musik zu machen.
+microphone|Mikrofon|The singer holds the microphone.|Die Sängerin hält das Mikrofon.
+music stand|Notenständer|Put your sheet music on the music stand.|Leg deine Noten auf den Notenständer.
+notes|Noten|She reads the notes quickly.|Sie liest die Noten schnell.
+orchestra|Orchester|The orchestra has sixty musicians.|Das Orchester hat sechzig Musiker.
+percussion instruments|Schlaginstrumente|Drums are percussion instruments.|Trommeln sind Schlaginstrumente.
+piano|Klavier|My sister plays the piano every day.|Meine Schwester spielt jeden Tag Klavier.
+play|spielen|Do you play an instrument?|Spielst du ein Instrument?
+podium|Podest, Dirigentenpult|The conductor steps onto the podium.|Der Dirigent betritt das Podest.
+read music|Noten lesen|Can you read music?|Kannst du Noten lesen?
+recorder|Blockflöte|We play the recorder at school.|Wir spielen in der Schule Blockflöte.
+saxophone|Saxofon|The saxophone sounds warm.|Das Saxofon klingt warm.
+score|Partitur|The conductor studies the score.|Der Dirigent studiert die Partitur.
+violin|Geige, Violine|She plays the violin in an orchestra.|Sie spielt in einem Orchester Geige.
+wind instruments|Blasinstrumente|Flutes are wind instruments.|Flöten sind Blasinstrumente.
+take a bow|sich verbeugen|The singer takes a bow.|Die Sängerin verbeugt sich.
+trombone|Posaune|The trombone slides up and down.|Die Posaune gleitet auf und ab.
+trumpet|Trompete|He plays the trumpet loudly.|Er spielt laut Trompete.
+tune|Melodie|I can't get that tune out of my head.|Ich bekomme diese Melodie nicht aus dem Kopf.
+tuning keys|Stimmwirbel|Turn the tuning keys to tune the guitar.|Dreh an den Stimmwirbeln, um die Gitarre zu stimmen.
+ace||I have the ace of spades.|Ich habe das Pik-Ass.
+backgammon|Backgammon|We play backgammon after dinner.|Nach dem Essen spielen wir Backgammon.
+bishop|Läufer (Schach), Bischof|The bishop moves diagonally.|Der Läufer zieht diagonal.
+board games|Brettspiele|We play board games on rainy days.|An Regentagen spielen wir Brettspiele.
+canvas|Leinwand|She paints on a large canvas.|Sie malt auf einer großen Leinwand.
+cards|Karten, Kartenspiel|Let's play cards.|Lass uns Karten spielen.
+chess|Schach|My grandfather teaches me chess.|Mein Opa bringt mir Schach bei.
+clubs|Kreuz (Karten)|I have the queen of clubs.|Ich habe die Kreuzdame.
+collect stamps|Briefmarken sammeln|He likes to collect stamps.|Er sammelt gern Briefmarken.
+deal cards|Karten austeilen|It's your turn to deal cards.|Du bist dran mit Kartenausteilen.
+diamonds|Karo (Karten)|The king of diamonds wins.|Der Karokönig gewinnt.
+die|Würfel|Roll the die.|Wirf den Würfel.
+do crosswords|Kreuzworträtsel lösen|My mum does crosswords every morning.|Meine Mama löst jeden Morgen Kreuzworträtsel.
+do D.I.Y.|heimwerken|Dad likes to do D.I.Y. at weekends.|Papa werkelt am Wochenende gern.
+do gardening|im Garten arbeiten|We do gardening on Saturdays.|Samstags arbeiten wir im Garten.
+dominoes|Domino|The children play dominoes.|Die Kinder spielen Domino.
+do pottery|töpfern|She does pottery in the evening.|Sie töpfert am Abend.
+do sudoku|Sudoku lösen|He does sudoku on the train.|Er löst im Zug Sudoku.
+draughts|Dame (Spiel)|We play draughts with black and white pieces.|Wir spielen Dame mit schwarzen und weißen Steinen.
+easel|Staffelei|The painter stands at her easel.|Die Malerin steht an ihrer Staffelei.
+embroider|sticken|Grandma embroiders flowers on cloth.|Oma stickt Blumen auf Stoff.
+free time|Freizeit|What do you do in your free time?|Was machst du in deiner Freizeit?
+go to the cinema|ins Kino gehen|We go to the cinema on Fridays.|Freitags gehen wir ins Kino.
+go to the gym|ins Fitnessstudio gehen|He goes to the gym after work.|Er geht nach der Arbeit ins Fitnessstudio.
+go to the stadium|ins Stadion gehen|They go to the stadium to watch football.|Sie gehen ins Stadion, um Fußball zu schauen.
+go to the theatre|ins Theater gehen|I love to go to the theatre.|Ich gehe sehr gern ins Theater.
+hearts|Herz (Karten)|The ten of hearts is missing.|Die Herz-Zehn fehlt.
+jack|Bube|The jack beats the ten.|Der Bube sticht die Zehn.
+jigsaw puzzle|Puzzle|The jigsaw puzzle has a thousand pieces.|Das Puzzle hat tausend Teile.
+joker|Joker|The joker can be any card.|Der Joker kann jede Karte sein.
+king|König|The king is the most important piece.|Der König ist die wichtigste Figur.
+knight|Springer (Schach), Ritter|The knight moves in an L-shape.|Der Springer zieht in L-Form.
+knit|stricken|My aunt knits warm socks.|Meine Tante strickt warme Socken.
+listen to music|Musik hören|I listen to music on the bus.|Ich höre im Bus Musik.
+make models|Modelle bauen|He makes models of old ships.|Er baut Modelle von alten Schiffen.
+pack of cards|Kartenspiel, Stapel Karten|There are fifty-two cards in a pack of cards.|Ein Kartenspiel hat zweiundfünfzig Karten.
+paint|malen; Farbe|We paint pictures in art class.|Wir malen im Kunstunterricht Bilder.
+painting|Gemälde, Malerei|This painting is very old.|Dieses Gemälde ist sehr alt.
+palette|Palette|The painter mixes colours on the palette.|Die Malerin mischt die Farben auf der Palette.
+pawn|Bauer (Schach)|The pawn moves one square.|Der Bauer zieht ein Feld.
+play cards|Karten spielen|They play cards in the evening.|Sie spielen abends Karten.
+play chess|Schach spielen|Do you play chess?|Spielst du Schach?
+playing cards|Spielkarten|The playing cards are on the table.|Die Spielkarten liegen auf dem Tisch.
+play mikado|Mikado spielen|We play mikado with wooden sticks.|Wir spielen Mikado mit Holzstäbchen.
+play scrabble|Scrabble spielen|My family plays scrabble on Sundays.|Meine Familie spielt sonntags Scrabble.
+play videogames|Videospiele spielen|He plays videogames after school.|Er spielt nach der Schule Videospiele.
+poster paints|Plakatfarben|We use poster paints for the big picture.|Wir benutzen Plakatfarben für das große Bild.
+queen|Dame, Königin|The queen can move in any direction.|Die Dame kann in jede Richtung ziehen.
+read|lesen|I read in bed every night.|Ich lese jeden Abend im Bett.
+rook|Turm (Schach)|The rook moves in straight lines.|Der Turm zieht in geraden Linien.
+take photographs|fotografieren|She likes to take photographs of nature.|Sie fotografiert gern die Natur.
+travel|reisen|I want to travel around the world.|Ich möchte um die Welt reisen.
+arrow keys||Use the arrow keys to move.|Benutze die Pfeiltasten, um dich zu bewegen.
+attach a file||Please attach a file to the email.|Bitte hänge eine Datei an die E-Mail an.
+browser|Browser|Open the browser and search for the answer.|Öffne den Browser und suche die Antwort.
+camera|Kamera|The camera on my phone is good.|Die Kamera an meinem Handy ist gut.
+caps lock|Feststelltaste|Turn off the caps lock, please.|Schalte bitte die Feststelltaste aus.
+CD-ROM|CD-ROM|The old game is on a CD-ROM.|Das alte Spiel ist auf einer CD-ROM.
+chat|chatten; Chat|We chat online every evening.|Wir chatten jeden Abend online.
+contacts|Kontakte|Save her number in your contacts.|Speichere ihre Nummer in deinen Kontakten.
+copy|kopieren|Copy the text and paste it here.|Kopiere den Text und füge ihn hier ein.
+delete a file|eine Datei löschen|You can delete a file you don't need.|Du kannst eine Datei löschen, die du nicht brauchst.
+delete/return key|Lösch-/Eingabetaste|Press the delete key to remove a letter.|Drücke die Löschtaste, um einen Buchstaben zu entfernen.
+ebook reader|E-Book-Reader|My ebook reader holds a hundred books.|Mein E-Book-Reader fasst hundert Bücher.
+electric cable|Stromkabel|The electric cable is too short.|Das Stromkabel ist zu kurz.
+email|E-Mail|I send an email to my teacher.|Ich schicke meiner Lehrerin eine E-Mail.
+enter key|Eingabetaste|Press the enter key to continue.|Drücke die Eingabetaste, um fortzufahren.
+headphones|Kopfhörer|I wear headphones on the bus.|Ich trage im Bus Kopfhörer.
+headset|Headset|Use a headset for the video call.|Benutze ein Headset für den Videoanruf.
+laptop|Laptop|The laptop is on the desk.|Der Laptop steht auf dem Schreibtisch.
+message|Nachricht|I got a message from Tom.|Ich habe eine Nachricht von Tom bekommen.
+modem|Modem|Restart the modem if the internet is slow.|Starte das Modem neu, wenn das Internet langsam ist.
+mouse|Maus|Click the mouse button twice.|Klicke zweimal auf die Maustaste.
+notice board|Anschlagbrett, Schwarzes Brett|The news is on the notice board.|Die Neuigkeiten hängen am Schwarzen Brett.
+online shopping|Online-Einkauf|Online shopping is very convenient.|Online einzukaufen ist sehr bequem.
+paste|einfügen|Paste the text into the document.|Füge den Text in das Dokument ein.
+print|drucken|Please print the ticket.|Bitte drucke die Fahrkarte aus.
+radio|Radio|He listens to the radio in the car.|Er hört im Auto Radio.
+save|speichern|Save your work often.|Speichere deine Arbeit oft.
+scanner|Scanner|The scanner copies the picture.|Der Scanner kopiert das Bild.
+screen|Bildschirm|The screen is very bright.|Der Bildschirm ist sehr hell.
+send an email|eine E-Mail senden|I send an email every morning.|Ich sende jeden Morgen eine E-Mail.
+using technology|Technik nutzen|Using technology can be fun.|Technik zu nutzen kann Spaß machen.
+videogame|Videospiel|This videogame is for children.|Dieses Videospiel ist für Kinder.
+webcam|Webcam|Switch on the webcam for the meeting.|Schalte die Webcam für die Besprechung an.
+Wi-Fi connection|WLAN-Verbindung|The Wi-Fi connection is very fast.|Die WLAN-Verbindung ist sehr schnell.
+adventure film||We watch an adventure film tonight.|Heute Abend sehen wir einen Abenteuerfilm.
+advertising||Advertising often interrupts my favourite show.|Werbung unterbricht oft meine Lieblingssendung.
+assistant director||The assistant director helps on set.|Der Regieassistent hilft am Set.
+boom mike|Mikrofongalgen, Tonangel|The boom mike hangs above the actors.|Der Mikrofongalgen hängt über den Schauspielern.
+cameraman|Kameramann|The cameraman films the scene.|Der Kameramann filmt die Szene.
+cartoons|Zeichentrickfilme|Kids love cartoons.|Kinder lieben Zeichentrickfilme.
+channel|Sender, Kanal|Change the channel, please.|Schalte bitte den Sender um.
+channel hop|durch die Sender zappen|Dad likes to channel hop.|Papa zappt gern durch die Sender.
+cooking programme|Kochsendung|I learn recipes from a cooking programme.|Ich lerne Rezepte aus einer Kochsendung.
+cry|weinen|The film is so sad that I cry.|Der Film ist so traurig, dass ich weine.
+documentary|Dokumentarfilm|The documentary is about whales.|Der Dokumentarfilm handelt von Walen.
+enjoy|genießen, Spaß haben|I enjoy this series.|Ich mag diese Serie sehr.
+fall asleep|einschlafen|Grandpa falls asleep in front of the TV.|Opa schläft vor dem Fernseher ein.
+get bored|sich langweilen|I get bored during long films.|Bei langen Filmen langweile ich mich.
+get frightened|Angst bekommen|Children get frightened by scary films.|Kinder bekommen bei Gruselfilmen Angst.
+laugh|lachen|The comedy makes everyone laugh.|Die Komödie bringt alle zum Lachen.
+live recording|Live-Aufnahme|This is a live recording of the concert.|Das ist eine Live-Aufnahme des Konzerts.
+music programme|Musiksendung|My sister watches a music programme.|Meine Schwester schaut eine Musiksendung.
+on/off button|Ein-/Ausschalter|Press the on/off button.|Drücke den Ein-/Ausschalter.
+pause|Pause; anhalten|Pause the film for a moment.|Halte den Film kurz an.
+police film|Kriminalfilm, Polizeifilm|My dad loves a good police film.|Mein Papa liebt einen guten Krimi.
+presenter|Moderator(in)|The presenter welcomes the guests.|Der Moderator begrüßt die Gäste.
+quiz show|Quizsendung|We answer questions during the quiz show.|Wir beantworten Fragen bei der Quizsendung.
+reality show|Reality-Show|She watches a reality show every week.|Sie schaut jede Woche eine Reality-Show.
+record|aufnehmen|I record the film for later.|Ich nehme den Film für später auf.
+record button|Aufnahmetaste|Press the record button now.|Drücke jetzt die Aufnahmetaste.
+romantic film|Liebesfilm|The romantic film has a happy ending.|Der Liebesfilm hat ein Happy End.
+sci-fi film|Science-Fiction-Film|The sci-fi film takes place on Mars.|Der Science-Fiction-Film spielt auf dem Mars.
+volume|Lautstärke|Turn down the volume, please.|Dreh bitte die Lautstärke leiser.
+watch closely|genau beobachten|Watch closely what happens next.|Schau genau hin, was als Nächstes passiert.
+weather forecast|Wettervorhersage|The weather forecast says rain.|Die Wettervorhersage sagt Regen.
+talent show|Talentshow|The talent show starts at eight.|Die Talentshow beginnt um acht.
+talk show|Talkshow|The talk show has a famous guest.|Die Talkshow hat einen berühmten Gast.
+television camera|Fernsehkamera|The television camera is on the singer.|Die Fernsehkamera ist auf die Sängerin gerichtet.
+television studio|Fernsehstudio|The television studio is full of lights.|Das Fernsehstudio ist voller Scheinwerfer.
+the news|die Nachrichten|We watch the news at seven.|Wir sehen um sieben die Nachrichten.
+traffic update|Verkehrsmeldung|The traffic update warns of a long queue.|Die Verkehrsmeldung warnt vor einem langen Stau.
+TV editing|Fernsehschnitt, Schnitt|TV editing makes the film shorter.|Der Schnitt macht den Film kürzer.
+TV programmes|Fernsehsendungen|My favourite TV programmes are on Friday.|Meine Lieblingssendungen laufen freitags.
+TV viewer|Fernsehzuschauer(in)|Every TV viewer can vote.|Jeder Fernsehzuschauer kann abstimmen.
+bakery|Bäckerei|The bakery smells of fresh bread.|Die Bäckerei riecht nach frischem Brot.
+bank note|Geldschein|I have a ten-euro bank note.|Ich habe einen Zehn-Euro-Schein.
+bar code|Strichcode, Barcode|The cashier scans the bar code.|Die Kassiererin scannt den Barcode.
+basket|Korb, Einkaufskorb|She puts apples in the basket.|Sie legt Äpfel in den Korb.
+bookshop|Buchhandlung|I buy a novel at the bookshop.|Ich kaufe in der Buchhandlung einen Roman.
+buying and selling|Kaufen und Verkaufen|Buying and selling happens at the market.|Kaufen und Verkaufen findet auf dem Markt statt.
+cake shop|Konditorei|The cake shop sells delicious tarts.|Die Konditorei verkauft köstliche Torten.
+car showroom|Autohaus|The car showroom has new models.|Das Autohaus hat neue Modelle.
+chemist's|Drogerie, Apotheke|I buy shampoo at the chemist's.|Ich kaufe im Drogeriemarkt Shampoo.
+cleaning products|Reinigungsmittel|Cleaning products are on the second shelf.|Reinigungsmittel stehen im zweiten Regal.
+clothes shop|Bekleidungsgeschäft|The clothes shop has a sale.|Das Bekleidungsgeschäft hat Ausverkauf.
+coin|Münze|I need a coin for the trolley.|Ich brauche eine Münze für den Einkaufswagen.
+credit card|Kreditkarte|Can I pay by credit card?|Kann ich mit Kreditkarte bezahlen?
+discount|Rabatt|There is a ten percent discount today.|Heute gibt es zehn Prozent Rabatt.
+electrical goods|Elektrogeräte|Electrical goods are on the third floor.|Elektrogeräte gibt es im dritten Stock.
+fitting room|Umkleidekabine|Try the jacket in the fitting room.|Probiere die Jacke in der Umkleidekabine an.
+florist's|Blumengeschäft|The florist's sells beautiful roses.|Das Blumengeschäft verkauft schöne Rosen.
+furniture|Möbel|The shop sells modern furniture.|Das Geschäft verkauft moderne Möbel.
+jeweller's|Juwelier|She buys a ring at the jeweller's.|Sie kauft beim Juwelier einen Ring.
+laundrette|Waschsalon|I wash my clothes at the laundrette.|Ich wasche meine Wäsche im Waschsalon.
+leather goods|Lederwaren|The leather goods are very good.|Die Lederwaren sind sehr hochwertig.
+lingerie|Unterwäsche, Damenwäsche|The shop sells silk lingerie.|Das Geschäft verkauft Seidenwäsche.
+mannequin|Schaufensterpuppe|The mannequin wears a red dress.|Die Schaufensterpuppe trägt ein rotes Kleid.
+money|Geld|I don't have enough money.|Ich habe nicht genug Geld.
+newsagent's|Zeitungsladen, Kiosk|I buy a magazine at the newsagent's.|Ich kaufe im Zeitungsladen eine Zeitschrift.
+optician's|Optiker|He gets new glasses at the optician's.|Er bekommt beim Optiker eine neue Brille.
+perfume shop|Parfümerie|The perfume shop smells wonderful.|Die Parfümerie duftet wunderbar.
+pet shop|Tierhandlung|We buy fish food at the pet shop.|Wir kaufen in der Tierhandlung Fischfutter.
+price tag|Preisschild|Look at the price tag first.|Sieh dir zuerst das Preisschild an.
+receipt|Kassenzettel, Quittung|Keep the receipt in case of problems.|Behalte den Kassenzettel für den Fall von Problemen.
+sales assistant|Verkäufer(in)|The sales assistant helps me find a size.|Die Verkäuferin hilft mir, eine Größe zu finden.
+shade|Farbton, Schattierung|This shade of blue suits you.|Dieser Blauton steht dir gut.
+supermarket|Supermarkt|We shop at the supermarket on Saturdays.|Wir kaufen samstags im Supermarkt ein.
+telephones and computers|Telefone und Computer|Telephones and computers are on the first floor.|Telefone und Computer gibt es im ersten Stock.
+till|Kasse|Please pay at the till.|Bitte zahlen Sie an der Kasse.
+toyshop|Spielwarengeschäft|The children love the toyshop.|Die Kinder lieben das Spielwarengeschäft.
+trolley|Einkaufswagen|Push the trolley to the checkout.|Schieb den Einkaufswagen zur Kasse.`;
+(function(){
+  const idx=new Map(W.map((w,i)=>[w[0].toLowerCase(),i]));
+  EX.split("\n").forEach(l=>{
+    const [en,de,se,sd]=l.split("|"),i=idx.get(en.toLowerCase());
+    if(i===undefined)return;
+    if(de&&!W[i][2])W[i][2]=de;
+    if(se&&!W[i][4])W[i][4]=se;
+    if(sd)W[i][7]=sd;
   });
 })();
 function ltr(i){const m=W[i][0].match(/[A-Za-z]/);return m?m[0].toUpperCase():"#"}
