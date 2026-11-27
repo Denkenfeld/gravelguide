@@ -251,10 +251,10 @@ function inner(w,showDe){
   const z=w[6];
   return `<div class="emo">${w[5]}</div>
     <button class="word" data-say="${w[0]}">${w[0]}</button>
-    ${showDe?`<div class="de">${w[2]}</div>`:""}
+    ${showDe?(w[2]?`<div class="de">${w[2]}</div>`:`<div class="note">Übersetzung folgt noch</div>`):""}
     ${w[3]?`<div class="pl">${w[3]}</div>`:""}
     ${z?`<div class="forms">${z.inf} · ${z.pres}<br>past: ${z.past} · participle: ${z.pp} · ${z.ing}</div>`:""}
-    <button class="sent" data-say="${w[4].replace(/"/g,"&quot;")}">${w[4]}</button>
+    ${w[4]?`<button class="sent" data-say="${w[4].replace(/"/g,"&quot;")}">${w[4]}</button>`:""}
     <div class="pg">Kapitel ${w[1].join(", ")}</div>`;
 }
 function card(i){return `<article class="card">${inner(W[i],st.de)}</article>`}
@@ -272,17 +272,20 @@ function renderWords(){
     chs.map(c=>`<button class="chip" data-ch="${c}" aria-pressed="${st.view==="ch"&&st.ch===c}">${c}<small>Kapitel</small></button>`).join("")+`</div>`;
   const all=W.map((_,i)=>i);
   if(st.view==="az"){
-    const avail=new Set(all.map(i=>W[i][0][0].toUpperCase()));
+    const avail=new Set(all.map(ltr));
     if(!avail.has(st.letter))st.letter=[...avail].sort()[0];
-    const letters=`<div class="letters">`+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(L=>`<button class="lt" data-letter="${L}" aria-pressed="${st.letter===L}"${avail.has(L)?"":" disabled"}>${L}</button>`).join("")+`</div>`;
-    const list=all.filter(i=>W[i][0][0].toUpperCase()===st.letter).sort((a,b)=>W[a][0].toLowerCase().localeCompare(W[b][0].toLowerCase()));
+    const letters=letterBar(avail);
+    const list=sortIds(all.filter(i=>ltr(i)===st.letter));
     st.cur=list;
     main.innerHTML=chips+letters+`<h2>Wörter mit ${st.letter} <span class="note">· ${list.length}</span></h2><div class="grid">${list.map(card).join("")}</div>
-    <p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
+    <p class="note">Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
     return;
   }
   const tr=st.mode==="train";
-  const list=all.filter(i=>W[i][1].includes(st.ch));
+  let list=all.filter(i=>W[i][1].includes(st.ch));
+  const noDe=tr&&st.dir==="de"?list.filter(i=>!W[i][2]).length:0;
+  if(noDe)list=list.filter(i=>W[i][2]);
+  if(!tr||!st.shuf)sortIds(list);
   if(tr&&st.shuf)list.sort((a,b)=>st.rnd[a]-st.rnd[b]);
   st.cur=list;
   const modes=`<div class="row" style="margin:0 0 12px"><button class="tab" data-mode="cards" aria-pressed="${!tr}">🗂️ Lernkarten</button><button class="tab" data-mode="train" aria-pressed="${tr}">🎯 Vokabeltraining</button></div>`;
@@ -290,22 +293,583 @@ function renderWords(){
   const head=`<h2>Kapitel ${st.ch}${CH[st.ch]?": "+CH[st.ch]:""}</h2>`;
   main.innerHTML=chips+head+modes+tools+
     `<div class="grid">${list.map(tr?tcard:card).join("")}</div>`+
-    (tr?`<p class="note" id="prog"></p><p class="note">Sterne: ★ = kann ich noch gar nicht · ★★ = geht so · ★★★ = kann ich perfekt. Denselben Stern nochmal antippen = zurücksetzen. Deine Sterne bleiben gespeichert.</p>`
-       :`<p class="note">Das ist eine Auswahl zum Testen. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`);
+    (tr?`<p class="note" id="prog"></p>${noDe?`<p class="note">${noDe} Wörter ohne deutsche Übersetzung sind in dieser Richtung ausgeblendet.</p>`:""}<p class="note">Sterne: ★ = kann ich noch gar nicht · ★★ = geht so · ★★★ = kann ich perfekt. Denselben Stern nochmal antippen = zurücksetzen. Deine Sterne bleiben gespeichert.</p>`
+       :`<p class="note">Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`);
   if(tr)updateProgress();
 }
 
 // ---- Wörterbuch (A-Wörter komplett, Rest aus der Auswahl) ----
-const A="abdomen|26|Bauch, Unterleib;access barrier|23|Zugangsschranke;accessories for the dog|6|Hundezubehör;accordion|15|Akkordeon;ace|16|Ass;acid rain|34|saurer Regen;acoustic guitar|15|Akustikgitarre;actor|13,14|Schauspieler;actress|14|Schauspielerin;adult|5|Erwachsene(r);adventure film|18|Abenteuerfilm;advertising|18|Werbung;aeroplane|24|Flugzeug;Africa|25|Afrika;afternoon|29|Nachmittag;air conditioning|12|Klimaanlage;airport|24|Flughafen;aisle|14,23,24|Gang;alarm clock|4|Wecker;allergies|27|Allergien;alley|8|Gasse;almond|21|Mandel;aluminium|34|Aluminium;aluminium foil|2|Alufolie;ambulance|27|Krankenwagen;amplifier|15|Verstärker;amusement park|25|Freizeitpark;ancor|22|Anker (anchor);animal fur|27|Tierfell;animal kingdom|32|Tierreich;animals welcome|25|Tiere willkommen;animal’s body|32|Tierkörper;ankle|26|Fußknöchel;ankle boots|20|Stiefeletten;anorak|20|Anorak;ant|30|Ameise;Antarctic Ocean|25|Südlicher Ozean;anteater|32|Ameisenbär;apple|21|Apfel;apricot|21|Aprikose;April|29|April;apron|2|Schürze;aquarium|25|Aquarium;archeological site|25|Ausgrabungsstätte;archery|28|Bogenschießen;archipelago|25|Inselgruppe;architect|13|Architekt(in);Arctic Ocean|25|Nordpolarmeer;arm|26|Arm;armchair|3|Sessel;armrest|3|Armlehne;arrivals|23,24|Ankunft;arrow keys|17|Pfeiltasten;Art|9|Kunst;artichoke|21|Artischocke;articulated lorry|22|Sattelzug;artificial satellite|35|künstlicher Satellit;artistic gymnastics|28|Kunstturnen;Asia|25|Asien;ask for information|23|nach Auskunft fragen;asparagus|21|Spargel;assistant director|18|Regieassistent(in);astronomical observatory|35|Sternwarte;Atlantic Ocean|25|Atlantik;atmospheric pollution|34|Luftverschmutzung;attach a file|17|eine Datei anhängen;aubergine|21|Aubergine;August|29|August;aunt|5|Tante;author|9|Autor(in);automatic check-in|24|Selbst-Check-in;automatic grasscutter|7|Mähroboter;autumn|29|Herbst;avalanche|29|Lawine;avenue|8|Allee;avocado|21|Avocado".split(";").map(s=>{const p=s.split("|");return [p[0],p[1].split(",").map(Number),p[2]]});
+// ---- Icons: Emoji pro Wort (Tabelle: Emoji|Wort;Wort;…) ----
+const EMO=`🫃|abdomen;navel
+🦶|ankle;foot;toes;big toe;heel
+🐾|footprint;animals welcome;paws;animal's body
+💪|arm;muscles;elbow;forearm
+🧍|back;human body;neck;hip;pelvis;underarm;bottom
+🎵|body;musician;play
+🧑‍⚕️|surgeon
+🧔|beard;moustache
+🦴|bone;rib;skeleton;fracture;accessories for the dog
+🧠|brain
+👄|mouth;lip
+👅|tongue
+👃|nose
+👂|ear;ears
+👁️|eye;eyebrow;eyelash(es);blue eyes;brown eyes;green eyes;hazel eyes;eyes
+🦷|teeth;toothache;toothbrush;toothpaste;dentist
+🙂|face;cheek;chin;forehead;head
+🌷|iris;tulip;flower;flowers;flowerbed;flowerbeds;daffodil;hyacinth;petal
+💇|hair;hair styles;fringe;pony-tail;plait;curly hair;wavy hair;hairdresser;hairdryer;comb
+👩‍🦱|long, brown hair
+👴|white hair;grey hair;grandfather/granddad
+👨‍🦲|bald (be)
+🤚|hand;fingers;thumb;index finger;middle finger;ring finger;little finger;wrist;hand wash
+🦵|leg;knee;thigh;knee pads
+❤️|heart;hearts
+🫁|lung;trachea;thorax;chest
+🩸|vein;blood pressure meter
+🩻|liver;intestine;x-ray
+💅|nail;nail file
+✂️|nail scissors;scissors;shears;haircut
+💻|cut;videogame;computer;laptop;i.t. (information technology);browser;webcam;modem;wi-fi;wi-fi connection;online shopping;chat;email;email address;send an email;attach a file;save;copy;paste;print;delete a file;delete/return key;enter key;caps lock;arrow keys;using technology;contacts;memory stick;cd-rom;scanner
+📅|april;august;calendar;december;february;january;july;june;march;may;november;october;september;months;week;weekend;monday;tuesday;wednesday;thursday;friday;saturday;sunday;days;seasons;daily routine
+☀️|day;sunburn;sun
+🍎|apple;apples
+🍑|apricot;peach
+🍆|aubergine
+🥑|avocado
+🍌|banana
+🫐|blueberry;blackberry
+🥦|broccoli;cauliflower;brussels sprouts;vegetables
+🥬|cabbage;lettuce;celery;artichoke;asparagus;fennel;green beans;leaf;seaweed
+🥕|carrot
+🍒|cherry
+🥥|coconut
+🥒|cucumber;courgette
+🍇|grape;grapes;plum
+🍊|orange;tangerine;juice;grapefruit;juicer
+🍋|lemon
+🍉|watermelon;melon
+🥭|papaya;fig
+🥜|peanut;almond;pistachio;hazelnut;walnut;pine nuts
+🍐|pear
+🍍|pineapple
+🍓|raspberry;strawberry
+🥔|potato
+🧄|garlic
+🧅|onion
+🍅|tomato
+🎃|pumpkin
+🌽|sweetcorn
+🌾|grain;harvest;lawn;grass;cut the grass;lawnmower;automatic grasscutter;barn;farm;farmer;vegetable patch;hay;husk
+🥝|kiwi fruit
+🍄|mushroom
+🫛|peas;legumes;beans
+🌶️|pepper
+🍏|core;fruit and vegetables;seasonal fruit;fruit salad;dried fruit;fruit
+🌱|seed;bud;root;plant;fertilizer
+🥗|salad;greengrocer's
+🛒|trolley;shopping;do the shopping;supermarket;basket;wheel barrow
+🍞|bread;bread basket;crumb;crumbs;crust;toast;toaster;bakery
+🧑‍🍳|baker
+🍰|cake;cake shop;dessert;desserts;mousse
+🍕|pizza
+🍔|hamburger
+🍟|chips
+🍝|pasta
+🍚|rice
+🥩|meat
+🐟|fish;bream;sea bass;barracuda;pond
+🧀|cheese;grate;grater;dairy products
+🥛|milk;glass
+🐣|egg
+🥚|eggs;whisk (eggs)
+🍳|frying pan;fry;pan;kitchen;cook;chef
+🍲|casserole dish;lid;main dish;dish;courses;sauces
+🌭|sausages
+🍨|ice cream
+🍦|cone
+🧂|salt;season
+🍶|vinegar
+🛢️|oil;oil tanker
+🍷|red wine;white wine;wine list;corkscrew;wine;cellar
+🍺|beer
+🥂|cocktail
+🍵|green tea
+☕|coffee;coffee pot;coffee machine;coffee table;café;cup;mug
+🫖|kettle;tea
+🥤|drinks;blender;hand-held blender;liquidize;drinks trolley
+🍽️|menu;restaurant;restaurant carriage;reserved;head waiter;waiter;customer;dishwasher;do the washing up;load the dishwasher;clear the table;lay the table;dining room;plate;vegetarian menu;table;tablecloth
+🥄|spoon;teaspoon;ladle;whisk;food mixer;colander
+🍴|fork;cutlery
+🔪|knife;chopping board;vegetable peeler;peel
+🥣|bowl
+🥫|can;aluminium foil;tin
+🏭|aluminium;electronics;atmospheric pollution
+🫙|jar
+🧊|freezer;refrigerator;iceberg;ice bucket;antarctic ocean;arctic ocean;glacier
+❄️|ice;snow;winter
+🔥|oven;hob;light the hob;fireplace;oven tray;heat;camping stove;forest fire
+🧤|oven glove;pot holder;gloves;rubber gloves;gardening gloves
+🧻|kitchen paper;toilet paper;napkin
+🗑️|bin;rubbish bag;rubbish bin;take the rubbish out
+🛠️|dustpan;do d.i.y.
+🗄️|cupboard;drawer;chest of drawers;cabinet;locker;filing;wardrobe/closet
+🚰|tap;cold water;hot water;drainpipe;sink;wash basin;basin;hosepipe;water tank
+⚖️|scales;weigh;judge;lawyer
+🐠|scale;aquarium;fin;gill;sea animals
+⏲️|timer
+🧼|wash;clean;conditioner;soap
+🧴|shampoo;washing-up liquid;cleaning products;shaving cream
+🧺|washing basket;tea towel;hang out the washing;clothes airer;load the washing machine;ironing board
+💨|extractor fan;air conditioning
+🌬️|wind
+🍾|bottle opener;bottle
+🍪|biscuit
+🫗|measuring jug;jug
+🛋️|armchair;armrest;living room;sofa;cushion;central stand
+📺|television;tv programmes;television studio;tv viewer;tv editing;remote control;channel;channel hop;the news;traffic update;talent show;talk show;reality show;quiz show;cooking programme;music programme;presenter;record;record button;pause;on/off button;volume;live recording
+🌦️|weather forecast;natural events;clouds;humidity;degrees;below zero;morning;afternoon;evening;night
+🎬|film;adventure film;sci-fi film;police film;romantic film;director;assistant director;documentary;cartoons;cameraman;boom mike;actor;actress;enjoy;cry;laugh;get bored;get frightened;fall asleep;dream
+🎥|television camera;videocamera
+📻|radio
+🕯️|candle
+💡|light bulb;lamp;lampshade;change the lightbulb;lights;light;lighting technician
+🖼️|picture;photo-frame;painting;gallery;frame
+🪵|parquet;floor;rolling pin;wood and cuttings
+🔌|plug;plug in;unplug;electric cable;charger
+🪞|mirror
+🏛️|archeological site;monument;museum;politician;city hall
+🎨|art;paint;paintbrush;palette;poster paints;easel;canvas;painter;watercolours;sculptor
+🛏️|bed;bedroom;make the bed;mattress;sheet;quilt;quilt cover;bedside table;bedside mat;lightweight blanket
+🛌|pillow;pillowcase;sleep;wake up;get up;blanket
+🧸|toy
+⏰|alarm clock;clock
+🪥|brush one's teeth
+🛁|bath;have a bath;bathrobe;dressing gown;have a shower;have a wash;items for the shower;bathroom
+🚿|shower;watering can
+🧖|towel;towels;wellness room
+🪒|razor;shave;tweezers
+🧖‍♀️|put on make-up;beautician
+💄|make-up
+👗|dress;nightdress
+🩳|shorts;swimming trunks
+👙|swimsuit
+🧥|anorak;coat;jacket;quilted jacket;raincoat
+👕|t-shirt;shirt;sweatshirt;sweater;pullover/jumper;hoodie;blouse;vest;waistcoat
+👖|jeans;trousers;pants
+🧦|socks;tights
+👟|trainers;shoes;laced shoes
+🥾|ankle boots;boots;hiking shoes;wellington boots;breeder
+👠|heeled shoes
+🩴|flip-flops;sandals
+🩰|ballet shoes;dancer;ballerina;classical ballet;contemporary dance;dance
+🎩|hat;cap;beret;turban;hijab
+🧣|scarf;necklace
+👓|glasses;sunglasses
+👜|bag;school bag;overnight bag;paper bag
+💼|briefcase;office;office chair;office worker;work;job advertisements;recruitment;contract of work;dismissal;retire;salary;boss;colleague;business card;logo;maternity/paternity leave;entrepreneur
+🎒|backpack;personal items
+💍|ring;bracelet;earrings;jewellery;jeweller's
+⌚|watch
+👛|wallet;pocket
+🔘|button;sew on a button;zip
+🧵|thread;needle;sewing machine;knit;wool;cotton;fabrics;synthetic fabrics;pins;safety pin
+🪡|sew;seamstress
+🧶|embroider;collect stamps;do pottery;cardigan
+📏|tape measure;ruler
+👔|tie;belt;man's suit;woman's suit;braces;bra;lingerie;collar
+👘|caftan;sari;jilbab
+🌂|umbrella
+👨‍👩‍👧|family;parents;relatives;couple;grandparents;cousins
+👶|baby;child;children;young
+🐐|kid;goat
+👦|boy;son
+👧|girl;daughter
+👨|man;father/dad;husband;uncle;brother;boyfriend;groom
+👩|woman;mother/mum;wife;aunt;sister;girlfriend;bride
+👵|grandmother/grandma;elderly person
+🧑|adult;teenager;cousin;uncle and aunt
+🎂|birthday party;birthday card
+🎁|present
+💒|get married;get engaged;fall in love
+🎈|party
+🧹|broom;sweep;housework;household items;duster;vacuum;vacuum cleaner;wash the floor;tidy up
+🧽|clean the windows
+🪣|bucket
+🧷|peg
+👚|fold
+♨️|iron;microwave oven
+🔧|repair;plumber;mechanic;tool
+🐕|dog;feed the dog;kennel;take the dog out;puppy
+⛸️|ice skating;ice skates;curling
+🌹|rose;carnation
+🌼|chrysanthemum
+🪷|waterlily
+🌵|cactus
+🌳|garden;tree;branch;orchard;bush;hedge;gardener;do gardening;gardening;go gardening;park
+🐘|trunk;elephant;tusks
+🧑‍🌾|fertilise;scarecrow;feed the animals;pick fruit
+🪴|plant pot;pot;greenhouse
+🌿|path;thorn
+♻️|weedkiller;composter;shellfish;paper;recycling;recycling materials;non-recyclable waste;organic waste;bulky waste;waste transport;purifier;protection of the environment;container;used oils;incinerator;plastic;plastic bottle;newspaper;magazine;top;water pollution
+🥀|bark
+🍃|rake;rake the leaves
+⛏️|dig;hoe;trowel
+🪜|ladder
+🌡️|thermometer;fever;cold;hot
+🏚️|tool shed
+🐝|bees;beehive;bee;insects;insect sting;wasp
+🏙️|city;city centre;metropolis;town;urban centres;urban spaces;building;residential area;village
+🏫|school;classroom
+🎓|university
+🏦|bank
+💶|money;bank note;coin;credit card;cashpoint;till;receipt;discount;price tag;tip
+🏨|hotel;reception;receptionist;porter;maid;guests;room service;room number;rooms;double room;twin room;hotel staff;manager
+🏥|hospital;patient;nurse;doctor;health problems;midwife
+🚑|ambulance;emergency
+🚓|police station
+👮|police officer
+📮|post box;post office;post woman
+⛲|fountain
+🛣️|avenue;alley;crossroads;road;road sign;road signs;roundabout;one-way street;no entry;no stopping;no right turn;give way;turn right;industrial estate
+🚧|work in progress;access barrier;fence
+🚏|bus stop;bus station
+🚦|traffic lights;pedestrian crossing;warning triangle
+🚶|pavement;pedestrian zone
+✈️|aisle;aeroplane;cockpit;tail;take off;land;landing gear;overhead compartment;oxygen mask;pilot;flight assistants;flight commander;flight safety;tray table
+🚲|bicycle;cycle path;bike-share parking;handlebars;mud guard;pedal;saddle;bell
+🚴|cycling
+🅿️|car park;parking meter;parking space;garage
+♿|disabled parking
+🌉|bridge
+🛴|scooter
+🚌|bus;coach;bus driver
+🚗|car;bonnet;bumpers;boot;headlight;indicator;seatbelt;gear lever;number plate;rent a car;windscreen wiper;brake;wheel;tyre;engine;car showroom
+🚙|camper;caravan
+🚚|van;articulated lorry;wagon
+🚜|tractor;plough
+🚢|cruise ship;cargo ship;ship;porthole;funnel;cabin
+⛵|sailing boat;sailing;yacht
+🚤|dinghy
+🛶|canoe;canoeing;rowing boat;kayaking
+🛟|life jacket;buoy
+⚓|anchor
+🎣|fisherman;fishing boat
+🚆|train;train travel;platform;carriage;conductor;ticket collector;get on the train;get off the train;miss the train;luggage rack;put the luggage on the luggage rack;wait in the waiting room;waiting room;have lunch on board
+🪟|look out of the window;close the window;open the window;window;dormer window
+🎫|ticket;ticket machine;ticket office;buy tickets;check the tickets;boarding card
+🕐|timetable;check the timetable
+ℹ️|information office;ask for information;lost property office
+🧳|luggage;luggage check;luggage trolley;baggage reclaim;travel accessories;suitcase;passenger
+🚉|travel;transport;traveller
+🚋|tram
+🚇|underground
+🛗|lift;escalator;travelator
+🚻|toilet
+🪶|wing;ostrich
+🛫|airport;departures
+🛬|arrivals;runway
+🛂|passport;passport control;customs;check-in;automatic check-in;metal detector;security
+🏪|duty free shop
+🚁|helicopter;hangar
+📡|radar;aerial
+🗼|control tower
+🖥️|screen;projector;interactive whiteboard
+🧭|compass;cardinal points;east;west;north;north-east;north-west
+🗺️|world map;guidebook;gps/sat-nav;leaflet;tour operator;travel agency
+🌍|africa;europe;continents;globe;equator;earthquake;earth;earth's crust;inner core;outer core;lower mantle;upper mantle;pole;latitude;longitude
+🌏|asia;oceania
+🌎|north america;central america
+🌊|oceans;sea;atlantic ocean;pacific ocean;indian ocean;waves;coast;bay;gulf;beach;marine environment;tsunami;wreck;seabed;flood
+🏝️|island;archipelago;peninsula;holiday resort;holidays
+🏜️|desert;tundra;savannah;dromedary;drought;dry
+🌴|jungle
+🌋|volcano;volcanic eruption
+⛰️|mountain;mountains;avalanche
+🏞️|lake;river;waterfall;canal;cave
+🏰|castle;palace
+⛪|church
+♟️|bishop;chess;play chess;king;queen;knight;pawn;rook
+🕌|mosque
+🛕|buddhist temple
+🎡|amusement park
+🦁|lion;safari park;animal kingdom;mane
+🐒|monkey;orangutan
+🦍|gorilla
+🦒|giraffe
+🦓|zebra;zoo
+🦛|hippopotamus
+🦏|rhinoceros
+🐊|crocodile
+🦎|lizard;chameleon
+🐍|snake
+🐆|leopard;panther;puma
+🐻|bear;animal fur;fur
+🐼|panda
+🐧|penguin
+🦘|kangaroo
+🐨|koala
+🐪|camel
+🦙|llama
+🦌|deer;reindeer;horns;gazelle
+🐺|wolf;hyena
+🦊|fox;den
+🦝|raccoon
+🦔|porcupine;sea urchin
+🦡|meerkat;anteater
+🦬|bison;buffalo
+🦭|seal;walrus;sea lion
+🐻‍❄️|polar bear
+🦅|eagle;vulture;woodpecker
+🦜|parrot
+🦩|flamingo
+🐦|bird;beak;nest;robin;hummingbird;toucan;swallow
+🐦‍⬛|crow
+🦆|duck;duckling
+🦉|owl;barn owl
+🐔|chicken;hen;rooster;chick;chicken coop
+🦃|turkey
+🪿|goose
+🐴|horse;foal;bridle;reins;horse riding;hooves;seahorse
+🐄|cow;calf;bull
+🐖|pig
+🐑|sheep;lamb;sheep pen
+🐇|rabbit;hare
+🖱️|mouse
+🐈|cat;kitten
+🐸|frog;toad
+🐢|turtle;tortoise
+🐿️|squirrel
+🦇|bat
+🐜|ant
+🦋|butterfly
+🐛|caterpillar;worm
+🪲|ladybird
+🦗|cricket;grasshopper
+🕷️|spider
+🦂|scorpion
+🪰|fly
+🦟|mosquito
+🐌|snail
+🪱|millipede
+🪳|dragonfly
+🐬|dolphin
+🐳|whale;orca
+🦈|shark
+🐙|octopus
+🦑|squid
+🦀|crab;claws;claw
+🦞|lobster;prawn
+🐚|shell;clam;mussel;molluscs
+🪸|coral;coral reef
+🐡|swordfish;manta ray;moray
+🪼|jellyfish
+🪨|rocks;pebbles;sand
+🤿|scuba diver;mask;flippers;wetsuit;oxygen tank
+🏊|diving;swimming;water polo;swimming pool;synchronised swimming
+🌲|forest;pine cone;forest animals;chestnut;acorn
+🏕️|campsite;camping equipment;camping chair;camping table;mat;walking poles;flask
+⛺|tent
+🔦|torch
+🌻|sunflower
+🩺|stethoscope;cardiologist;dermatologist;dietitian;optician;orthopaedist;paediatrician
+🏃|running;track;hurdling;go to the gym;gym;fitness room;p.e. (physical education)
+🤧|allergies;cough;pollen
+🩹|plaster;bandage;wound;ointment;glue
+💊|medicine;drops;out-of-date medicines
+💉|syringe;drip feed
+🧰|first aid kit
+🦽|wheelchair
+🩼|crutch
+🌅|sunrise
+🌇|sunset;balcony;viewing terrace;terrace
+😷|dust
+⚽|football;goal;sport;go to the stadium;ball
+🏀|basketball
+🏈|rugby
+⚾|baseball
+🎾|tennis;tennis racket;net
+🃏|ace;cards;pack of cards;playing cards;play cards;deal cards;joker;jack;clubs;diamonds;spades
+🏓|table tennis
+🏐|volleyball
+🏒|ice hockey
+⛷️|cross-country skiing;skiing
+🛼|in-line skates;rollerskating
+🛷|bobsleigh
+🥊|boxing
+🤼|wrestling;judo
+🤺|fencing
+🏹|archery
+🏇|polo
+⛳|golf;golf club
+🏋️|weight lifting
+🤸|artistic gymnastics;parallel bars;rings
+🏅|medal;finish line
+🎼|podium;score;music;listen;listen to music;making music;notes;read music;music stand;follow the beat;baton;conduct;orchestra;tune;take a bow;applaud
+🚩|flag
+🥏|discus throw;javelin
+🏁|umpire
+🏄|windsurfing
+🪂|pole vault;high jump;long jump
+🎿|snowboard
+🎲|board games;die;dominoes;draughts;backgammon;jigsaw puzzle;play mikado;play scrabble;free time
+🎮|play videogames;do sudoku;do crosswords
+📷|camera;digital camera;take photographs;photographer
+🎭|theatre;comedy;tragedy;mime;monologue;wig;costume;curtain;dressing room;backstage;foyer;stage;scenery;go to the theatre;musical;programme;poster;usher;emergency exit;lower circle;upper circle;cloakroom;dance company;carnival;carnival parade;school recital
+💺|row;seat
+🎻|violin;cello;double bass
+🎸|guitar;acoustic guitar;bass guitar;electric guitar;bass guitarist;guitarist;fingerboard;headstock;tuning keys
+🎹|piano;keyboard player;keyboard
+🥁|drums;drummer;bass drum;kettledrum;cymbals;percussion instruments
+🎺|trumpet;cornet;trombone;brass instruments
+🎷|saxophone
+🪈|flute;recorder;clarinet;wind instruments
+🪗|accordion
+🪕|harp;banjo
+🎤|microphone;sing;concert;recital (solo concert)
+🔊|amplifier
+📖|read;book;page;title;cover;publisher;author;librarian;library
+📚|bookcase;bookshop;school subjects
+🌐|website;geography
+🖨️|printer;photocopier
+🎧|headphones;headset;earphones
+📱|mobile phone;telephone;telephones and computers;telephone number;tablet;ebook reader
+☎️|switchboard operator
+📌|notice board;pin
+📎|paper clip
+🖊️|pen;felt-tip pen;highlighter;pen holder
+✏️|pencil;coloured pencil;pencil case;pencil sharpener;rubber
+🖍️|crayon
+📒|notebook
+📓|ring-binder;folder
+🗂️|document tray
+📄|sheet of paper;oven paper;cv
+📐|set square;architect
+🧪|laboratory;chemistry;science
+👩‍🔬|scientist
+🔬|microscope
+🧮|calculator;maths
+🗣️|foreign languages;interpreter
+📜|history
+🪧|blackboard;teacher's desk
+🧑‍🏫|teacher;tourist guide
+🪑|desk;chair;bench;canteen;highchair;foot-stool
+🖇️|elastic band;hole-punch
+🗒️|post-it
+📬|envelope;postal address
+🧑‍🚒|fireman
+👷|builder;labourer;overalls;carpenter;professions;working people
+⚡|electrician
+🌩️|lightning
+⚙️|engineer;technician
+📦|courier;delivery man;box;crate
+🚕|taxi;taxi driver;taxi rank
+🎙️|reporter;intercom
+🏠|estate agent;attic;detached house;house;house number;roof;ceiling;chimney
+🏊‍♀️|lifeguard
+🤵|bodyguard
+🚛|road sweeper;rubbish truck;rubbish collector;rubbish collector's equipment;rubbish dump
+💃|model;mannequin
+🛍️|shop;clothes shop;fitting room;shade;sales assistant;buying and selling;furniture;leather goods;electrical goods;perfume shop;pet shop;toyshop;newsagent's;florist's;chemist's;optician's;laundrette;bar code;shelf;shelving unit
+🌧️|rain;acid rain
+🌈|rainbow
+⛈️|thunder
+🌪️|tornado;hurricane
+🌫️|fog
+🌨️|hail
+🍂|autumn
+🌸|spring
+🌞|summer
+🌙|moon;crescent moon;half moon;full moon;waning moon
+☿|mercury
+♀️|venus
+♂️|mars
+♃|jupiter
+🪐|saturn;uranus;neptune;planet;planets;pluto
+🌌|milky way;galaxy;constellations;north star
+☄️|meteorite;comet
+🛰️|artificial satellite;orbiter
+🚀|rocket;launch base;lunar module
+🔭|telescope;astronomical observatory;radio telescope;astronomer;binoculars
+👩‍🚀|astronaut
+⭐|stars
+📢|advertising
+🏢|apartment;flat/apartment;block of flats
+👨‍🍳|apron
+🍸|bar;mini-bar
+🧱|base;wall;wallpaper
+🦫|beaver;mole
+🧾|bill
+🧩|bit;make models
+🎀|bow
+🖌️|brush
+🟫|carpet;rug;doormat
+🎦|cinema;go to the cinema
+🔂|inside and out
+🤝|conference room;meeting room
+🚫|do not disturb
+🫏|donkey
+🚪|door;entrance;hall;room;gate
+🔔|doorbell
+💩|dung
+🔑|electronic key;key
+🎉|entertainment
+🪭|fan
+💐|florist
+🥘|food
+🤕|headache
+⛑️|helmet
+🪪|i.d.
+🦮|lead
+👤|mark
+💬|message
+🏍️|motorbike
+🏺|ornament
+🔩|parts and accessories
+🤲|pick up
+🕊️|pigeon;seagull
+🩲|pyjamas
+🔐|safe
+💧|water;water dispenser
+🏘️|semi-detached house;terraced house
+🐕‍🦺|vet
+⛱️|sunshade
+🍯|syrup
+🐯|tiger
+🛄|conveyor belt
+☁️|cotton wool
+📰|magazine rack
+👀|watch closely`;
+const EM=new Map();EMO.split("\n").forEach(l=>{const i=l.indexOf("|");l.slice(i+1).split(";").forEach(w=>EM.set(w.trim().toLowerCase(),l.slice(0,i)))});
+const CHE={1:"🏠",2:"🍳",3:"🛋️",4:"🛏️",5:"👨‍👩‍👧",6:"🧹",7:"🌷",8:"🏙️",9:"🏫",10:"💼",11:"🍽️",12:"🏨",13:"👷",14:"🎭",15:"🎵",16:"🎲",17:"💻",18:"📺",19:"🛍️",20:"👕",21:"🥕",22:"🚗",23:"🚆",24:"✈️",25:"🗺️",26:"🧍",27:"🩺",28:"⚽",29:"🌦️",30:"🌲",31:"🚜",32:"🦁",33:"🌊",34:"♻️",35:"🚀"};
+const NOICON=new Set(["the","of","a","on","in","to","off","out","up","do","get","go","take","put","have","be","and","for","with"]);
+function emojiFor(en,c){
+  const k=en.toLowerCase();
+  if(EM.has(k))return EM.get(k);
+  const look=t=>EM.get(t)||EM.get(t.replace(/'s$/,""))||EM.get(t.replace(/e?s$/,""));
+  const toks=k.replace(/\([^)]*\)/g,"").split(/[\s\/,\-]+/).filter(t=>t.length>2&&!NOICON.has(t));
+  for(let i=toks.length-1;i>=0;i--){const r=look(toks[i]);if(r)return r}
+  return CHE[c[0]]||"📘";
+}
+// ---- Gesamtliste aus dem Buch: Wort|Kapitel|Deutsch (Deutsch folgt Stück für Stück) ----
+const ALL="abdomen|26|Bauch, Unterleib;access barrier|23|Zugangsschranke;accessories for the dog|6|Hundezubehör;accordion|15|Akkordeon;ace|16|Ass;acid rain|34|saurer Regen;acorn|30;acoustic guitar|15|Akustikgitarre;actor|13,14|Schauspieler;actress|14|Schauspielerin;adult|5|Erwachsene(r);adventure film|18|Abenteuerfilm;advertising|18|Werbung;aerial|1,17;aeroplane|24|Flugzeug;Africa|25|Afrika;afternoon|29|Nachmittag;air conditioning|12|Klimaanlage;airport|24|Flughafen;aisle|14,23,24|Gang;alarm clock|4|Wecker;allergies|27|Allergien;alley|8|Gasse;almond|21|Mandel;aluminium|34|Aluminium;aluminium foil|2|Alufolie;ambulance|27|Krankenwagen;amplifier|15|Verstärker;amusement park|25|Freizeitpark;anchor|22|Anker;animal fur|27|Tierfell;animal kingdom|32|Tierreich;animals welcome|25|Tiere willkommen;animal's body|32|Tierkörper;ankle|26|Fußknöchel;ankle boots|20|Stiefeletten;anorak|20|Anorak;ant|30|Ameise;Antarctic Ocean|25|Südlicher Ozean;anteater|32|Ameisenbär;apartment|1;applaud|15;apple|21|Apfel;apricot|21|Aprikose;April|29|April;apron|2|Schürze;aquarium|25|Aquarium;archeological site|25|Ausgrabungsstätte;archery|28|Bogenschießen;archipelago|25|Inselgruppe;architect|13|Architekt(in);Arctic Ocean|25|Nordpolarmeer;arm|26|Arm;armchair|3|Sessel;armrest|3|Armlehne;arrivals|23,24|Ankunft;arrow keys|17|Pfeiltasten;Art|9|Kunst;artichoke|21|Artischocke;articulated lorry|22|Sattelzug;artificial satellite|35|künstlicher Satellit;artistic gymnastics|28|Kunstturnen;Asia|25|Asien;ask for information|23|nach Auskunft fragen;asparagus|21|Spargel;assistant director|18|Regieassistent(in);astronaut|35;astronomer|35;astronomical observatory|35|Sternwarte;Atlantic Ocean|25|Atlantik;atmospheric pollution|34|Luftverschmutzung;attach a file|17|eine Datei anhängen;attic|1;aubergine|21|Aubergine;August|29|August;aunt|5|Tante;author|9|Autor(in);automatic check-in|24|Selbst-Check-in;automatic grasscutter|7|Mähroboter;autumn|29|Herbst;avalanche|29|Lawine;avenue|8|Allee;avocado|21|Avocado\".split(;baby|5;back|26;backgammon|16;backpack|30;backstage|14;bag|10,20,21;baggage reclaim|24;baker|13;bakery|19;balcony|1;bald (be)|26;ball|28;ballerina|13,14;ballet shoes|14;banana|21;bandage|27;bank|8;bank note|19;bar|12,28;bar code|19;bark|7;barn|31;barn owl|30;barracuda|33;base|3;baseball|28;basin|6;basket|19,21,34;basketball|28;bass drum|15;bass guitar|15;bass guitarist|15;bat|30;bath|4;bathrobe|4,12;bathroom|1,4,12;baton|15;bay|33;beach|33;beak|32;beans|11;bear|32;beard|26;beautician|13;beaver|32;bed|4;bedroom|1,4;bedside mat|4;bedside table|4;beehive|31;beer|11;bees|31;bell|22;below zero|29;belt|20;bench|8;beret|20;bicycle|22;big toe|26;bill|11;bike-share parking|8;bin|2,4,9,10,34;binoculars|14,30;birthday card|5;birthday party|5;bishop|16;bison|32;bit|31;blackberry|21;blackboard|9;blanket|4,12;blender|2;block of flats|1;blood pressure meter|27;blouse|20;blueberry|21;blue eyes|26;board games|16;boarding card|24;bobsleigh|28;body|15;bodyguard|13;bone|26;bonnet|22;book|9;bookcase|3,9;bookshop|19,23;boom mike|18;boot|22;boots|20;boss|10;bottle|3,34;bottle opener|2;bottom|26;bow|22;bowl|3,6;box|14,34;boxing|28;boy|5;boyfriend|5;bra|20;bracelet|20;braces|20;brain|26;brake|22;branch|7;brass instruments|15;bread|2;bread basket|11;bream|33;breeder|31;bride|5;bridge|8,22;bridle|31;briefcase|20;broccoli|21;broom|6,34;brother|5;brown eyes|26;browser|17;brush|4,6;brush one's hair|4;brush one's teeth|4;Brussels sprouts|21;bucket|6;bud|7;Buddhist temple|25;buffalo|32;builder|13;building|8;bulky waste|34;bull|31;bumpers|22;buoy|22;bus|22,24;bus driver|13;bush|7;business card|10;bus station|23;bus stop|8;butterfly|30;button|20;buying and selling|19;buy tickets|23;cabbage|21;cabin|22,24;cabinet|3;cactus|7;café|8;caftan|20;cake|5,11;cake shop|19;calculator|9,10;calendar|9,10,17;calf|26,31;camel|32;camera|17;cameraman|18;camper|22,30;camping chair|30;camping equipment|30;camping stove|30;camping table|30;campsite|30;can|34;canal|8;candle|3,5;canoe|22;canoeing|28;canteen|9;canvas|16;cap|20,30;caps lock|17;caravan|30;cardigan|20;cardinal points|25;cardiologist|27;cards|16;cargo ship|22;carnation|7;carnival|14;carnival parade|14;car park|8,22,24;carpenter|13;carpet|3;carriage|23;carrot|21;car showroom|19;cartoons|18;cashpoint|8,19;casserole dish|2;castle|25;cat|31;caterpillar|30;cauliflower|21;cave|33;CD-ROM|17;ceiling|1;celery|21;cellar|1;cello|15;Central America|25;central stand|3;chameleon|32;change the lightbulb|6;channel|18;channel hop|18;charger|10,17;chat|17;check-in|24;check the tickets|23;check the timetable|23;cheek|26;cheese|11;chef|11,12;Chemistry|9;chemist's|19;cherry|21;chess|16;chest|26;chestnut|30;chest of drawers|4;chick|31;chicken|11;chicken coop|31;child-minder|13;child|5;children|5;chimney|1;chin|26;chips|11;chopping board|2;chrysanthemum|7;church|25;cinema|8,16;city|8,25;city centre|8;city hall|8;clam|33;clarinet|15;classical ballet|14;classroom|9;claw|33;claws|32;clean|6;cleaning products|19;clean the windows|6;clear the table|6;cloakroom|14;clock|9,10,23;close the window|6;clothes airer|6;clothes shop|19,20;clouds|29;clubs|16;coach|22;coast|33;coat|20;coat hanger|4;cockpit|24;cocktail|11;coconut|21;coffee|11;coffee machine|12;coffee pot|2;coffee table|3;coin|19;colander|2;cold|27,29;cold water|4;collar|6,20;colleague|10;collect stamps|16;coloured pencil|9;comb|4;comedy|14;comet|35;compass|9;composter|7;computer|9,10,17;concert|15;conditioner|4;conduct|15;conductor|14,15,23;conference room|12;constellations|35;contacts|17;container|34;contemporary dance|14;continents|25;contract of work|10;control tower|24;conveyor belt|24;cook|2,6,16;cooking programme|18;copy|17;coral|33;coral reef|33;core|21;corkscrew|2;cornet|15;costume|14;cotton|20;cotton wool|27;cough|27;couple|5;courgette|21;courier|13;courses|11;cousin|5;cousins|5;cover|9;cow|31;crab|33;crate|7,21;credit card|19;crescent moon|35;cricket|30;crocodile|32;cross-country skiing|28;crossroads|8;crow|30;cruise ship|22,25;crumb|2;crumbs|2;crust|2;crutch|27;cry|18;cucumber|21;cup|3;cupboard|2;curling|28;curly hair|26;curtain|3,14;cushion|3,6;customer|11;customs|24;cut|2,17;cut the grass|7;cutlery|3;CV|10;cycle path|8,22;cycling|28;cymbals|15;daffodil|7;daily routine|4;dairy products|11;dance|15,16;dance company|14;dancer|14;daughter|5;day|29;days|29;deal cards|16;December|29;deer|32;degrees|29;delete a file|17;delete/return key|17;delivery man|10;den|32;dentist|27;departures|23,24;dermatologist|27;desert|25,32;desk|9,10,17;dessert|11;desserts|11;detached house|1;diamonds|16;die|16;dietitian|27;dig|31;digital camera|25;dinghy|22;dining room|1,3;director|10,13,18;disabled parking|8;discount|19;discus throw|28;dish|3;dishwasher|2;dismissal|10;diving|28;do crosswords|16;doctor|27;documentary|18;document tray|10;do D.I.Y.|16;dog|31;do gardening|16;dolphin|33;dominoes|16;do not disturb|12;donkey|31;door|1,3,22,24;doorbell|1;doormat|1;do pottery|16;dormer window|1;do sudoku|16;do the shopping|6;do the washing up|6;double bass|15;double room|12;drought|29;dragonfly|30;drainpipe|1;draughts|16;drawer|2,4;dream|4,18;dress|20;dressing gown|4;dressing room|14;dried fruit|11;drinks|11;drinks trolley|23;drip feed|27;dromedary|32;drops|27;drummer|15;drums|15;dry|6;dry one's hair|4;duck|31;duckling|31;dung|32;dust|6,27;duster|6;dustpan|6,34;duty free shop|24;eagle|32;ear|26;earphones|24;earrings|20;ears|32;Earth|35;earthquake|29;Earth's crust|35;easel|16;East|25;ebook reader|17;egg|30,31;eggs|11;elastic band|10;elbow|26;elderly person|5;electrical goods|19;electric cable|17;electric guitar|15;electrician|13;electronic key|12;electronics|34;elephant|32;email|17;email address|10;embroider|16;emergency exit|14;engine|22,24;engineer|13;enjoy|18;enter key|17;entertainment|25;entrance|1,19;entrepreneur|13;envelope|10;equator|35;escalator|23,24;estate agent|13;Europe|25;evening|29;extractor fan|2;eye|26;eyebrow|26;eyelash(es)|26;fabrics|20;face|26;fall asleep|18;fall in love|5;family|5;fan|14,17;farm|31;farmer|31;father/dad|5;February|29;feed the animals|31;feed the dog|6;felt-tip pen|9;fence|31;fencing|28;fennel|21;fertilise|31;fertilizer|7;fever|27;fig|21;film|2;fin|33;fingerboard|15;fingers|26;finish line|28;fireman|13;fireplace|3;first aid kit|27;fish|11,33;fisherman|13;fishing boat|22;fitness room|12;fitting room|19;flag|28;flamingo|32;flask|30;flat/apartment|1;flight assistants|24;flight commander|24;flight safety|24;flip-flops|20;flippers|33;flood|29;floor|1;florist|13;florist's|19,23;flower|7;flowerbed|7;flowerbeds|7;flowers|7;flute|15;fly|30;foal|31;fog|29;fold|6;folder|10;follow the beat|15;food/drinks dispenser|10;food|27;food mixer|2;foot-stool|3;foot|26;football|28;footprint|32;forearm|26;forehead|26;Foreign languages|9;forest|30,32;forest animals|30;forest fire|29;fork|3;fountain|8;fox|30;foyer|14;fracture|27;free time|16;freezer|2;Friday|29;fringe|26;frog|30;fruit and vegetables|21;fruit salad|11;fry|2;frying pan|2;full moon|35;funnel|22;fur|32;furniture|19;galaxy|35;gallery|14;garage|1,8,12;garden|1;gardener|7;gardening|7;gardening gloves|7;garlic|21;gate|8,24;gazelle|32;gear lever|22;Geography|9;get bored|18;get engaged|5;get frightened|18;get married|5;get off the train|23;get on the train|23;get up|4;gill|33;giraffe|32;girl|5;girlfriend|5;give way|22;glacier|25;glass|3,34;glasses|20;globe|9,35;gloves|20,28,34;glue|9;goal|28;goat|31;golf|28;golf club|28;goose|31;gorilla|32;go to the cinema|16;go to the gym|16;go to the stadium|16;go to the theatre|16;GPS/sat-nav|25;grain|31;grandfather/granddad|5;grandmother/grandma|5;grandparents|5;grapefruit|21;grape|21;grapes|21;grass|7;grasshopper|30;grate|2;grater|2;green beans|21;green eyes|26;greengrocer's|21;greenhouse|7,31;green tea|11;grey hair|26;groom|5;guests|12;guidebook|25;guitarist|15;gulf|25;gym|9,16;hail|29;hair|26;hairdresser|13,19;hairdryer|4;hair styles|26;half moon|35;hall|1,12;hamburger|11;hand-held blender|2;hand|26;handlebars|22;hand wash|6;hangar|24;hang out the washing|6;hare|30;harp|15;harvest|31;hat|20;have a bath|4;have a shower|4;have a wash|4;have lunch on board|23;hazel eyes|26;hazelnut|21;head|26;headache|27;headlight|22;headphones|17;headset|17;headstock|15;head waiter|11;health problems|27;heart|26;hearts|16;heat|29;hedge|7;heel|26;heeled shoes|20;helicopter|24;helmet|22,35;hen|31;highchair|11;high jump|28;highlighter|9;hijab|20;hiking shoes|30;hip|26;hippopotamus|32;History|9;hob|2;hoe|7,31;hole-punch|10;holiday resort|25;holidays|10;hoodie|20;hooves|32;horns|32;horse|28,31;horse riding|28,31;hosepipe|7;hospital|8,27;hot|29;hotel|8,12,25;hotel staff|12;hot water|4;house|1;house number|1;household items|6;housework|6;human body|26;humidity|29;hummingbird|32;hurdling|28;hurricane|29;husband|5;husk|21,30;hyacinth|7;hyena|32;I.D.|12;I.T. (Information Technology)|9;ice|29,32;iceberg|25;ice bucket|11;ice cream|11;ice hockey|28;ice skates|28;ice skating|28;in-line skates|28;incinerator|34;index finger|26;Indian Ocean|25;indicator|22;industrial estate|8;information office|23,24;inner core|35;insects|27;insect sting|27;inside and out|21;interactive whiteboard|9;intercom|1;interpreter|13;intestine|26;iris|7;iron|6;ironing board|6;island|25,33;items for the shower|12;jack|16;jacket|20;January|29;jar|2,34;javelin|28;jeans|20;jellyfish|33;jeweller's|19;jigsaw puzzle|16;jilbab|20;job advertisements|10;joker|16;judge|13;judo|28;jug|3;juice|21;juicer|2;July|29;June|29;jungle|25,32;Jupiter|35;kayaking|28;kangaroo|32;kennel|6;kettle|2,12;kettledrum|15;key|1;keyboard|15,17;keyboard player|15;kid|31;king|16;kitchen|1,2,11,12;kitchen paper|2;kitten|31;kiwi fruit|21;knee|26;knee pads|28;knife|2,3;knight|16;knit|16;koala|32;laboratory|9;labourer|13;laced shoes|20;ladder|7;ladle|2;ladybird|30;lake|25;lamb|31;lamp|3,4,17,30;lampshade|3;land|24;landing gear|24;laptop|17;latitude|35;laugh|18;launch base|35;laundrette|19;lawn|7;lawnmower|7;lawyer|13;lay the table|6;lead|6;leaf|7,21;leaflet|25;leather goods|19;leg|26;legumes|11;lemon|21;leopard|32;lettuce|21;librarian|13;library|8,9;lid|2;lifeguard|13;life jacket|24;lift|12,24;light|15,22;light bulb|3;lighting technician|14,18;lightning|29;lights|14,18;light the hob|6;lightweight blanket|4;lingerie|19;lion|32;lip|26;liquidize|2;listen|15;listen to music|16;little finger|26;liver|26;live recording|18;living room|1,3;lizard|30;llama|32;load the dishwasher|6;load the washing machine|6;lobster|33;locker|9;logo|10;long, brown hair|26;longitude|35;long jump|28;look out of the window|23;lost property office|24;lower circle|14;lower mantle|35;luggage|12,23;luggage check|24;luggage rack|23;luggage trolley|12,23,24;lunar module|35;lung|26;magazine|34;magazine rack|3;maid|12;main dish|11;make models|16;make the bed|6;making music|15;man|5;manager|12;mane|32;manta ray|33;mannequin|19;man's suit|20;March|29;marine environment|33;Mark|5;Mars|35;mask|14,33;mat|4,30;maternity/paternity leave|10;Maths|9;mattress|4;May|29;measuring jug|2;meat|11;mechanic|22;medal|28;medicine|27;meerkat|32;meeting room|10;melon|21;memory stick|10,17;menu|11;Mercury|35;message|17;metal detector|24;meteorite|35;metropolis|8;microphone|15,17,18;microwave oven|2;middle finger|26;midwife|27;milk|31;Milky Way|35;millipede|30;mime|14;mini-bar|12;mirror|4;miss the train|23;mobile phone|10,17;model|13;modem|17;mole|30;molluscs|33;Monday|29;money|19;monkey|32;monologue|14;months|29;monument|8;Moon|35;moray|33;morning|29;mosque|25;mosquito|30;mother/mum|5;motorbike|22;mountain|25;mountains|32;mouse|17,31;mousse|11;moustache|26;mouth|26;mud guard|22;mug|3;muscles|26;museum|8,25;mushroom|21,30;music|9,15;musical|14;musician|13,15;music programme|18;music stand|15;mussel|33;nail|26;nail file|4;nail scissors|4;napkin|3;natural events|29;navel|26;neck|26;necklace|20;needle|13;Neptune|35;nest|30;net|28;newsagent's|19,23;newspaper|34;night|29;nightdress|4;no entry|22;non-recyclable waste|34;no right turn|22;North-East|25;North-West|25;North|25;North America|25;North Star|35;nose|26;no stopping|22;notebook|9,34;notes|15;notice board|17;November|29;number plate|22;nurse|27;Oceania|25;oceans|25;October|29;octopus|33;office|10;office chair|10;office worker|10;oil|11;oil tanker|22;ointment|27;on/off button|18;one-way street|22;onion|21;online shopping|17;open the window|6;optician|27;optician's|19;orange|21;orangutan|32;orbiter|35;orca|33;orchard|7;orchestra|15;orchestra pit|14;organic waste|34;ornament|3;orthopaedist|27;ostrich|32;out-of-date medicines|34;outer core|35;oven|2;oven glove|2;oven paper|2;oven tray|2;overalls|34;overhead compartment|24;overnight bag|23;owl|30;oxygen mask|24;oxygen tank|33;P.E. (Physical Education)|9;Pacific Ocean|25;pack of cards|16;paediatrician|27;page|9;paint|16;paintbrush|9,16;painter|13;painting|16;palace|25;palette|16;pan|2;panda|32;panther|32;pants|20;papaya|21;paper|34;paper bag|34;paper clip|10;parallel bars|28;parents|5;park|8;parking meter|8;parking space|12;parquet|3;parrot|32;parts and accessories|20;passenger|23;passenger boarding bridge|24;passport|24;passport control|24;pasta|11;paste|17;path|7;patient|27;pause|18;pavement|8;pawn|16;paws|32;peach|21;peanut|21;pear|21;peas|21;pebbles|7,33;pedal|22;pedestrian crossing|8,22;pedestrian zone|8;peel|2;peg|6;pelvis|26;pen|9;pencil|9;pencil case|9;pencil sharpener|9;penguin|32;pen holder|10;peninsula|25;pepper|11,21;percussion instruments|15;perfume shop|19;personal items|4;petal|7;pet shop|19;photocopier|10;photographer|13;photo-frame|3;piano|15;pick fruit|31;pick up|6;picture|3;pig|31;pigeon|31;pillow|4,12;pillowcase|4;pilot|24;pin|10;pineapple|21;pine cone|30;pine nuts|30;pins|13;pistachio|21;pizza|11;plait|26;planet|35;planets|35;plant|3,7;plant pot|3;plaster|27;plastic|34;plastic bottle|34;plate|3;platform|23;play|15,16;play cards|16;play chess|16;playing cards|16;play mikado|16;play scrabble|16;play videogames|16;plough|31;plug|3;plug in|6;plum|21;plumber|13;Pluto|35;pocket|20;podium|15;polar bear|32;pole|35;pole vault|28;police film|18;police officer|13;police station|8;politician|13;pollen|27;polo|28;pond|7;pony-tail|26;porcupine|30;porter|12;porthole|22;post-it|10;postal address|10;post box|1;poster|14;poster paints|16;post office|8;post woman|13;pot|7;potato|21;pot holder|2;prawn|33;present|5,15;presenter|18;price tag|19;print|17;printer|10,17;professions|13;programme|14;projector|9;protection of the environment|34;publisher|9;pullover/jumper|20;puma|32;pumpkin|21;puppy|31;purifier|34;put on make-up|4;put the luggage on the luggage rack|23;pyjamas|4;queen|16;quilt|4;quilt cover|4;quilted jacket|20;quiz show|18;rabbit|31;raccoon|30;radar|24;radio|17;radio telescope|35;rain|29;rainbow|29;raincoat|20;rake|7;rake the leaves|7;raspberry|21;razor|4;read|16;read music|15;reality show|18;receipt|19;reception|12;receptionist|12;recital (solo concert)|14;record|18;record button|18;recorder|15;recruitment|10;recycling|34;recycling materials|34;red wine|11;refrigerator|2;reindeer|32;reins|31;relatives|5;remote control|3,18;rent a car|23;repair|6;reporter|13;reserved|11;residential area|8;restaurant|8,11,12,23;restaurant carriage|23;retire|10;rhinoceros|32;rib|26;rice|11,31;ring-binder|10;ring|20,35;ring finger|26;rings|28;river|25;road sign|8;road signs|22;road sweeper|13,34;robin|30;rocket|35;rocks|33;rollerskating|28;rolling pin|2;romantic film|18;roof|1;rook|16;room|1;room number|12;rooms|12;room service|12;rooster|31;root|7;rose|7;roundabout|8;row|14;rowing boat|22;rubber|9;rubber gloves|6;rubbish bag|2;rubbish bin|8;rubbish collector|34;rubbish collector's equipment|34;rubbish dump|34;rubbish truck|34;rug|3,4;rugby|28;ruler|9;running|28;runway|24;saddle|22,31;safari park|25;safe|10,12;safety pin|13;sailing|28;sailing boat|22;salad|11;salary|10;sales assistant|19;salt|11;sand|33;sandals|20;sari|20;Saturday|29;Saturn|35;sauces|11;sausages|11;savannah|25,32;save|17;saxophone|15;scale|33;scales|2,4,21;scanner|17;scarecrow|31;scarf|20;scenery|14;school|9;school bag|9;school recital|14;school subjects|9;sci-fi film|18;Science|9;scientist|13;scissors|9;scooter|22;score|15;scorpion|30;screen|17,24;scuba diver|33;sculptor|13;sea|25;sea animals|33;sea bass|33;seabed|33;seagull|33;seahorse|33;seal|32;sea lion|32;seamstress|13;season|2;seasonal fruit|11;seasons|29;seat|14,22,23,24;seatbelt|22,24;sea urchin|33;seaweed|33;seed|7,21;semi-detached house|1;send an email|17;September|29;set square|9;sew|6;sewing machine|13;sew on a button|6;shade|19;shampoo|4;shark|33;shave|4;shaving cream|4;shears|7;sheep|31;sheep pen|31;sheet|4;sheet of paper|9,10;shelf|3,10,19;shell|21,33;shellfish|34;shelving unit|10;shirt|20;shoes|28;urban centres|8;urban spaces|8;used oils|34;usher|14;using technology|17;vacuum|6;vacuum cleaner|6;van|22;vase of flowers|3;vegetable patch|31;vegetable peeler|2;vegetables|11;vegetarian menu|11;vein|26;Venus|35;vest|20;vet|31;videocamera|8,23,25;videogame|17;viewing terrace|12;village|8;vinegar|11;violin|15;volcanic eruption|29;volcano|25;volleyball|28;volume|18;vulture|32;wagon|22;waistcoat|20;waiter|11,12;waiting room|23,24;wait in the waiting room|23;wake up|4;walking poles|30;wall|1;wallet|20;wallpaper|3;walnut|21;walrus|32;waning moon|35;wardrobe/closet|4;warning triangle|22;wash|2;wash basin|4;washing-up liquid|2;washing basket|4;wash the floor|6;wasp|30;waste transport|34;watch|20;watch closely|18;water|7;watercolours|9;water dispenser|10;waterfall|25;watering can|7;waterlily|7;watermelon|21;water pollution|34;water polo|28;water tank|30;waves|33;wavy hair|26;weather forecast|18;webcam|17;website|10;Wednesday|29;weedkiller|34;week|29;weekend|29;weigh|2;weight lifting|28;Wellington boots|20;wellness room|12;West|25;wetsuit|33;whale|33;wheel|22;wheel barrow|7;wheelchair|27;whisk (eggs)|2;whisk|2;white hair|26;white wine|11;Wi-Fi|12;Wi-Fi connection|17;wife|5;wig|14;wind|29;wind instruments|15;window|1,19,22,23,24;windscreen wiper|22;windsurfing|28;wine list|11;wing|24,32;winter|29;wolf|32;woman|5;woman's suit|20;wood and cuttings|34;woodpecker|30;wool|20;work|10,13;working people|13;work in progress|22;world map|9;worm|30;wound|27;wreck|33;wrestling|28;wrist|26;x-ray|27;yacht|22;young|32;zebra|32;zip|20;zoo|25;Sun|35;sunburn|27;Sunday|29;sunflower|31;sunglasses|20;sunrise|29;sunset|29;sunshade|1;supermarket|19;surgeon|27;swallow|31;sweater|20;sweatshirt|20;sweep|6;sweetcorn|31;swimming|28;swimming pool|12;swimming trunks|20;swimsuit|20;switchboard operator|13;swordfish|33;synchronised swimming|28;synthetic fabrics|20;syringe|27;syrup|27;T-shirt|20,28;table|3,23;tablecloth|3;tablet|9,10,17;table tennis|28;tail|24,32,33;take a bow|15;take off|24;take photographs|16;take the dog out|6;take the rubbish out|6;talent show|18;talk show|18;tangerine|21;tap|2,4;tape measure|13;taxi|22,23,24;taxi driver|13;taxi rank|8;teacher|9;teacher's desk|9;teaspoon|3;tea towel|2;technician|13;teenager|5;teeth|26;telephone|10,17;telephone number|10;telephones and computers|19;telescope|35;television|3,12,18;television camera|18;television studio|18;tennis|28;tennis racket|28;tent|30;terrace|1;terraced house|1;theatre|8,14,16;the news|18;thermometer|27,29;thigh|26;thorax|26;thorn|7;thread|13;thumb|26;Thursday|29;ticket|14,23,25;ticket collector|23;ticket machine|23;ticket office|23;tidy up|6;tie|20;tiger|32;tights|20;till|19;timer|2;timetable|23,24;tip|11;title|9;toad|30;toast|2;toaster|2;toes|26;toilet|4,23,24;toilet paper|4;tomato|21;tongue|26;tool shed|7;toothache|27;toothbrush|4;toothpaste|4;top|34;torch|30;tornado|29;tortoise|30;tourist guide|13;tour operator|25;towel|4;towels|12;town|8;toyshop|19;trachea|26;track|28;tractor|31;traffic lights|8;traffic update|18;tragedy|14;train|23;trainers|20;train travel|23;tram|8,22;transport|22;travel|16,23;travel accessories|25;travel agency|25;travelator|24;traveller|23;tray table|23,24;tree|7;trolley|19;trombone|15;trousers|20;trowel|7;trumpet|15;trunk|7;tsunami|29;toucan|32;Tuesday|29;tulip|7;tundra|25;tune|15;tuning keys|15;turban|20;turkey|31;turn right|22;turtle|33;tusks|32;TV editing|18;TV programmes|18;TV viewer|18;tweezers|4;twin room|12;tyre|22;umbrella|20;umpire|28;uncle|5;uncle and aunt|5;underarm|26;underground|8;university|8;unplug|6;upper circle|14;upper mantle|35;Uranus|35";
+(function(){
+  const idx=new Map(W.map((w,i)=>[w[0].toLowerCase(),i]));
+  ALL.split(";").forEach(r=>{
+    const [en,ch,de]=r.split("|"),c=ch.split(",").map(Number),k=en.toLowerCase();
+    if(idx.has(k))W[idx.get(k)][1]=c;                       // Karte mit allen Details: Kapitel aus dem Buch übernehmen
+    else W.push([en,c,de||"",null,"",emojiFor(en,c)]);       // einfache Karte
+  });
+})();
+function ltr(i){const m=W[i][0].match(/[A-Za-z]/);return m?m[0].toUpperCase():"#"}
+function sortIds(ids){return ids.sort((a,b)=>W[a][0].replace(/^[^A-Za-z]+/,"").toLowerCase().localeCompare(W[b][0].replace(/^[^A-Za-z]+/,"").toLowerCase()))}
+function letterBar(avail){return `<div class="letters">`+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(L=>`<button class="lt" data-letter="${L}" aria-pressed="${st.letter===L}"${avail.has(L)?"":" disabled"}>${L}</button>`).join("")+`</div>`}
 function renderDict(){
-  const m=new Map();
-  A.forEach(a=>m.set(a[0].toLowerCase(),a));
-  W.forEach(w=>m.set(w[0].toLowerCase(),[w[0],w[1],w[2]]));
-  const L=[...m.values()].sort((a,b)=>a[0].toLowerCase().localeCompare(b[0].toLowerCase()));
-  let cur="",h="";
-  L.forEach(e=>{const c=e[0][0].toUpperCase();if(c!==cur){cur=c;h+=`<h3>${c}</h3>`}
-    h+=`<button class="de-e" data-say="${e[0]}"><b>${e[0]}</b>${st.de?` <span>${e[2]}</span>`:""} <i>${e[1].join(", ")}</i></button>`});
-  main.innerHTML=`<h2>Wörterbuch A–Z</h2><div class="dict">${h}</div><p class="note">${L.length} Wörter · die kleine Zahl ist das Kapitel · Tippen = anhören. Weitere Buchstaben folgen.</p>`;
+  const all=W.map((_,i)=>i),avail=new Set(all.map(ltr));
+  if(!avail.has(st.letter))st.letter=[...avail].sort()[0];
+  const list=sortIds(all.filter(i=>ltr(i)===st.letter));
+  const h=list.map(i=>{const e=W[i];return `<button class="de-e" data-say="${e[0]}"><b>${e[0]}</b>${st.de&&e[2]?` <span>${e[2]}</span>`:""} <i>${e[1].join(", ")}</i></button>`}).join("");
+  main.innerHTML=letterBar(avail)+`<h2>Wörterbuch · ${st.letter} <span class="note">· ${list.length} Wörter</span></h2><div class="dict">${h}</div><p class="note">${W.length} Wörter insgesamt · die kleine Zahl ist das Kapitel · Tippen = anhören.</p>`;
 }
 
 // ---- Geschichten ----
@@ -352,7 +916,7 @@ document.addEventListener("click",e=>{
   const fl=e.target.closest(".flip");
   if(fl&&!e.target.closest("[data-say]")){fl.classList.toggle("flipped");return}
   const t=e.target.closest("button");if(!t)return;
-  if(t.dataset.i!==undefined){st.voice=+t.dataset.i;renderVoices();if(st.tab==="s")renderStory();say("Hello! I am "+VN[st.voice][0]+".",st.voice)}
+  if(t.dataset.i!==undefined){st.voice=+t.dataset.i;renderVoices();if(st.tab==="s")renderStory()}
   else if(t.id==="tabW"){st.tab="w";render()}
   else if(t.id==="tabD"){st.tab="d";render()}
   else if(t.id==="tabS"){st.tab="s";render()}
