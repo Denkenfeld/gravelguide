@@ -264,7 +264,8 @@ body.drag::after{content:"Dateien hier ablegen";position:fixed;inset:10px;border
 #wh::-webkit-scrollbar{display:none}
 .wi{height:44px;display:flex;align-items:center;gap:7px;padding:0 8px;scroll-snap-align:center;cursor:pointer;will-change:transform}
 .wi span{min-width:0;line-height:1.15}.wi b{display:block;font-size:13px}.wi small{font-size:11px;color:var(--dim)}
-#wh .wi{gap:6px;padding:0 6px}#wh .wi span{flex:1;min-width:0;white-space:nowrap}#wh .wi b{font-size:var(--wfs,13px);white-space:nowrap}#wh .wi small{display:block;font-size:calc(var(--wfs,13px)*.85);white-space:nowrap}
+#wh .wi{gap:6px;padding:0 6px}
+#wh .wi svg,#rwh .wi svg{width:34px;height:34px;flex:none}#wh .wi span{flex:1;min-width:0;white-space:nowrap}#wh .wi b{font-size:var(--wfs,13px);white-space:nowrap}#wh .wi small{display:block;font-size:calc(var(--wfs,13px)*.85);white-space:nowrap}
 #hdet{flex:1;min-width:0}
 #hnm{display:block;width:100%;text-align:left;background:none;border:0;padding:0 0 5px;font:inherit;font-size:13px;font-weight:700;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #hst{grid-template-columns:1fr 1fr!important;row-gap:6px;text-align:left}
@@ -1161,10 +1162,10 @@ function pattern(){const wd=Array(7).fill(0),hr=Array(24).fill(0);V.forEach(t=>{
    FAHRTENLISTE
    ============================================================ */
 let sortK='date',sortD=-1,shown=40,qry='',onlyFav=false;
-function thumb(r){if(r._th)return r._th;const st=Math.max(1,Math.ceil(r.n/160)),k=Math.cos(r.lat[0]*Math.PI/180);let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const P=[];
+function thumb(r){if(r._thl)return r._thl;const st=Math.max(1,Math.ceil(r.n/160)),k=Math.cos(r.lat[0]*Math.PI/180);let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const P=[];
  for(let i=0;i<r.n;i+=st){const x=r.lon[i]*k,y=-r.lat[i];x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);P.push([x,y])}
  const W=84,H=58,pd=7,s=Math.min((W-2*pd)/(x1-x0||1),(H-2*pd)/(y1-y0||1)),ox=(W-(x1-x0)*s)/2,oy=(H-(y1-y0)*s)/2,q=P.map(p=>[(ox+(p[0]-x0)*s).toFixed(1),(oy+(p[1]-y0)*s).toFixed(1)]),d='M'+q.map(p=>p.join(' ')).join('L'),a=q[0],b=q[q.length-1];
- return r._th=`<svg class="th" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="none" stroke="${r.col}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".2"/><path d="${d}" fill="none" stroke="${r.col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${a[0]}" cy="${a[1]}" r="2.6" fill="#3ddc84"/><circle cx="${b[0]}" cy="${b[1]}" r="2.6" fill="#ff5c7c"/></svg>`}
+ return r._thl=`<svg class="th" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="none" stroke="${r.col}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".2"/><path d="${d}" fill="none" stroke="${r.col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${a[0]}" cy="${a[1]}" r="2.6" fill="#3ddc84"/><circle cx="${b[0]}" cy="${b[1]}" r="2.6" fill="#ff5c7c"/></svg>`}
 function listData(){const q=qry.trim().toLowerCase();return V.filter(t=>(!onlyFav||t.raw.fav)&&(!q||(t.raw.note||'').toLowerCase().includes(q)||rname(t).toLowerCase().includes(q)||new Date(t.date).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'}).toLowerCase().includes(q))).sort((a,b)=>{const x=a[sortK],y=b[sortK];return(x>y?1:x<y?-1:0)*sortD||(b.date-a.date)})}
 function renderRides(){const R=listData(),vis=R.slice(0,shown),byDate=sortK=='date';
  qa('#sg .chip').forEach(b=>{if(b.dataset.s=='fav'){b.classList.toggle('on',onlyFav);return}const on=b.dataset.s==sortK;b.classList.toggle('on',on);b.textContent=b.textContent.replace(/ [↓↑]$/,'')+(on?(sortD<0?' ↓':' ↑'):'')});
