@@ -1903,7 +1903,7 @@ const _ws=whSel;whSel=function(i){aniStop();_ws(i);heSet(i?WH.L[i-1]:null);shpop
 var HM="km",HB=null,GBR=[];
 const HMD={km:{g:r=>r.km,f:v=>f0(v,1),u:" km"},up:{g:r=>r.up,f:v=>f0(v),u:" m"},h:{g:r=>r.h,f:v=>fHm(v),u:" h"},kc:{g:r=>r.kc,f:v=>f0(v),u:" kcal"}};
 function whStatsOv(ride){const L=ride?[ride]:V,f=(k,n,u)=>'<div class="sm'+(HM==k?' on':'')+'" data-m="'+k+'"><b>'+n+'<small>'+u+'</small></b></div>';
- return f("km",f0(sum(L,x=>x.km)),"km")+f("up",f0(sum(L,x=>x.up)),"m")+f("h",fHm(sum(L,x=>x.h)),"h")+f("kc",f0(sum(L,x=>x.kc)),"kcal")}
+ return f("km",f0(sum(L,x=>x.km)),"km")+f("up",f0(sum(L,x=>x.up)),"hm")+f("h",fHm(sum(L,x=>x.h)),"h")+f("kc",f0(sum(L,x=>x.kc)),"kcal")}
 function wlCount(){const l=$("wlogo");if(l){const n=V.length;l.innerHTML="<b>"+f0(n)+"</b>";ggCnt("hnr",f0(n))}if(typeof WH!="undefined"&&WH.i)return;const h=$("hnm");if(h){h.textContent="";h.classList.remove("lk")}}
 function whBarMark(tgt){const g=$("hgr");if(!g)return;let hit=false;g.querySelectorAll("i[data-k]").forEach(i=>{const x=GBR[+i.dataset.k],on=!!tgt&&!!x&&x.r===tgt;i.classList.toggle("s",on);if(on)hit=true});g.classList.toggle("hs",hit)}
 function whBarLive(c){if(typeof WH=="undefined"||!WH.L)return;whBarMark(c>0?WH.L[c-1]:HB)}
@@ -2099,7 +2099,7 @@ body.pl-on #map canvas{cursor:crosshair}
  <div id="rbody"></div>
  <div id="rpop"></div>
  <div id="pl-h">
- <div id="pl-st"><span><b id="pl-km">0</b> <small>km</small></span><span><b id="pl-up">0</b> <small>m ↑</small></span><span><b id="pl-dn">0</b> <small>m ↓</small></span><span><b id="pl-tm">–</b> <small>h</small></span><span id="pl-busy">berechne…</span></div><div class="pl-actions"><button class="chip" id="pl-cancel" type="button">Abbrechen</button><button class="chip" id="pl-x">Fertig</button></div></div>
+ <div id="pl-st"><span><b id="pl-km">0</b> <small>km</small></span><span><b id="pl-up">0</b> <small>hm ↑</small></span><span><b id="pl-dn">0</b> <small>hm ↓</small></span><span><b id="pl-tm">–</b> <small>h</small></span><span id="pl-busy">berechne…</span></div><div class="pl-actions"><button class="chip" id="pl-cancel" type="button">Abbrechen</button><button class="chip" id="pl-x">Fertig</button></div></div>
  <div id="pl-cvw"><canvas id="pl-cv"></canvas><div id="pl-hv"></div></div>
  <div class="chips" id="pl-ctl"><div id="pl-pf"></div>
  <div id="pl-edit-actions"><button class="chip pl-icon" id="pl-undo" type="button" title="Zurück" aria-label="Zurück"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 4 9l5 5M4 9h9a7 7 0 0 1 0 14" transform="translate(0 -2)"/></svg></button><button class="chip pl-icon" id="pl-rev" type="button" title="Umkehren" aria-label="Umkehren"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 3-4 4 4 4M3 7h17M17 13l4 4-4 4M21 17H4"/></svg></button><button class="chip pl-icon" id="pl-clr" type="button" title="Leeren" aria-label="Leeren"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button></div></div>
@@ -2321,7 +2321,8 @@ function plFit(){if(PL.pts.length<1)return;const b=new maplibregl.LngLatBounds()
 function plToggle(v){
  if(v===undefined)v=!PL.on;const wasOn=PL.on;PL.on=v?1:0;document.body.classList.toggle('pl-on',!!PL.on);el('bplan').classList.toggle('on',!!PL.on);
  if(PL.on&&document.body.dataset.tab!='map'){try{document.body.dataset.tab='map'}catch(e){}}
- if(!PL.on){PL.edit=0;el('plan').classList.remove('edit')}
+ if(!PL.on){if(wasOn&&PL.edit)PL.resume=1;PL.edit=0;el('plan').classList.remove('edit')}
+ else if(!wasOn&&PL.resume){PL.resume=0;PL.edit=1;el('plan').classList.add('edit')}
  ensurePlan();plVis();plDim(!!PL.on);plMarkers();
  if(PL.on){if(PL.edit)plBuild();else rtEnter();if(!PL.t0u&&el('pl-t0'))el('pl-t0').value=plNowT()}else{plHoverEnd();rtHoverEnd();rtPop(false);hudPnl();plExApply(0)}
  setTimeout(()=>{plChart();rtChart()},60);
@@ -2706,19 +2707,19 @@ function rtCur(){return RT.i?RT.L[RT.i-1]||null:null}
 var RM='km';
 function rtBarUpdate(fit){if(RT.i)return;const it=RT.L.find(x=>x.key===RT.barKey);if(!it)RT.barKey=null;
  const f=(k,v,u)=>'<div class="sm'+(k&&RM===k?' on':'')+'"'+(k?' data-m="'+k+'"':'')+'><b>'+v+'<small>'+u+'</small></b></div>';
- if(it){const st=it.c&&it.c.length>1?statsOf(rtA(it.c)):null;el('rhst').innerHTML=f('km',fmt(it.km,1),'km')+f('up',fmt(it.up),'m ↑')+f('',st?hmm(st.h):'–','h')+f('',st?fmt(plKcal(st)):'–','kcal');el('rhnm').textContent=it.name;
+ if(it){const st=it.c&&it.c.length>1?statsOf(rtA(it.c)):null;el('rhst').innerHTML=f('km',fmt(it.km,1),'km')+f('up',fmt(it.up),'hm')+f('',st?hmm(st.h):'–','h')+f('',st?fmt(plKcal(st)):'–','kcal');el('rhnm').textContent=it.name;
  if(!it.c&&it.hh){const key=it.key;rtLoadGeo(it,true).then(ok=>{if(ok&&!RT.i&&RT.barKey===key){const rec=rtRecs().find(r=>r.sent===it.hh);if(rec&&rec.c)it.c=rec.c;rtBarUpdate(true)}})}}else{el('rhst').innerHTML=rtStatsOv();el('rhnm').textContent=''}
  el('rhgr').querySelectorAll('i[data-j]').forEach(b=>{const x=RT.L[+b.dataset.j];b.classList.toggle('s',!!it&&x===it)});rtMap(!!fit);}
 function rtStatsOv(){const L=RT.L,tk=L.reduce((a,x)=>a+x.km,0),tu=L.reduce((a,x)=>a+x.up,0),lg=L.reduce((a,x)=>Math.max(a,x.km),0),av=L.length?tk/L.length:0;
  const f=(k,v,u)=>'<div class="sm'+(k?(RM==k?' on':''):' ro')+'"'+(k?' data-m="'+k+'"':'')+'><b>'+v+'<small>'+u+'</small></b></div>';
- return f('km',fmt(tk),'km')+f('up',fmt(tu),'m ↑')+f('',fmt(av),'Ø km')+f('',fmt(lg),'längste')}
+ return f('km',fmt(tk),'km')+f('up',fmt(tu),'hm')+f('',fmt(av),'Ø km')+f('',fmt(lg),'längste')}
 function rtGraph(){const g=el('rhgr');if(!g)return;const L=RT.L;if(!L.length){g.innerHTML='';return}
  const get=x=>RM=='up'?x.up:x.km,u=RM=='up'?' m':' km',mx=Math.max(...L.map(get),1e-6),A=L.map((x,j)=>({x,j})).reverse().slice(-60),n=A.length;
  g.innerHTML='<div class="gb">'+A.map((o,i)=>'<i data-j="'+o.j+'" class="c'+(o.x.c?'':' nv')+(i==n-1?' l':'')+'" title="'+esc(o.x.name)+' · '+fmt(get(o.x),RM=='up'?0:1)+u+(o.x.c?'':' · keine Vorschau')+(o.x.hh?' · Karoo':' · nur App')+'" style="height:'+Math.max(4,get(o.x)/mx*100).toFixed(1)+'%;animation-delay:'+Math.min(i*14,400)+'ms"></i>').join('')+'</div>'}
 function rtHead(){const it=rtCur(),f=(v,u)=>'<div><b>'+v+'<small>'+u+'</small></b></div>',p=el('plan');
  p.classList.toggle('rrd',!!it);el('rhnm').textContent=it?it.name:'';
  const L=RT.L,lg=el('rwlogo');if(lg)lg.innerHTML='<b>'+fmt(L.length)+'</b>';ggCnt('rhnr',fmt(L.length));
- if(it){const s=RT.A?statsOf(RT.A):null;el('rhst').innerHTML=f(fmt(it.km,1),'km')+f(fmt(it.up),'m ↑')+(s?f(hmm(s.h),'h')+f(fmt(plKcal(s)),'kcal'):'')}
+ if(it){const s=RT.A?statsOf(RT.A):null;el('rhst').innerHTML=f(fmt(it.km,1),'km')+f(fmt(it.up),'hm')+(s?f(hmm(s.h),'h')+f(fmt(plKcal(s)),'kcal'):'')}
  else{el('rhst').innerHTML=rtStatsOv();rtGraph();rtBarUpdate()}
  rtMsg()}
 function rtMsg(){const s=el('rhsub');if(!s)return;const L=RT.L,nh=L.filter(x=>x.hh).length;
@@ -2792,7 +2793,7 @@ function plKcal(s){const m=(typeof WT=='number'?WT:75)+(typeof BW=='number'?BW:1
 const BN=[['≤ −6 %',-99,-6,-9],['−6…−2 %',-6,-2,-4],['flach',-2,2,0],['2…6 %',2,6,4],['6…10 %',6,10,8],['> 10 %',10,99,13]];
 function rtBody(){const bd=el('rbody');if(!bd)return;const it=rtCur(),X=(v,l)=>'<div><b>'+v+'</b><small>'+l+'</small></div>';
  if(!it){const L=RT.L,tk=L.reduce((a,x)=>a+x.km,0),tu=L.reduce((a,x)=>a+x.up,0),lg=L.reduce((a,x)=>Math.max(a,x.km),0);
-  bd.innerHTML='<h4>Übersicht</h4><div class="plg">'+X(fmt(L.length),'Routen')+X(fmt(tk),'km gesamt')+X(fmt(tu),'m ↑ gesamt')+X(fmt(lg),'km längste')+'</div>'
+  bd.innerHTML='<h4>Übersicht</h4><div class="plg">'+X(fmt(L.length),'Routen')+X(fmt(tk),'km gesamt')+X(fmt(tu),'hm gesamt')+X(fmt(lg),'km längste')+'</div>'
    +rtListHtml()
    +'<h4>Backup</h4><div class="plhint">Alle Routen mit Strecke als eine GPX-Datei sichern. In einem neuen Browser mit „Backup laden“ wiederherstellen.</div><div class="plbtns" style="margin-top:6px"><button class="chip on" data-a="rbk">⤓ Backup speichern</button><button class="chip" data-a="rrs">⤒ Backup laden</button></div>'+'<h4>Hammerhead Dashboard</h4><div class="plhint" id="rb-msg"></div><div class="plbtns" style="margin-top:6px"><button class="chip" data-a="rref">↻ Aktualisieren</button><button class="chip" data-a="rdash">Karoo öffnen</button><button class="chip" data-a="rimp">GPX importieren</button></div><div class="plhint">Routen und Fahrten werden bewusst nur im Hammerhead Dashboard gelöscht.</div>';
   rtMsg();return}
@@ -2868,7 +2869,7 @@ async function rtRestore(file){try{const doc=new DOMParser().parseFromString(awa
  warn(n+' neu'+(u?' · '+u+' aktualisiert':'')+' – Routen wiederhergestellt')}
  catch(e){warn('Backup konnte nicht gelesen werden')}}
 function rtRow(x,j){const loc=!x.hh,can=!!(x.c||(x.rec&&x.rec.p&&x.rec.p.length>1));
- return'<div class="plli tap rrow'+(loc?' loc':'')+'" data-a="rg" data-i="'+(j+1)+'"><span class="rth">'+rtThumb(x.c)+'</span><div class="t">'+esc(x.name)+'<small>'+fmt(x.km,1)+' km · '+fmt(x.up)+' m ↑'+(x.date?' · '+new Date(x.date).toLocaleDateString('de-DE'):'')+(x.c?'':' · keine Vorschau')+'</small></div>'
+ return'<div class="plli tap rrow'+(loc?' loc':'')+'" data-a="rg" data-i="'+(j+1)+'"><span class="rth">'+rtThumb(x.c)+'</span><div class="t">'+esc(x.name)+'<small>'+fmt(x.km,1)+' km · '+fmt(x.up)+' hm'+(x.date?' · '+new Date(x.date).toLocaleDateString('de-DE'):'')+(x.c?'':' · keine Vorschau')+'</small></div>'
   +(()=>{const q=rtState(x);return q=='app'?'<span class="tagl">nur App</span>':(q=='mod'||q=='nm')?'<span class="tagm">geändert</span>':'<span class="tagk">Karoo</span>'})()
   +(!x.c&&x.hh?'<button class="chip rgp" data-a="ras" data-i="'+(j+1)+'">GPX +</button>':'')
   +'<button class="rbt" data-a="rel" data-i="'+(j+1)+'" aria-label="Bearbeiten"'+(can?'':' disabled')+'>'+PEN+'</button>'
