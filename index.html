@@ -2294,21 +2294,21 @@ function plNearest(pt){
 /* ---- Tippen / Halten ---- */
 function plAttach(){
  if(PL.att||!map)return;PL.att=1;
- const cc=map.getCanvasContainer(),ring=el('pl-ring');let st=null,tapT=0,ptrs=0;
+ const cc=map.getCanvasContainer(),ring=el('pl-ring');let st=null,tapT=0;
  const xy=e=>{const r=cc.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
  const stop=()=>{if(st){clearTimeout(st.t);st=null}ring.classList.remove('go')};
  cc.addEventListener('pointerdown',e=>{
-  if(!PL.on||!PL.edit)return;ptrs++;if(ptrs>1){stop();return}
-  if(e.target.closest&&e.target.closest('.maplibregl-marker,.maplibregl-popup'))return;
+  if(!PL.on||!PL.edit)return;if(e.isPrimary===false){stop();return}
+  if(e.target.closest&&e.target.closest('.maplibregl-marker,.maplibregl-popup')){stop();return}
   clearTimeout(tapT);
   const p=xy(e);st={x:e.clientX,y:e.clientY,p,t0:Date.now(),held:0};
   ring.style.left=e.clientX+'px';ring.style.top=e.clientY+'px';ring.classList.remove('go');void ring.offsetWidth;ring.classList.add('go');
   const me=st;st.t=setTimeout(()=>{if(st!==me)return;me.held=1;ring.classList.remove('go');plHoldAdd(p)},380);
  },true);
  cc.addEventListener('pointermove',e=>{if(st&&!st.held&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>10)stop()},true);
- const up=e=>{ptrs=Math.max(0,ptrs-1);if(!PL.on||!PL.edit||!st)return;const me=st,quick=!me.held&&Date.now()-me.t0<380&&Math.hypot(e.clientX-me.x,e.clientY-me.y)<=10;stop();
+ const up=e=>{if(!PL.on||!PL.edit||!st)return;const me=st,quick=!me.held&&Date.now()-me.t0<380&&Math.hypot(e.clientX-me.x,e.clientY-me.y)<=10;stop();
   void quick};
- cc.addEventListener('pointerup',up,true);cc.addEventListener('pointercancel',e=>{ptrs=Math.max(0,ptrs-1);stop()},true);
+ cc.addEventListener('pointerup',up,true);cc.addEventListener('pointercancel',e=>{stop()},true);
  map.on('styledata',ensurePlan);map.on('idle',ensurePlan);
  map.on('click',e=>{if(!PL.on||PL.edit)return;try{const fs=map.queryRenderedFeatures([[e.point.x-10,e.point.y-10],[e.point.x+10,e.point.y+10]],{layers:['rt-all-line']});if(fs.length&&fs[0].properties.i)rtGo(+fs[0].properties.i)}catch(x){}});
  ensurePlan();
