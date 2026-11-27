@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Weltraum-Wörter</title>
+<title>35 - Stars and planets</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
 <style>
@@ -109,11 +109,14 @@ section.block{background:var(--panel);border:2px solid var(--line);border-radius
 .opts{display:grid;gap:8px}.opts button{text-align:left}
 .opts button.right{background:#8cf0a8;color:var(--ink);border-color:#8cf0a8}.opts button.wrong{background:var(--coral);color:var(--ink);border-color:var(--coral)}
 .fb{min-height:1.6em;font-weight:800;margin:10px 0}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 14px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--fg);font:700 .95rem var(--body);text-decoration:none}
+.back:hover{border-color:var(--teal)}.back:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 </style>
 
 <div class="wrap">
+<div><a class="back" href="index.html">← Zurück zum Menu</a></div>
 <header>
- <h1>Weltraum-<span>Wörter</span></h1>
+ <h1>35 - <span>Stars and planets</span></h1>
  <div class="bar" style="margin:0">
   <select id="accent" aria-label="Aussprache"><option value="en-GB">Britisches Englisch</option><option value="en-US">Amerikanisches Englisch</option></select>
   <button id="slow" aria-pressed="false">Langsam sprechen</button>
@@ -595,25 +598,33 @@ function drawLabels(){
 }
 
 /* Zoom */
-let zoom=null;
-/* Auf breiten Bildschirmen passt das ganze Bild in Breite und Höhe */
-function fitWidth(){const w=Math.max(280,stage.clientWidth);return w<900?w:Math.min(w,Math.floor(innerHeight*.82*1.44))}
-function startWidth(){const f=fitWidth();return f<900?1150:f}
-function setZoom(w,keepCenter=true){
- const old=zoom||w,cx=(stage.scrollLeft+stage.clientWidth/2)/old,cy=(stage.scrollTop+stage.clientHeight/2)/old;
- zoom=Math.min(3600,Math.max(fitWidth(),w));scene.style.width=zoom+'px';
- if(keepCenter){stage.scrollLeft=cx*zoom-stage.clientWidth/2;stage.scrollTop=cy*zoom-stage.clientHeight/2;}
+let zoom=null,whole=true;
+/* "Ganzes Bild": die komplette Grafik passt in Breite und Höhe auf den Bildschirm */
+function fitWidth(){
+ const w=Math.max(280,stage.clientWidth),below=innerHeight-(stage.getBoundingClientRect().top+scrollY)-12;
+ const h=below>=innerHeight*.55?below:innerHeight-16;
+ return Math.min(w,Math.max(280,Math.floor((h-4)*1.44)));
 }
-$('#zin').onclick=()=>setZoom(zoom*1.3);$('#zout').onclick=()=>setZoom(zoom/1.3);$('#zfit').onclick=()=>setZoom(fitWidth());
+function applyZoom(w){zoom=w;scene.style.width=w+'px';stage.style.maxHeight=whole?'none':'';$('#zfit').setAttribute('aria-pressed',whole);}
+function showWhole(){whole=true;applyZoom(fitWidth());stage.scrollLeft=stage.scrollTop=0;}
+function setZoom(w){
+ const cx=(stage.scrollLeft+stage.clientWidth/2)/zoom,cy=(stage.scrollTop+stage.clientHeight/2)/zoom,f=fitWidth();
+ const next=Math.min(3600,Math.max(f,w));whole=next<=f+1;applyZoom(next);
+ stage.scrollLeft=cx*next-stage.clientWidth/2;stage.scrollTop=cy*next-stage.clientHeight/2;
+}
+$('#zin').onclick=()=>setZoom(zoom*1.5);$('#zout').onclick=()=>setZoom(zoom/1.5);$('#zfit').onclick=showWhole;
 function focusOn(id){
  const o=OBJ[id];if(!o||!zoom)return;const k=scene.getBoundingClientRect().width/1800;
  const x=(o.f[0]+o.l[0])/2*k,y=(o.f[1]+o.l[1])/2*k;
- stage.scrollTo({left:x-stage.clientWidth/2,top:y-stage.clientHeight/2,behavior:'smooth'});
+ if(!whole)stage.scrollTo({left:x-stage.clientWidth/2,top:y-stage.clientHeight/2,behavior:'smooth'});
  const card=$('#card');
  if(!card.hidden&&getComputedStyle(card).position==='fixed'){
   const r=stage.getBoundingClientRect(),free=innerHeight-card.offsetHeight;
-  const inStage=Math.min(stage.clientHeight/2,y),target=Math.max(70,free/2);
-  window.scrollBy({top:r.top+inStage-target,behavior:'smooth'});
+  const bar=$$('#tourbar,#findbar').find(b=>!b.hidden);let delta;
+  if(whole&&stage.offsetHeight<=free-8){
+   const top=bar&&bar.offsetHeight+stage.offsetHeight+20<=free?bar:stage;delta=top.getBoundingClientRect().top-6;
+  }else delta=r.top+(whole?y:Math.min(stage.clientHeight/2,y))-Math.max(70,free/2);
+  window.scrollBy({top:delta,behavior:'smooth'});
  }
 }
 function mark(id,cls=''){
@@ -646,9 +657,8 @@ function openCard(id){
 }
 function select(id,{speakIt=true,scroll=false}={}){
  const hadCard=!$('#card').hidden;
- unmark();openCard(id);revealed.add(id);
+ unmark();openCard(id);revealed.add(id);if(!hadCard)refit();
  if(OBJ[id]){
-  if(!hadCard&&view==='bild'&&zoom&&zoom<=fitWidth()+40&&innerWidth>=1100)setZoom(fitWidth(),false);
   if(opt.lab==='q')drawLabels();
   $$(`#scene [data-id="${id}"]`).forEach(e=>e.classList.add('sel'));mark(id);
   if(scroll&&view==='bild')focusOn(id);
@@ -679,9 +689,8 @@ scene.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target
 addEventListener('keydown',e=>{if(e.key==='Escape'&&current){stopAll();closeCard();}});
 
 /* Kartenbreite ändert sich: Bild neu einpassen, solange nicht gezoomt wurde */
-let lastFit=0;
-function refit(){requestAnimationFrame(()=>{if(view!=='bild'||!stage.clientWidth)return;const f=fitWidth();if(zoom===null||Math.abs(zoom-lastFit)<2||zoom<f)setZoom(f<900?Math.max(zoom||1150,f):f,false);lastFit=f<900?-9:f;});}
-new ResizeObserver(refit).observe(stage);
+function refit(){requestAnimationFrame(()=>{if(view==='bild'&&stage.clientWidth&&whole)showWhole();});}
+new ResizeObserver(refit).observe(stage);new ResizeObserver(refit).observe($('#v-bild'));addEventListener('resize',refit);
 
 /* ---------- Wortliste ---------- */
 const GROUPS=[['sys','Sonnensystem'],['sky','Am Himmel'],['tech','Raumfahrt und Forschung'],['geo','Globus']];
@@ -838,7 +847,7 @@ const VIEWS=['bild','detail','geschichte','redensarten','quiz'];
 function show(v){
  view=v;VIEWS.forEach(n=>$('#v-'+n).hidden=n!==v);
  $$('nav [data-v]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
- if(v==='bild')refit();
+ if(v==='bild'){whole=true;refit();}
 }
 $$('nav [data-v]').forEach(b=>b.onclick=()=>{
  stopAll();if(find)endFind();closeCard();show(b.dataset.v);if(b.dataset.v==='quiz')quizMenu();
