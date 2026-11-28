@@ -62,11 +62,13 @@ select,input[type=text],input[type=search]{background:var(--panel);border:1.5px 
 .hide-de .tr{filter:blur(6px);cursor:pointer;user-select:none}
 .hide-de .tr.open{filter:none}
 #close{min-height:36px;padding:4px 12px}
-@media (min-width:1100px){
- .stagegrid.has{grid-template-columns:minmax(0,1fr) 320px}
- #card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 10px)}
+@media (min-width:1000px),(min-width:700px) and (max-height:560px){
+ .stagegrid.has{grid-template-columns:minmax(0,1fr) 300px}
+ #thumb{aspect-ratio:2}
+ #card .btns{gap:6px}
+ #card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);overflow:auto;padding:12px}
 }
-@media (max-width:1099px){
+@media (max-width:699px),(max-width:999px) and (min-height:561px){
  #card{position:fixed;left:0;right:0;bottom:0;z-index:20;border-radius:20px 20px 0 0;border-width:2px 0 0;max-height:52%;overflow:auto;box-shadow:0 -10px 30px rgba(20,20,40,.25);padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
  #thumb{width:92px;aspect-ratio:1;float:right;margin:0 0 6px 10px}
  #cword{font-size:1.6rem}
@@ -116,58 +118,107 @@ button:disabled{cursor:default;color:var(--fg)}
 .fb{min-height:1.6em;font-weight:800;margin:10px 0}
 .back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 14px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--fg);font:700 .95rem var(--body);text-decoration:none}
 .back:hover{border-color:var(--teal)}.back:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
-/* Kopfzeile: Menü links, Titel mittig, Seitenwahl rechts */
-.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"back title pages";align-items:center;gap:10px 14px;margin-bottom:12px}
-.topbar>.back{grid-area:back;justify-self:start;margin:0}
-.topbar h1{grid-area:title;justify-self:center;text-align:center;font-size:clamp(1.5rem,2.4vw,2.3rem)}
-.pages{grid-area:pages;justify-self:end;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+/* Drei kompakte Zeilen, darunter das Bild ohne Rahmen */
+.wrap{padding-block:8px}
+.topbar{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:8px;margin-bottom:6px}
+.topbar>.back{justify-self:start;margin:0;white-space:nowrap}
+.topbar h1{justify-self:center;text-align:center;font-size:clamp(1.05rem,2.3vw,1.9rem);min-width:0}
+.pages{justify-self:end;display:flex;gap:6px}
 .pages .back{margin:0;white-space:nowrap}
-.pageno{display:inline-flex;align-items:center;min-height:42px;padding:6px 14px;border:1.5px solid var(--primary);border-radius:12px;font:800 .95rem var(--body);white-space:nowrap}
-@media (max-width:1179px){.topbar{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"back pages" "title title"}}
-@media (max-width:639px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"back" "pages" "title"}.pages{gap:6px}.pages>*{font-size:.8rem;padding-inline:8px}}
+.pageno{display:inline-flex;align-items:center;border:1.5px solid var(--sun);border-radius:12px;font:800 .9rem var(--body);white-space:nowrap}
+.topbar .back,.pageno,.row button,.row select{min-height:38px;padding:4px 11px;font-size:.9rem;white-space:nowrap}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:6px;position:relative;min-width:0}
+.row[hidden]{display:none}
+.row nav{flex:1;min-width:0;margin:0;padding:3px;gap:5px}
+.row nav button{font-size:.98rem}
+.settings{display:flex;align-items:center;gap:6px}
+.settings .count{font-size:.9rem;white-space:nowrap}
+#gear{display:none}
+#row3 .bar{flex:1;margin:0;gap:6px;min-width:0}
+#row3 .banner{flex:1;margin:0;padding:3px 8px;gap:6px;border-width:1.5px;border-radius:12px;min-width:0}
+#row3 .banner strong{font-size:1.1rem}
+#row3 .banner button{min-height:32px}
+#row3:has(>.banner:not([hidden]))>#tools{display:none}
+#stage{border:0;border-radius:0;background:none;max-height:none}
+#stage.whole{overflow:hidden}
+#scene{border-radius:12px}
+#lists{margin-top:14px;padding-bottom:20px}
+.topbar>.back,.pages .back{display:inline-block;line-height:27px;text-align:center}
+.s{display:none}
+@media (max-width:1099px){.t{display:none}}
+@media (max-width:899px){#row2 nav .l{display:none}#row2 nav .s{display:inline}}
+@media (min-width:700px) and (max-height:560px){#thumb{display:none}}
+@media (max-width:999px){.pages .w{display:none}}
+@media (max-width:699px){
+ .l,.m{display:none}.s{display:inline}
+ .topbar{grid-template-columns:auto minmax(0,1fr) auto;gap:6px}
+ .topbar .back,.pageno,.row button{font-size:.78rem;padding:3px 7px}
+ .pages{gap:4px}
+ .row{gap:5px}
+ .row nav{gap:3px;padding:3px 0}.row nav button{font-size:.82rem}
+ #row3 .bar{gap:5px;flex-wrap:wrap}
+ #gear{display:inline-block}
+ .settings{display:none;position:absolute;right:0;top:100%;z-index:30;flex-wrap:wrap;justify-content:flex-end;max-width:100%;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+ .settings.open{display:flex}.settings .t{display:inline}
+}
+#row3 .banner{flex-wrap:nowrap}
+#findword{min-width:0;line-height:1.1;overflow-wrap:anywhere}
+#findscore{white-space:nowrap}
+@media (max-width:699px){
+ #row3 .banner strong{font-size:.95rem}
+ #findfb:not(:empty){position:fixed;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--panel);border:2px solid var(--primary);border-radius:12px;padding:10px;text-align:center;pointer-events:none}
+}
+@media (max-width:359px){
+ .row{gap:3px}.row nav,#row3 .bar,#row3 .banner{gap:2px}
+ .row nav button,.row button{padding-inline:5px;font-size:.74rem}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="topbar">
- <a class="back" href="index.html">← Zurück zum Menu</a>
+ <a class="back" href="index.html" aria-label="Zurück zum Menu">← <span class="m">Zurück zum </span>Menu</a>
  <h1>3 - <span>Living room</span></h1>
- <div class="pages" role="navigation" aria-label="Seiten"><a class="back" href="2.html">← Vorherige Seite</a><span class="pageno" aria-current="page">Seite 3</span><a class="back" href="4.html">Nächste Seite →</a></div>
+ <div class="pages" role="navigation" aria-label="Seiten"><a class="back" href="2.html" aria-label="Vorherige Seite">←<span class="m"> Vorherige</span><span class="w"> Seite</span></a><span class="pageno" aria-current="page">Seite 3</span><a class="back" href="4.html" aria-label="Nächste Seite"><span class="m">Nächste </span><span class="w">Seite </span>→</a></div>
 </div>
-<header>
- <div class="bar" style="margin:0">
-  <select id="accent" aria-label="Aussprache"><option value="en-GB">Britisches Englisch</option><option value="en-US">Amerikanisches Englisch</option></select>
-  <button id="slow" aria-pressed="false">Langsam sprechen</button>
-  <button id="showde" aria-pressed="true">Deutsch sichtbar</button>
-  <span class="count" id="count"></span>
- </div>
-</header>
 <p id="nospeech" class="banner" hidden>Dieser Browser kann nicht vorlesen. Öffne die Seite in Safari oder Chrome, um die Wörter anzuhören.</p>
-<nav role="tablist" aria-label="Bereiche">
- <button role="tab" data-v="bild">Bild</button>
- <button role="tab" data-v="detail">Details &amp; Lampe</button>
- <button role="tab" data-v="geschichte">Hörgeschichte</button>
- <button role="tab" data-v="redensarten">Redewendungen</button>
- <button role="tab" data-v="quiz">Quiz</button>
-</nav>
 
+<div class="row" id="row2">
+ <nav role="tablist" aria-label="Bereiche">
+  <button role="tab" data-v="bild"><span class="l">Bild</span><span class="s">Bild</span></button>
+  <button role="tab" data-v="detail"><span class="l">Details &amp; Lampe</span><span class="s">Details</span></button>
+  <button role="tab" data-v="geschichte"><span class="l">Hörgeschichte</span><span class="s">Story</span></button>
+  <button role="tab" data-v="redensarten"><span class="l">Redewendungen</span><span class="s">Idioms</span></button>
+  <button role="tab" data-v="quiz"><span class="l">Quiz</span><span class="s">Quiz</span></button>
+ </nav>
+ <button id="gear" aria-expanded="false" aria-controls="settings" aria-label="Einstellungen">⚙️</button>
+ <div class="settings" id="settings">
+  <select id="accent" aria-label="Aussprache"><option value="en-GB">🇬🇧 UK</option><option value="en-US">🇺🇸 US</option></select>
+  <button id="slow" aria-pressed="false" title="Langsam sprechen" aria-label="Langsam sprechen">🐢<span class="t"> Langsam</span></button>
+  <button id="showde" aria-pressed="true" title="Deutsche Übersetzung zeigen oder verdecken" aria-label="Deutsche Übersetzung zeigen">🇩🇪<span class="t"> Deutsch</span></button>
+  <span class="count" id="count" title="entdeckte Wörter"></span>
+ </div>
+</div>
+<div class="row" id="row3">
+ <div class="bar" id="tools">
+  <button class="primary" id="tour" title="Alle Wörter abspielen" aria-label="Alle Wörter abspielen">▶<span class="l"> Alle abspielen</span></button>
+  <div class="seg" role="group" aria-label="Beschriftung im Bild">
+   <button data-lab="en"><span class="l">English</span><span class="s">EN</span></button><button data-lab="de"><span class="l">Deutsch</span><span class="s">DE</span></button><button data-lab="q">?</button><button data-lab="off">Aus</button>
+  </div>
+  <button id="listbtn" aria-pressed="false" aria-controls="lists" aria-label="Wortliste">☰<span class="l"> Wörter</span></button>
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="Bildgröße"><button id="zout" aria-label="Verkleinern">−</button><button id="zfit" aria-label="Ganzes Bild">Ganz<span class="l">es Bild</span></button><button id="zin" aria-label="Vergrößern">+</button></div>
+ </div>
+ <div class="banner" id="tourbar" hidden><strong id="tourpos"></strong><span class="spacer"></span><button id="tprev" aria-label="Zurück">⏮<span class="l"> Zurück</span></button><button id="tpause" aria-label="Pause">⏸<span class="l"> Pause</span></button><button id="tnext" aria-label="Weiter"><span class="l">Weiter </span>⏭</button><button id="tstop" aria-label="Beenden">⏹<span class="l"> Beenden</span></button></div>
+ <div class="banner" id="findbar" hidden><span id="findscore" class="count"></span><strong id="findword"></strong><button id="findplay" aria-label="Nochmal">🔊<span class="l"> Nochmal</span></button><span id="findfb" role="status"></span><span class="spacer"></span><button id="findnext" class="primary" hidden aria-label="Weiter"><span class="l">Weiter</span><span class="s">→</span></button><button id="findstop" aria-label="Beenden"><span class="l">Beenden</span><span class="s">✕</span></button></div>
+</div>
 <div class="stagegrid" id="grid">
 <main style="min-width:0">
 
 <div id="v-bild">
- <div class="bar" id="tools">
-  <button class="primary" id="tour">▶ Alle Wörter abspielen</button>
-  <div class="seg" role="group" aria-label="Beschriftung im Bild">
-   <button data-lab="en">English</button><button data-lab="de">Deutsch</button><button data-lab="q">?</button><button data-lab="off">Aus</button>
-  </div>
-  <span class="spacer"></span>
-  <div class="seg" role="group" aria-label="Bildgröße"><button id="zout" aria-label="Verkleinern">−</button><button id="zfit">Ganzes Bild</button><button id="zin" aria-label="Vergrößern">+</button></div>
- </div>
- <div class="banner" id="tourbar" hidden><strong id="tourpos"></strong><span class="spacer"></span><button id="tprev">⏮ Zurück</button><button id="tpause">⏸ Pause</button><button id="tnext">Weiter ⏭</button><button id="tstop">⏹ Beenden</button></div>
- <div class="banner" id="findbar" hidden><span id="findscore" class="count"></span><strong id="findword"></strong><button id="findplay">🔊 Nochmal</button><span id="findfb" role="status"></span><span class="spacer"></span><button id="findnext" class="primary" hidden>Weiter</button><button id="findstop">Beenden</button></div>
  <div id="stage"></div>
- <p class="hint">Tippe auf ein Ding oder sein Schild, um es zu hören. Wische im Bild, um dich umzusehen. Mit „?“ kannst du dich selbst testen.</p>
- <div class="lists" id="lists">
+ <div class="lists" id="lists" hidden>
+  <p class="hint">Tippe auf ein Ding oder sein Schild, um es zu hören. Wische im Bild, um dich umzusehen. Mit „?“ kannst du dich selbst testen.</p>
   <input type="search" id="search" placeholder="Wort suchen (Englisch oder Deutsch)" aria-label="Wort suchen">
   <div id="chiplists"></div>
  </div>
@@ -486,12 +537,27 @@ function drawLabels(){
 /* Zoom */
 let zoom=null,whole=true;
 /* "Ganzes Bild": die komplette Grafik passt in Breite und Höhe auf den Bildschirm */
-function fitWidth(){
- const w=Math.max(280,stage.clientWidth),below=innerHeight-(stage.getBoundingClientRect().top+scrollY)-12;
- const h=below>=innerHeight*.55?below:innerHeight-16;
- return Math.min(w,Math.max(280,Math.floor((h-4)*LW/LH)));
+/* freie Höhe unter den drei Zeilen; auf sehr niedrigen Bildschirmen der ganze Bildschirm */
+function freeHeight(){
+ const below=innerHeight-(stage.getBoundingClientRect().top+scrollY)-8;
+ return below>=innerHeight*.45?below:innerHeight-8;
 }
-function applyZoom(w){zoom=w;scene.style.width=w+'px';stage.style.maxHeight=whole?'none':'';$('#zfit').setAttribute('aria-pressed',whole);}
+function fitWidth(){
+ const w=Math.max(280,stage.clientWidth);
+ return Math.min(w,Math.max(280,Math.floor(freeHeight()*LW/LH)));
+}
+function applyZoom(w){
+ zoom=w;scene.style.width=w+'px';stage.classList.toggle('whole',whole);stage.style.maxHeight=whole?'':freeHeight()+'px';
+ $('#zfit').setAttribute('aria-pressed',whole);fitCard();
+}
+/* Die Wortkarte soll das Bild möglichst nicht verdecken */
+function fitCard(){
+ const card=$('#card');if(card.hidden)return;card.style.maxHeight='';
+ if(getComputedStyle(card).position==='fixed'){
+  const free=innerHeight-(stage.getBoundingClientRect().bottom+scrollY)-4;
+  if(view==='bild'&&whole&&free>=240)card.style.maxHeight=Math.min(free,innerHeight*.52)+'px';
+ }else card.style.maxHeight=Math.max(320,innerHeight-Math.max(8,card.getBoundingClientRect().top)-8)+'px';
+}
 function showWhole(){whole=true;applyZoom(fitWidth());stage.scrollLeft=stage.scrollTop=0;}
 function setZoom(w){
  const cx=(stage.scrollLeft+stage.clientWidth/2)/zoom,cy=(stage.scrollTop+stage.clientHeight/2)/zoom,f=fitWidth();
@@ -505,12 +571,11 @@ function focusOn(id){
  if(!whole)stage.scrollTo({left:x-stage.clientWidth/2,top:y-stage.clientHeight/2,behavior:'smooth'});
  const card=$('#card');
  if(!card.hidden&&getComputedStyle(card).position==='fixed'){
-  const r=stage.getBoundingClientRect(),free=innerHeight-card.offsetHeight;
-  const bar=$$('#tourbar,#findbar').find(b=>!b.hidden);let delta;
-  if(whole&&stage.offsetHeight<=free-8){
-   const top=bar&&bar.offsetHeight+stage.offsetHeight+20<=free?bar:stage;delta=top.getBoundingClientRect().top-6;
-  }else delta=r.top+(whole?y:Math.min(stage.clientHeight/2,y))-Math.max(70,free/2);
-  window.scrollBy({top:delta,behavior:'smooth'});
+  const r=stage.getBoundingClientRect(),free=innerHeight-card.offsetHeight,bottom=r.bottom+scrollY;let top;
+  if(whole&&bottom<=free+2)top=0;
+  else if(whole&&r.height<=free)top=bottom-free;
+  else top=r.top+scrollY+(whole?y:Math.min(stage.clientHeight/2,y))-Math.max(70,free/2);
+  window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
  }
 }
 function mark(id,cls=''){
@@ -521,7 +586,7 @@ function mark(id,cls=''){
 function unmark(){$('#marker').setAttribute('hidden','');$$('.sel').forEach(e=>e.classList.remove('sel'));}
 
 /* ---------- Wortkarte ---------- */
-function updateCount(){$('#count').textContent=`${seen.size} / ${WORDS.length} entdeckt`;}
+function updateCount(){$('#count').innerHTML=`${seen.size}/${WORDS.length}<span class="t"> entdeckt</span>`;}
 function thumbFor(id){
  const t=$('#thumb'),o=OBJ[id];t.style.display='';
  if(o){const [x,y,r]=o.f;t.setAttribute('viewBox',`${x-r*1.15} ${y-r*1.15} ${r*2.3} ${r*2.3}`);t.innerHTML='<use href="#art"/>';return;}
@@ -536,7 +601,7 @@ function openCard(id){
  $('#cword').textContent=w.en;$('#cipa').textContent=opt.accent==='en-GB'?'/'+w.ipa+'/':'';
  $('#cde').textContent=w.de;$('#cex').textContent=w.ex;$('#cexde').textContent=w.exde;
  $$('#card .tr').forEach(e=>e.classList.remove('open'));
- thumbFor(id);
+ thumbFor(id);fitCard();
  seen.add(id);store.set('seen',[...seen]);updateCount();
  $$('.chip').forEach(c=>c.classList.toggle('seen',seen.has(c.dataset.id)));
 }
@@ -575,16 +640,17 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&current){stopAll();closeCard
 
 /* Kartenbreite ändert sich: Bild neu einpassen, solange nicht gezoomt wurde */
 function refit(){requestAnimationFrame(()=>{if(view==='bild'&&stage.clientWidth&&whole)showWhole();});}
-new ResizeObserver(refit).observe(stage);new ResizeObserver(refit).observe($('#v-bild'));addEventListener('resize',refit);
+new ResizeObserver(refit).observe(stage);['#v-bild','#row2','#row3','.topbar'].forEach(q=>new ResizeObserver(refit).observe($(q)));addEventListener('resize',refit);
 
 /* ---------- Wortliste ---------- */
 const GROUPS=LESSON.groups;
 $('#chiplists').innerHTML=GROUPS.map(([g,n])=>`<div class="group" style="margin-bottom:14px"><h3>${n}</h3><div class="chips">${WORDS.filter(w=>w.g===g).map(w=>`<button class="chip${seen.has(w.id)?' seen':''}" data-id="${w.id}" data-s="${(w.en+' '+w.de).toLowerCase()}">${w.en}<small class="tr0">${w.de}</small></button>`).join('')}</div></div>`).join('');
-$('#chiplists').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){select(c.dataset.id,{scroll:true});if(innerWidth>=1100)stage.scrollIntoView({behavior:'smooth',block:'nearest'});}});
+$('#chiplists').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){select(c.dataset.id,{scroll:true});if(matchMedia('(min-width:1000px),(min-width:700px) and (max-height:560px)').matches)window.scrollTo({top:0,behavior:'smooth'});}});
 $('#search').oninput=e=>{const q=e.target.value.trim().toLowerCase();$$('.chip').forEach(c=>c.hidden=!c.dataset.s.includes(q));$$('.group').forEach(g=>g.hidden=!g.querySelector('.chip:not([hidden])'));};
 
 /* ---------- Tour: alles abspielen ---------- */
 let tour=null;
+function setPause(p){const b=$('#tpause');b.innerHTML=p?'▶<span class="l"> Abspielen</span>':'⏸<span class="l"> Pause</span>';b.setAttribute('aria-label',p?'Abspielen':'Pause');}
 function stopTour(silent){if(!tour)return;tour=null;$('#tourbar').hidden=true;}
 async function tourStep(){
  const me=++run;if(synth)synth.cancel();
@@ -599,19 +665,19 @@ async function tourStep(){
 }
 function startTour(ids,start=0){
  stopAll();tour={ids,i:start,paused:false};
- if(view==='bild'){$('#tourbar').hidden=false;$('#tpause').textContent='⏸ Pause';}
+ if(view==='bild'){$('#tourbar').hidden=false;setPause(false);}
  tourStep();
 }
 $('#tour').onclick=()=>startTour(SCENE_IDS,Math.max(0,SCENE_IDS.indexOf(current)));
 $('#tstop').onclick=()=>stopAll();
-$('#tpause').onclick=()=>{if(!tour)return;tour.paused=!tour.paused;$('#tpause').textContent=tour.paused?'▶ Weiter abspielen':'⏸ Pause';if(tour.paused){run++;synth&&synth.cancel();}else tourStep();};
-const jump=d=>{if(!tour)return;tour.i=(tour.i+d+tour.ids.length)%tour.ids.length;tour.paused=false;$('#tpause').textContent='⏸ Pause';tourStep();};
+$('#tpause').onclick=()=>{if(!tour)return;tour.paused=!tour.paused;setPause(tour.paused);if(tour.paused){run++;synth&&synth.cancel();}else tourStep();};
+const jump=d=>{if(!tour)return;tour.i=(tour.i+d+tour.ids.length)%tour.ids.length;tour.paused=false;setPause(false);tourStep();};
 $('#tprev').onclick=()=>jump(-1);$('#tnext').onclick=()=>jump(1);
 
 /* ---------- Einstellungen ---------- */
 $('#accent').value=opt.accent;
 $('#accent').onchange=e=>{opt.accent=e.target.value;store.set('accent',opt.accent);if(current)openCard(current);say('Hello! Let us learn some English.');};
-function applyToggles(){$('#slow').setAttribute('aria-pressed',opt.slow);$('#showde').setAttribute('aria-pressed',opt.showde);$('#showde').textContent=opt.showde?'Deutsch sichtbar':'Deutsch verdeckt';document.body.classList.toggle('hide-de',!opt.showde);$$('.tr0').forEach(e=>e.hidden=!opt.showde);$$('.tr').forEach(e=>e.classList.remove('open'));}
+function applyToggles(){$('#slow').setAttribute('aria-pressed',opt.slow);$('#showde').setAttribute('aria-pressed',opt.showde);document.body.classList.toggle('hide-de',!opt.showde);$$('.tr0').forEach(e=>e.hidden=!opt.showde);$$('.tr').forEach(e=>e.classList.remove('open'));}
 $('#slow').onclick=()=>{opt.slow=!opt.slow;store.set('slow',opt.slow);applyToggles();};
 $('#showde').onclick=()=>{opt.showde=!opt.showde;store.set('showde',opt.showde);applyToggles();};
 $$('[data-lab]').forEach(b=>b.onclick=()=>{opt.lab=b.dataset.lab;revealed=new Set();store.set('lab',opt.lab);drawLabels();});
@@ -714,14 +780,15 @@ function ask(){
 }
 /* Spiel im Bild */
 const ALSO=LESSON.also||{};
+function showScore(){$('#findscore').innerHTML=`${find.i+1}/10<span class="l"> · Punkte</span><span class="s"> ⭐</span> ${find.score}`;}
 function startFind(){
  closeCard();find={list:shuffle(SCENE_IDS).slice(0,10),i:0,score:0,tries:0,done:false};
  show('bild');$('#findbar').hidden=false;$('#tools [data-lab]').parentElement.hidden=true;$('#tour').hidden=true;$('#lists').hidden=true;
- drawLabels();askFind();$('#findbar').scrollIntoView({block:'start'});
+ drawLabels();askFind();window.scrollTo(0,0);
 }
 function askFind(){
  find.tries=0;find.done=false;unmark();const w=W[find.list[find.i]];
- $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findword').textContent=`Find: ${w.en}`;$('#findfb').textContent='';$('#findnext').hidden=true;say(w.en);
+ showScore();$('#findword').innerHTML=`<span class="l">Find: </span>${w.en}`;$('#findfb').textContent='';$('#findnext').hidden=true;say(w.en);
 }
 function answerFind(id){
  if(find.done)return;const target=find.list[find.i],ok=id===target||(ALSO[target]||[]).includes(id);
@@ -729,17 +796,27 @@ function answerFind(id){
  else{find.tries++;
   if(find.tries<2){mark(id,'wrong');$('#findfb').textContent=`Das ist „${W[id].en}“. Versuch es noch einmal.`;say(W[id].en);return;}
   find.done=true;mark(target,'right');focusOn(target);$('#findfb').textContent=`Hier ist es: ${W[target].de}`;say(W[target].en);}
- $('#findscore').textContent=`${find.i+1} / 10 · Punkte ${find.score}`;$('#findnext').hidden=false;
+ showScore();$('#findnext').hidden=false;
 }
-function endFind(){find=null;$('#findbar').hidden=true;$('#tools [data-lab]').parentElement.hidden=false;$('#tour').hidden=false;$('#lists').hidden=false;unmark();drawLabels();}
+function endFind(){find=null;$('#findbar').hidden=true;$('#tools [data-lab]').parentElement.hidden=false;$('#tour').hidden=false;$('#lists').hidden=!listOpen();unmark();drawLabels();}
 $('#findplay').onclick=()=>say(W[find.list[find.i]].en);
 $('#findnext').onclick=()=>{find.i++;if(find.i<10)return askFind();const s=find.score;endFind();show('quiz');result('find',s);};
 $('#findstop').onclick=()=>{stopAll();endFind();show('quiz');quizMenu();};
 
+/* ---------- Wortliste und Einstellungen ausklappen ---------- */
+function listOpen(){return $('#listbtn').getAttribute('aria-pressed')==='true';}
+$('#listbtn').onclick=()=>{
+ const on=!listOpen();$('#listbtn').setAttribute('aria-pressed',on);$('#lists').hidden=!on;
+ if(on)requestAnimationFrame(()=>$('#lists').scrollIntoView({behavior:'smooth',block:'start'}));else window.scrollTo({top:0,behavior:'smooth'});
+};
+function openSettings(on){$('#settings').classList.toggle('open',on);$('#gear').setAttribute('aria-expanded',on);}
+$('#gear').onclick=()=>openSettings($('#gear').getAttribute('aria-expanded')!=='true');
+document.addEventListener('click',e=>{if(!e.target.closest('#settings,#gear'))openSettings(false);});
+
 /* ---------- Reiter ---------- */
 const VIEWS=['bild','detail','geschichte','redensarten','quiz'];
 function show(v){
- view=v;VIEWS.forEach(n=>$('#v-'+n).hidden=n!==v);
+ view=v;VIEWS.forEach(n=>$('#v-'+n).hidden=n!==v);$('#row3').hidden=v!=='bild';openSettings(false);
  $$('nav [data-v]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
  if(v==='bild'){whole=true;refit();}
 }
