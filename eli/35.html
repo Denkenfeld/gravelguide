@@ -111,12 +111,24 @@ section.block{background:var(--panel);border:2px solid var(--line);border-radius
 .fb{min-height:1.6em;font-weight:800;margin:10px 0}
 .back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:6px 14px;margin-bottom:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--fg);font:700 .95rem var(--body);text-decoration:none}
 .back:hover{border-color:var(--teal)}.back:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+/* Kopfzeile: Menü links, Titel mittig, Seitenwahl rechts */
+.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"back title pages";align-items:center;gap:10px 14px;margin-bottom:12px}
+.topbar>.back{grid-area:back;justify-self:start;margin:0}
+.topbar h1{grid-area:title;justify-self:center;text-align:center;font-size:clamp(1.5rem,2.4vw,2.3rem)}
+.pages{grid-area:pages;justify-self:end;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.pages .back{margin:0;white-space:nowrap}
+.pageno{display:inline-flex;align-items:center;min-height:42px;padding:6px 14px;border:1.5px solid var(--sun);border-radius:12px;font:800 .95rem var(--body);white-space:nowrap}
+@media (max-width:1179px){.topbar{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"back pages" "title title"}}
+@media (max-width:639px){.topbar{grid-template-columns:minmax(0,1fr);grid-template-areas:"back" "pages" "title"}.pages{gap:6px}.pages>*{font-size:.8rem;padding-inline:8px}}
 </style>
 
 <div class="wrap">
-<div><a class="back" href="index.html">← Zurück zum Menu</a></div>
-<header>
+<div class="topbar">
+ <a class="back" href="index.html">← Zurück zum Menu</a>
  <h1>35 - <span>Stars and planets</span></h1>
+ <div class="pages" role="navigation" aria-label="Seiten"><a class="back" href="34.html">← Vorherige Seite</a><span class="pageno" aria-current="page">Seite 35</span></div>
+</div>
+<header>
  <div class="bar" style="margin:0">
   <select id="accent" aria-label="Aussprache"><option value="en-GB">Britisches Englisch</option><option value="en-US">Amerikanisches Englisch</option></select>
   <button id="slow" aria-pressed="false">Langsam sprechen</button>

@@ -132,19 +132,61 @@ body.rail main{padding-right:96px}
 #lets span.on{background:var(--coral);color:#fff}
 #bub{position:fixed;right:104px;top:50%;transform:translateY(-50%);width:92px;height:92px;border-radius:26px;background:var(--coral);color:#fff;font-size:56px;font-weight:900;display:grid;place-items:center;z-index:7;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 #bub[hidden]{display:none}
+/* ---- Kompakt-Layout: Karten im Fokus ---- */
+header{padding:8px 16px;transition:transform .25s ease}
+header.hide{transform:translateY(-115%)}
+h1{margin:0;font-size:22px;letter-spacing:0;white-space:nowrap}
+.hrow{display:flex;align-items:center;gap:12px}
+.voices{flex:1;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.v{min-height:52px;padding:4px 10px 4px 4px;gap:8px;font-size:18px;border-radius:999px}
+.v small{display:none}
+.av{width:42px;height:42px;border-width:2px}
+.av.ph{font-size:22px}
+header .row{margin-top:8px;gap:8px}
+.tab{padding:8px 14px;font-size:17px}
+label.t{font-size:15px}
+label.t input{width:24px;height:24px}
+.rate button{padding:6px 8px;font-size:22px;min-width:46px;min-height:44px}
+main{padding:10px 18px 60px}
+.chips{padding:2px 0 8px}
+.chip{min-width:48px;min-height:44px;padding:6px 14px;border-radius:16px;font-size:19px}
+.chip small{display:none}
+.letters{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 8px}
+.lt{flex:none;min-width:44px;height:44px}
+h2{font-size:22px;margin:4px 0 10px}
+.seg{display:inline-flex;border:3px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.seg button{padding:8px 14px;font-weight:900;font-size:16px;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.tools>.tab{padding:8px 14px;font-size:18px;min-height:44px}
+@media (max-width:700px){.hrow{flex-wrap:wrap}.voices{flex-basis:100%}}
+/* Schnellleiste: nur der Scrollbalken ist immer da, A–Z blendet beim Ziehen/Scrollen ein */
+#rail{width:30px;gap:0;top:calc(var(--hh,0px) + 8px);transition:top .25s ease}
+#sbar{width:30px;height:100%}
+#lets{position:absolute;right:38px;top:0;bottom:0;width:54px;flex:none;opacity:0;pointer-events:none;transition:opacity .2s}
+#rail.show #lets{opacity:1;pointer-events:auto}
+#bub{right:104px}
+body.rail main{padding-right:46px}
+#rail.always #lets{opacity:1;pointer-events:auto}
+body.rail.lets main{padding-right:104px}
+/* eine Zeile: Kapitel + Werkzeuge */
+.navrow{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.navrow .chips{flex:1;min-width:0;padding:2px 0}
+.navrow .tools{flex:none;flex-wrap:nowrap;margin:0;gap:6px}
+.seg button{padding:8px 11px}
+.tools>.tab{padding:8px 12px}
+@media (max-width:1050px){.seg .lbl{display:none}}
 </style>
 </head>
 <body>
 <header>
-  <h1>GoGo English Guide</h1>
-  <div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div>
+  <div class="hrow"><div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div></div>
   <div class="note" id="vinfo" hidden></div>
   <div class="row">
-    <button class="tab" id="tabW">📚 Karten</button><button class="tab" id="tabD">📖 Wörterbuch</button>
-    <button class="tab" id="tabS">💬 Geschichten</button><button class="tab" id="tabB">📕 Buch</button>
-    <label class="t"><input type="checkbox" id="showDe" checked> Deutsch zeigen</label>
+    <button class="tab" id="tabW">📚 Karten</button><button class="tab" id="tabD">📖 Wörterbuch</button><button class="tab" id="tabS">💬 Geschichten</button><button class="tab" id="tabB">📕 Buch</button>
+    <label class="t"><input type="checkbox" id="showDe" checked> Deutsch</label>
     <div class="rate" role="group" aria-label="Tempo">
-      <button data-r="0.45" aria-label="Faultier: sehr langsam" title="sehr langsam">🦥</button><button data-r="0.7" aria-label="Schildkröte: langsam" title="langsam">🐢</button><button data-r="0.9">🙂</button><button data-r="1.05">🐇</button>
+      <button data-r="0.45" aria-label="Faultier: sehr langsam" title="sehr langsam">🦥</button><button data-r="0.7" aria-label="Schildkröte: langsam" title="langsam">🐢</button><button data-r="0.9" aria-label="normal" title="normal">🙂</button><button data-r="1.05" aria-label="schnell" title="schnell">🐇</button>
     </div>
   </div>
 </header>
@@ -244,7 +286,7 @@ function speakOne(text){const busy=speechSynthesis.speaking||speechSynthesis.pen
 function renderVoices(){
   document.getElementById("voices").innerHTML=VN.map((v,i)=>{
     const ok=!!pick(i);
-    return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?(pick(i).name.split(" (")[0]===v[0]?v[1]+" ✓":"Stimme: "+pick(i).name.split(" (")[0]):"Ersatzstimme"}</small></div></button>`;
+    return `<button class="v" data-i="${i}" aria-pressed="${st.voice===i}" title="${ok?"Stimme: "+pick(i).name.split(" (")[0]:"Ersatzstimme"}"><img class="av" src="${PIC[i]}" alt="" onerror="this.outerHTML='<span class=&quot;av ph&quot;>${v[0][0]}</span>'"><div>${v[0]}<small>${ok?(pick(i).name.split(" (")[0]===v[0]?v[1]+" ✓":"Stimme: "+pick(i).name.split(" (")[0]):"Ersatzstimme"}</small></div></button>`;
   }).join("");
   const info=document.getElementById("vinfo"),miss=VN.some((v,i)=>!pick(i));
   if(!miss)info.hidden=true;
@@ -307,30 +349,29 @@ function renderWords(){
   const chips=`<div class="chips"><button class="chip" data-view="az" aria-pressed="${st.view==="az"}">A–Z</button>`+
     chs.map(c=>`<button class="chip" data-ch="${c}" aria-pressed="${st.view==="ch"&&st.ch===c}">${c}<small>Kapitel</small></button>`).join("")+`</div>`;
   const az=st.view==="az";
-  const modes=`<div class="row" style="margin:0 0 12px"><button class="tab" data-mode="cards" aria-pressed="${!tr}">🗂️ Lernkarten</button><button class="tab" data-mode="train" aria-pressed="${tr}">🎯 Vokabeltraining</button></div>`;
-  const tools=`<div class="row" style="margin:0 0 12px"><button class="tab" data-dir="en" aria-pressed="${st.dir==="en"}">Englisch → Deutsch</button><button class="tab" data-dir="de" aria-pressed="${st.dir==="de"}">Deutsch → Englisch</button>${az?"":`<button class="tab" data-shuf="1">🔀 Mischen</button>${st.shuf?`<button class="tab" data-shuf="0">↕ Reihenfolge</button>`:""}`}</div>`;
+  const bar=`<div class="tools"><div class="seg"><button data-mode="cards" aria-pressed="${!tr}" aria-label="Lernen">🗂️<span class="lbl"> Lernen</span></button><button data-mode="train" aria-pressed="${tr}" aria-label="Training">🎯<span class="lbl"> Training</span></button></div><div class="seg"><button data-dir="en" aria-pressed="${st.dir==="en"}" aria-label="Englisch nach Deutsch">🇬🇧→🇩🇪</button><button data-dir="de" aria-pressed="${st.dir==="de"}" aria-label="Deutsch nach Englisch">🇩🇪→🇬🇧</button></div>${az?"":`<button class="tab" data-shuf="1" aria-label="Mischen">🔀</button>${st.shuf?`<button class="tab" data-shuf="0" aria-label="Reihenfolge">↕</button>`:""}`}</div>`;
   let list,head,letters="";
   if(az){
     const avail=new Set(all.map(ltr));
     if(!avail.has(st.letter))st.letter=[...avail].sort()[0];
     letters=letterBar(avail);
     list=sortIds(all.filter(i=>ltr(i)===st.letter));
-    head=`<h2>Wörter mit ${st.letter} <span class="note">· ${list.length}</span></h2>`;
+    head="";
     railSet("select",avail,st.letter);
   }else{
     list=all.filter(i=>W[i][1].includes(st.ch));
     if(st.shuf)list.sort((a,b)=>st.rnd[a]-st.rnd[b]);else sortIds(list);
-    head=`<h2>Kapitel ${st.ch}${CH[st.ch]?": "+CH[st.ch]:""}</h2>`;
+    head="";
     if(st.shuf)railSet("off");else{const av=new Set(list.map(ltr));railSet("scroll",av,list.length?ltr(list[0]):null)}
   }
   let noDe=0;
   if(st.dir==="de"){noDe=list.filter(i=>!W[i][2]).length;if(noDe)list=list.filter(i=>W[i][2])}
   st.cur=list;
-  main.innerHTML=chips+letters+head+modes+tools+
+  main.innerHTML=`<div class="navrow">${chips}${bar}</div>`+
     `<div class="grid">${list.map(i=>fcard(i,back)).join("")}</div>`+
     `<p class="note" id="prog"></p>`+
     (noDe?`<p class="note">${noDe} Wörter ohne deutsche Übersetzung sind in dieser Richtung ausgeblendet.</p>`:"")+
-    `<p class="note">${tr?"Vokabeltraining: Die Karten zeigen zuerst nur das Wort.":"Lernkarten: Die Karten zeigen zuerst alle Infos."} Antippen = umdrehen. Sterne: ★ = kann ich noch gar nicht · ★★ = geht so · ★★★ = kann ich perfekt. Denselben Stern nochmal antippen = zurücksetzen. Deine Sterne bleiben gespeichert. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
+    `<p class="note">${az?"Buchstabe "+st.letter+" · ":""}${list.length} Karten. ${tr?"Training: zuerst nur das Wort.":"Lernen: zuerst alle Infos."} Antippen = umdrehen. Sterne: ★ = kann ich noch gar nicht · ★★ = geht so · ★★★ = kann ich perfekt. Denselben Stern nochmal antippen = zurücksetzen. Deine Sterne bleiben gespeichert. Tippe auf ein Wort oder einen Satz, um ihn zu hören.</p>`;
   updateProgress();
 }
 
@@ -2599,7 +2640,7 @@ function renderDict(){
   const list=sortIds(all.filter(i=>ltr(i)===st.letter));
   railSet("select",avail,st.letter);
   const h=list.map(i=>{const e=W[i];return `<button class="de-e" data-say="${e[0]}"><b>${e[0]}</b>${st.de&&e[2]?` <span>${e[2]}</span>`:""} <i>${e[1].join(", ")}</i></button>`}).join("");
-  main.innerHTML=letterBar(avail)+`<h2>Wörterbuch · ${st.letter} <span class="note">· ${list.length} Wörter</span></h2><div class="dict">${h}</div><p class="note">${W.length} Wörter insgesamt · die kleine Zahl ist das Kapitel · Tippen = anhören.</p>`;
+  main.innerHTML=`<div class="dict">${h}</div><p class="note">${list.length} Wörter mit ${st.letter} · ${W.length} Wörter insgesamt · die kleine Zahl ist das Kapitel · Tippen = anhören.</p>`;
 }
 
 // ---- Geschichten ----
@@ -2645,7 +2686,7 @@ function bkProbe(){
 function renderBook(){
   bkProbe();
   const cells=Array.from({length:35},(_,i)=>i+1).map(n=>`<button class="bkc" data-bk="${n}" aria-label="Kapitel ${n}"><span class="emo">${CHE[n]||"📕"}</span><b>Kapitel ${n}</b><small>${CH[n]||""}</small><i>${bkStat[n]===false?"folgt":"öffnen"}</i></button>`).join("");
-  main.innerHTML=`<h2>📕 Buch</h2><p class="note">Tippe auf ein Kapitel. Es öffnet sich im Vollbild.</p>`+(st.bkMsg?`<p class="note"><b>Kapitel ${st.bkMsg}:</b> Der Inhalt folgt noch.</p>`:"")+`<div class="bkgrid">${cells}</div>`;
+  main.innerHTML=`<p class="note">📕 Tippe auf ein Kapitel. Es öffnet sich im Vollbild.</p>`+(st.bkMsg?`<p class="note"><b>Kapitel ${st.bkMsg}:</b> Der Inhalt folgt noch.</p>`:"")+`<div class="bkgrid">${cells}</div>`;
 }
 function openChapter(n){
   st.bkMsg=0;
@@ -2661,7 +2702,19 @@ const RAIL={mode:"off",avail:new Set(),cur:null};
 const hdr=document.querySelector("header"),rail=document.getElementById("rail"),sbar=document.getElementById("sbar"),sthumb=document.getElementById("sthumb"),lets=document.getElementById("lets"),bub=document.getElementById("bub");
 const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 lets.innerHTML=ABC.split("").map(L=>`<span data-L="${L}">${L}</span>`).join("");
-function hdrBottom(){return hdr.getBoundingClientRect().bottom}
+function hdrBottom(){const safe=parseFloat(getComputedStyle(document.documentElement).paddingTop)||0;return hdr.classList.contains("hide")?safe:safe+hdr.offsetHeight}
+let hideT=0,hold=false,lastY=window.scrollY,hdrHide=false,hdrLock=0;
+function touchLets(){if(RAIL.mode==="off")return;rail.classList.add("show");clearTimeout(hideT);if(!hold)hideT=setTimeout(()=>rail.classList.remove("show"),1400)}
+function holdLets(on){hold=on;if(on){if(RAIL.mode!=="off")rail.classList.add("show");clearTimeout(hideT)}else touchLets()}
+function hdrSet(h){hdrHide=h;hdr.classList.toggle("hide",h);updateRail()}
+function hdrScroll(){
+  const y=window.scrollY;
+  if(Date.now()<hdrLock){lastY=y;return}
+  const dy=y-lastY;if(Math.abs(dy)<10)return;
+  lastY=y;
+  const h=dy>0&&y>120;
+  if(h!==hdrHide)hdrSet(h);
+}
 let railRaf=0;
 function updateRail(){
   const show=st.tab==="w"||st.tab==="d"||st.tab==="s";
@@ -2670,18 +2723,20 @@ function updateRail(){
   const hb=hdrBottom();
   document.documentElement.style.setProperty("--hh",hb+"px");
   lets.hidden=RAIL.mode==="off";
+  rail.classList.toggle("always",RAIL.mode!=="off");document.body.classList.toggle("lets",RAIL.mode!=="off");
   if(RAIL.mode==="scroll"){
     const el=[...main.querySelectorAll("[data-l]")].find(e=>e.getBoundingClientRect().bottom>hb+16);
     if(el)RAIL.cur=el.dataset.l;
   }
   lets.querySelectorAll("span").forEach(sp=>{const L=sp.dataset.L;sp.classList.toggle("off",!RAIL.avail.has(L));sp.classList.toggle("on",L===RAIL.cur)});
+  if(sdrag&&RAIL.cur&&RAIL.mode!=="off"){bub.textContent=RAIL.cur;bub.hidden=false}
   const vh=window.innerHeight,dh=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight),tr=sbar.clientHeight||1,maxS=Math.max(0,dh-vh);
   const th=Math.max(56,Math.min(tr,tr*vh/Math.max(dh,1))),f=maxS>0?Math.min(1,window.scrollY/maxS):0;
   sthumb.style.height=th+"px";sthumb.style.transform=`translateY(${f*(tr-th)}px)`;
   sbar.style.opacity=maxS>40?"1":".4";
 }
 function railSoon(){if(!railRaf)railRaf=requestAnimationFrame(()=>{railRaf=0;updateRail()})}
-window.addEventListener("scroll",railSoon,{passive:true});
+window.addEventListener("scroll",()=>{hdrScroll();railSoon();touchLets()},{passive:true});
 window.addEventListener("resize",railSoon);
 window.addEventListener("orientationchange",railSoon);
 if("ResizeObserver" in window)new ResizeObserver(railSoon).observe(document.getElementById("main"));
@@ -2697,11 +2752,12 @@ function sMove(e){
 sbar.addEventListener("pointerdown",e=>{
   try{sbar.setPointerCapture(e.pointerId)}catch(_){}
   const r=sbar.getBoundingClientRect(),t=sthumb.getBoundingClientRect(),th=sthumb.offsetHeight;
+  hdrSet(true);hdrLock=Infinity;holdLets(true);
   sdrag={top:r.top,tr:r.height,th,off:(e.clientY>=t.top&&e.clientY<=t.bottom)?e.clientY-t.top:th/2};
-  sMove(e);e.preventDefault();
+  sMove(e);updateRail();e.preventDefault();
 });
-sbar.addEventListener("pointermove",sMove);
-["pointerup","pointercancel"].forEach(ev=>sbar.addEventListener(ev,()=>{sdrag=null}));
+sbar.addEventListener("pointermove",e=>{sMove(e);railSoon()});
+["pointerup","pointercancel"].forEach(ev=>sbar.addEventListener(ev,()=>{sdrag=null;hdrLock=Date.now()+400;holdLets(false);bubT=setTimeout(()=>{bub.hidden=true},450)}));
 
 // A–Z: nächstliegenden vorhandenen Buchstaben wählen
 function nearLetter(L){
@@ -2710,7 +2766,7 @@ function nearLetter(L){
   for(let d=1;d<26;d++){const a=ABC[i+d],b=ABC[i-d];if(a&&RAIL.avail.has(a))return a;if(b&&RAIL.avail.has(b))return b}
   return null;
 }
-function scrollToEl(el){window.scrollTo({top:Math.max(0,el.getBoundingClientRect().top+window.scrollY-hdrBottom()-12),behavior:"auto"})}
+function scrollToEl(el){hdrLock=Date.now()+600;hdrSet(true);window.scrollTo({top:Math.max(0,el.getBoundingClientRect().top+window.scrollY-hdrBottom()-12),behavior:"auto"})}
 function letterAt(e){const r=lets.getBoundingClientRect();return ABC.charAt(Math.min(25,Math.max(0,Math.floor((e.clientY-r.top)/r.height*26))))}
 let ldrag=null,bubT=0;
 function letterPreview(e){
@@ -2725,12 +2781,12 @@ function letterApply(){
     st.letter=L;render();
     const t=main.querySelector(".grid,.dict");if(t)scrollToEl(t);
   }
-  bubT=setTimeout(()=>{bub.hidden=true},450);
+  holdLets(false);bubT=setTimeout(()=>{bub.hidden=true},450);
 }
-lets.addEventListener("pointerdown",e=>{try{lets.setPointerCapture(e.pointerId)}catch(_){}letterPreview(e);e.preventDefault()});
+lets.addEventListener("pointerdown",e=>{try{lets.setPointerCapture(e.pointerId)}catch(_){}holdLets(true);letterPreview(e);e.preventDefault()});
 lets.addEventListener("pointermove",e=>{if(ldrag)letterPreview(e)});
 lets.addEventListener("pointerup",letterApply);
-lets.addEventListener("pointercancel",()=>{ldrag=null;bub.hidden=true});
+lets.addEventListener("pointercancel",()=>{ldrag=null;bub.hidden=true;holdLets(false)});
 
 // ---- Steuerung ----
 const main=document.getElementById("main");
@@ -2740,6 +2796,7 @@ function render(){
   tabW.setAttribute("aria-pressed",st.tab==="w");tabS.setAttribute("aria-pressed",st.tab==="s");tabD.setAttribute("aria-pressed",st.tab==="d");tabB.setAttribute("aria-pressed",st.tab==="b");
   st.tab==="w"?renderWords():st.tab==="d"?renderDict():st.tab==="b"?renderBook():renderStory();
   document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===st.rate));
+  document.querySelectorAll(".chips,.letters").forEach(c=>{const a=c.querySelector('[aria-pressed="true"]');if(a){const cr=c.getBoundingClientRect(),ar=a.getBoundingClientRect();c.scrollLeft+=ar.left-cr.left-(cr.width-ar.width)/2}});
   updateRail();
 }
 document.addEventListener("click",e=>{
@@ -2750,7 +2807,7 @@ document.addEventListener("click",e=>{
   if(fl&&!e.target.closest("[data-say]")){fl.classList.toggle("flipped");return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.i!==undefined){st.voice=+t.dataset.i;renderVoices();if(st.tab==="s")renderStory()}
-  else if(t.id==="tabW"){st.tab="w";render()}
+  else if(t.id==="tabW"){st.tab="w";st.shuf=false;render()}
   else if(t.id==="tabD"){st.tab="d";render()}
   else if(t.id==="tabS"){st.tab="s";render()}
   else if(t.id==="tabB"){st.tab="b";render()}
