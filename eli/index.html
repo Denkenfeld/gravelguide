@@ -178,11 +178,13 @@ body.rail.lets main{padding-right:104px}
 @media (max-width:1050px){.seg .lbl{display:none}}
 #sthumb{will-change:transform;transition:none}
 #rail{transition:none}
+.vb{flex:none;margin-left:auto;min-height:52px;padding:0 18px;border-radius:999px;background:var(--coral);color:#fff;font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.vb:active{transform:scale(.96)}
 </style>
 </head>
 <body>
 <header>
-  <div class="hrow"><div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div></div>
+  <div class="hrow"><div class="voices" id="voices" role="group" aria-label="Stimme wählen"></div><button class="vb" id="vbtn" aria-label="Verben-Spiel öffnen">🎮 Verben</button></div>
   <div class="note" id="vinfo" hidden></div>
   <div class="row">
     <button class="tab" id="tabW">📚 Karten</button><button class="tab" id="tabD">📖 Wörterbuch</button><button class="tab" id="tabS">💬 Geschichten</button><button class="tab" id="tabB">📕 Buch</button>
@@ -2690,6 +2692,12 @@ function renderBook(){
   const cells=Array.from({length:35},(_,i)=>i+1).map(n=>`<button class="bkc" data-bk="${n}" aria-label="Kapitel ${n}"><span class="emo">${CHE[n]||"📕"}</span><b>Kapitel ${n}</b><small>${CH[n]||""}</small><i>${bkStat[n]===false?"folgt":"öffnen"}</i></button>`).join("");
   main.innerHTML=`<p class="note">📕 Tippe auf ein Kapitel. Es öffnet sich im Vollbild.</p>`+(st.bkMsg?`<p class="note"><b>Kapitel ${st.bkMsg}:</b> Der Inhalt folgt noch.</p>`:"")+`<div class="bkgrid">${cells}</div>`;
 }
+let vmT=0;
+function openVerben(){
+  const go=()=>{try{localStorage.setItem("gg-tab",st.tab)}catch(e){}location.href="verben.html"};
+  const none=()=>{const i=document.getElementById("vinfo");i.hidden=false;i.textContent="Das Verben-Spiel (verben.html) ist noch nicht auf dem Server.";clearTimeout(vmT);vmT=setTimeout(renderVoices,3500)};
+  try{fetch("verben.html",{method:"HEAD",cache:"no-store"}).then(r=>{if(r.status===404||r.status===410)none();else go()}).catch(go)}catch(e){go()}
+}
 function openChapter(n){
   st.bkMsg=0;
   const go=()=>{try{localStorage.setItem("gg-tab","b")}catch(e){}location.href=n+".html"};
@@ -2840,6 +2848,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="tabS"){st.tab="s";render()}
   else if(t.id==="tabB"){st.tab="b";render()}
   else if(t.dataset.bk){openChapter(+t.dataset.bk)}
+  else if(t.id==="vbtn"){openVerben()}
   else if(t.dataset.r){st.rate=+t.dataset.r;document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",b===t))}
   else if(t.dataset.view){st.view="az";render()}
   else if(t.dataset.ch){st.view="ch";st.ch=+t.dataset.ch;st.shuf=false;render()}
@@ -2862,7 +2871,7 @@ if("speechSynthesis" in window){
   let tries=0;const iv=setInterval(()=>{loadV();if(++tries>40)clearInterval(iv)},250);
 }
 else{document.querySelector("h1").insertAdjacentText("afterend","Dieser Browser kann nicht vorlesen.")}
-try{if(localStorage.getItem("gg-tab")==="b"){st.tab="b";localStorage.removeItem("gg-tab")}}catch(e){}
+try{const v=localStorage.getItem("gg-tab");if(v&&v.length===1&&"wdsb".indexOf(v)>=0)st.tab=v;localStorage.removeItem("gg-tab")}catch(e){}
 renderVoices();render();
 </script>
 </body>
