@@ -22,6 +22,8 @@ button:disabled{cursor:default;color:inherit}
 button.g{text-align:left}
 .r{display:flex;align-items:center;gap:16px}.c{display:flex;flex-direction:column}.w{flex-wrap:wrap}
 .btn{color:#fff;background:#4a4ae0;border-radius:22px;min-height:60px;padding:0 28px;font-size:22px}
+.eng{color:#3a3ac0;font-weight:900}
+.on .eng,.on.eng,.good .eng,.bad .eng{color:#ffe08a}
 .back{text-decoration:none;font-size:18px;white-space:nowrap}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:0 22px;min-height:48px;border-radius:999px;background:rgba(255,255,255,.7);color:#1d2a4a}
 .ic{width:60px;height:60px;border-radius:20px;background:rgba(255,255,255,.7);display:grid;place-items:center;font-size:32px;flex:none}
@@ -57,7 +59,7 @@ table{width:100%;border-collapse:collapse;font-size:28px}td,th{padding:12px 16px
 .sg{flex:1;height:12px;border-radius:6px;background:#fff}.f{background:#4a4ae0}
 .q{padding:36px 48px;gap:16px;align-items:center;text-align:center}.qt{font-size:clamp(34px,5vw,56px);font-weight:900}
 .bl{display:inline-block;min-width:150px;border-bottom:6px solid #12805a;color:#12805a}
-.opts{display:flex;gap:22px;flex-wrap:wrap}.a{flex:1;min-width:200px;min-height:120px;font-size:44px;text-align:center!important}
+.opts{display:flex;gap:22px;flex-wrap:wrap}.a{color:#3a3ac0;flex:1;min-width:200px;min-height:120px;font-size:44px;text-align:center!important}
 .good{background:#12805a!important;color:#fff!important;border-color:#12805a!important}.bad{background:#c2410c!important;color:#fff!important;border-color:#c2410c!important}.dim{opacity:.35}
 .fb{padding:18px 28px;gap:18px;border:3px solid #a3aecb}.fb.okb{border-color:#12805a}
 .tm{width:100%;animation:tm 8s linear forwards}@keyframes tm{to{width:0}}
@@ -166,7 +168,7 @@ const pmr=()=>{pm.innerHTML=`<div class="g c pn" role="dialog" aria-label="Profi
 
 /* ===== Screens ===== */
 const lvCard=(L,l,c)=>{const a=VS(l),d=done(l),s=lstars(l);return `<button class="g lv" style="${l==c?'border:3px solid #4a4ae0;':''}${open(l)?'':'opacity:.55'}" data-a="lvl,${l}"><div class="r" style="justify-content:space-between"><div class="num" style="background:${L.c}">${l+1}</div><div style="font-size:30px" role="img" aria-label="${s} Sterne">${ss(s)}</div></div><div style="font-size:28px;font-weight:900">${L.t}</div><div class="m">${a.slice(0,5).map(v=>v.en).join(' · ')}</div><div class="m" style="margin-top:auto">${d} von ${a.length} Verben</div><div class="bar"><i style="width:${d/a.length*100}%;background:${L.c}"></i></div></button>`};
-const dl=q=>[...V].sort((a,b)=>a.en.localeCompare(b.en)).filter(v=>(v.en+' '+v.de).toLowerCase().includes(q.toLowerCase())).map(v=>`<button class="row" data-a="open,${v.id}"><span style="font-size:36px">${v.e}</span><b style="font-size:26px;min-width:150px">to ${v.en}</b><span style="flex:1">${v.de}</span><span class="m">Level ${v.l+1}</span><span>${ss(star(v))}</span></button>`).join('')||'<div class="m" style="padding:20px">Nichts gefunden</div>';
+const dl=q=>[...V].sort((a,b)=>a.en.localeCompare(b.en)).filter(v=>(v.en+' '+v.de).toLowerCase().includes(q.toLowerCase())).map(v=>`<button class="row" data-a="open,${v.id}"><span style="font-size:36px">${v.e}</span><b class="eng" style="font-size:26px;min-width:150px">to ${v.en}</b><span style="flex:1">${v.de}</span><span class="m">Level ${v.l+1}</span><span>${ss(star(v))}</span></button>`).join('')||'<div class="m" style="padding:20px">Nichts gefunden</div>';
 
 const VIEWS={
 home:()=>{const c=cur(),n=Math.min(5,VS(c).filter(v=>!star(v)).length||5),hello=`Hallo ${nm()}! Heute lernen wir ${n} neue Verben.`;
@@ -178,28 +180,28 @@ learn:()=>{const a=VS(st.l),v=a[st.i],t=st.t|0;
 return hd(`<div class="c" style="flex:1;gap:8px">${ti(`Level ${st.l+1} · ${LEVELS[st.l].t}`)}${bar((st.i+1)/a.length)}</div><div class="m">Verb ${st.i+1} von ${a.length}</div>${stars(star(v))}`)
 +`<div class="r w" style="flex:1 0 auto;align-items:stretch;gap:22px"><div class="g c ill"><button class="pic" data-a="pic" data-s="to ${v.en}" aria-label="to ${v.en}">${v.e}</button><div class="chip m">Tippe aufs Bild – es wird vorgelesen</div></div>
 <div class="g c main"><div class="r"><div class="c" style="flex:1"><div class="big">${v.de}</div><div class="en">to ${v.en}</div></div><button class="ic" data-s="to ${v.en}" aria-label="Vorlesen">${SPK}</button></div>
-<div class="m">Zeiten</div><div class="r w">${['Jetzt','Gestern','Morgen'].map((n,k)=>`<button class="chip${k==t?' on':''}" data-a="tense,${k}">${n} · ${tn(v,k,v.p)}</button>`).join('')}</div>
-<div class="g r sent"><div class="c" style="flex:1"><div style="font-size:34px">${sent(v,t)}</div><div class="m">${t?['','Gestern – Vergangenheit','Morgen – Zukunft'][t]:v.sd}</div></div><button class="ic" data-s="${sent(v,t,1)}" aria-label="Satz vorlesen">${SPK}</button></div>
-<div class="r w"><span class="m">Wörter dazu</span><button class="chip" data-s="${v.n}">${v.n} · ${v.nd}</button></div></div></div>
-<div class="r w" style="justify-content:space-between"><div class="r" data-s="Say ${v.en} with me!">${FOX(84)}<div class="g bub">Fina: Gut gemacht! Sag ${v.en} laut mit mir.</div></div><div class="r">${st.i?'<button class="chip" data-a="step,-1">‹ Zurück</button>':''}<button class="chip" data-a="conj">Konjugation</button><button class="btn" data-a="step,1">Weiter</button></div></div>`},
+<div class="m">Zeiten</div><div class="r w">${['Jetzt','Gestern','Morgen'].map((n,k)=>`<button class="chip${k==t?' on':''}" data-a="tense,${k}">${n} · <span class="eng">${tn(v,k,v.p)}</span></button>`).join('')}</div>
+<div class="g r sent"><div class="c" style="flex:1"><div class="eng" style="font-size:34px">${sent(v,t)}</div><div class="m">${t?['','Gestern – Vergangenheit','Morgen – Zukunft'][t]:v.sd}</div></div><button class="ic" data-s="${sent(v,t,1)}" aria-label="Satz vorlesen">${SPK}</button></div>
+<div class="r w"><span class="m">Wörter dazu</span><button class="chip" data-s="${v.n}"><span class="eng">${v.n}</span> · ${v.nd}</button></div></div></div>
+<div class="r w" style="justify-content:space-between"><div class="r" data-s="Say ${v.en} with me!">${FOX(84)}<div class="g bub">Fina: Gut gemacht! Sag <span class="eng">${v.en}</span> laut mit mir.</div></div><div class="r">${st.i?'<button class="chip" data-a="step,-1">‹ Zurück</button>':''}<button class="chip" data-a="conj">Konjugation</button><button class="btn" data-a="step,1">Weiter</button></div></div>`},
 
 conj:()=>{const v=VS(st.l)[st.i],t=st.t|0,all=P.map((_,p)=>P[p].split('/')[0]+' '+pres(v,p)).join('. ');
-return hd(`<div style="font-size:30px;font-weight:900;flex:1">Konjugation · ${v.de} = to ${v.en}</div>${stars(star(v))}`,'learn')
+return hd(`<div style="font-size:30px;font-weight:900;flex:1">Konjugation · ${v.de} = <span class="eng">to ${v.en}</span></div>${stars(star(v))}`,'learn')
 +`<div class="r w" style="flex:1 0 auto;align-items:stretch;gap:22px"><div class="g c" style="flex:1;min-width:520px;padding:26px 32px;gap:12px"><div class="r w">${['Jetzt','Gestern','Morgen'].map((n,k)=>`<button class="chip${k==t?' on':''}" data-a="tense,${k}">${n}</button>`).join('')}<span class="m" style="margin-left:auto">Tippe auf ein Wort zum Anhören</span></div>
-<table><tr class="m"><th>Person</th><th>Jetzt</th><th>Gestern</th><th>Morgen</th></tr>${P.map((_,p)=>`<tr><td>${PD[p]} · ${P[p]}</td>${[0,1,2].map(k=>`<td class="${k==t?'h':''}" data-s="${P[p].split('/')[0]} ${tn(v,k,p)}">${tn(v,k,p)}</td>`).join('')}</tr>`).join('')}</table></div>
-<div class="c" style="width:300px;gap:22px"><div class="g c tip">${ROBOT}<div style="font-size:26px;font-weight:900">Merke dir!</div><div class="m">${v.en=='be'?'Bei he, she und it heißt es is. Bei I heißt es am.':`Bei he, she und it heißt es ${pres(v,2)}. Gestern heißt es ${v.pa}.`}</div></div><button class="btn r" style="justify-content:center;gap:10px" data-s="${all}">${SPK} Alles anhören</button></div></div>`},
+<table><tr class="m"><th>Person</th><th>Jetzt</th><th>Gestern</th><th>Morgen</th></tr>${P.map((_,p)=>`<tr><td>${PD[p]} · <span class="eng">${P[p]}</span></td>${[0,1,2].map(k=>`<td class="${k==t?'h':''}" data-s="${P[p].split('/')[0]} ${tn(v,k,p)}">${tn(v,k,p)}</td>`).join('')}</tr>`).join('')}</table></div>
+<div class="c" style="width:300px;gap:22px"><div class="g c tip">${ROBOT}<div style="font-size:26px;font-weight:900">Merke dir!</div><div class="m">${v.en=='be'?'Bei <span class="eng">he, she</span> und <span class="eng">it</span> heißt es <span class="eng">is</span>. Bei <span class="eng">I</span> heißt es <span class="eng">am</span>.':`Bei <span class="eng">he, she</span> und <span class="eng">it</span> heißt es <span class="eng">${pres(v,2)}</span>. Gestern heißt es <span class="eng">${v.pa}</span>.`}</div></div><button class="btn r" style="justify-content:center;gap:10px" data-s="${all}">${SPK} Alles anhören</button></div></div>`},
 
 cards:()=>{const v=V[st.d[st.k]];
 return hd(`<div class="c" style="flex:1;gap:8px">${ti(`Lernkarten · Level ${st.l+1}`)}${bar(st.k/st.d.length)}</div><div class="m">Karte ${st.k+1} von ${st.d.length}</div>`)
-+`<div class="cw"><div class="g ghost"></div><div class="g c cardf" data-a="flip"><div class="m">Englisch</div><div class="bigw">to ${v.en}</div><div style="font-size:56px">${v.e}</div><button class="ic" data-s="to ${v.en}" aria-label="Vorlesen">${SPK}</button>${st.r?`<div class="dv"></div><div style="font-size:40px">${v.de}</div><div class="r" style="font-size:30px">${[v.en,v.pa,v.pp].map(x=>`<span class="chip">${x}</span>`).join('')}</div>`:'<div class="m">Tippe die Karte zum Umdrehen</div>'}</div></div>
++`<div class="cw"><div class="g ghost"></div><div class="g c cardf" data-a="flip"><div class="m">Englisch</div><div class="bigw eng">to ${v.en}</div><div style="font-size:56px">${v.e}</div><button class="ic" data-s="to ${v.en}" aria-label="Vorlesen">${SPK}</button>${st.r?`<div class="dv"></div><div style="font-size:40px">${v.de}</div><div class="r" style="font-size:30px">${[v.en,v.pa,v.pp].map(x=>`<span class="chip eng">${x}</span>`).join('')}</div>`:'<div class="m">Tippe die Karte zum Umdrehen</div>'}</div></div>
 <div class="r w" style="justify-content:center;gap:22px">${[['Noch nicht',1],['Fast',2],['Kann ich!',3]].map(([n,k])=>`<button class="g c rt${k==3?' best':''}" data-a="rate,${k}"><span style="font-size:36px">${ss(k)}</span>${n}</button>`).join('')}</div>
 <div class="c owl"><div class="g">Wie gut kannst du das?</div>${OWL}</div>`},
 
 quiz:()=>{const v=V[st.q[st.k]],g=st.m=='gap',ans=st.s>=0,ok=st.s==st.c;
 return hd(`${ti(`${g?'Test':'Schnell-Tippen'} · Level ${st.l+1}`)}<div class="r" style="flex:1;gap:6px">${st.q.map((_,i)=>`<i class="sg${i<st.k+(ans?1:0)?' f':''}"></i>`).join('')}</div><button class="chip" data-a="tip">Tipp von Fina</button>`,'games')
-+`<div class="g c q"><div class="m">${g?'Ergänze den Satz':'Wie heißt das auf Englisch?'}</div><div class="qt">${g?sent(v,0,0,`<span class="bl">${ans?st.o[st.c]:'&nbsp;'}</span>`):v.de}</div>${g?`<div class="m" style="font-size:22px">${v.sd}</div>`:`<div style="font-size:70px">${v.e}</div>`}${!g&&!ans?'<div class="bar" style="width:60%"><i class="tm"></i></div>':''}</div>
++`<div class="g c q"><div class="m">${g?'Ergänze den Satz':'Wie heißt das auf Englisch?'}</div><div class="qt${g?' eng':''}">${g?sent(v,0,0,`<span class="bl">${ans?st.o[st.c]:'&nbsp;'}</span>`):v.de}</div>${g?`<div class="m" style="font-size:22px">${v.sd}</div>`:`<div style="font-size:70px">${v.e}</div>`}${!g&&!ans?'<div class="bar" style="width:60%"><i class="tm"></i></div>':''}</div>
 <div class="opts">${st.o.map((o,i)=>`<button class="g a${ans?(i==st.c?' good':i==st.s?' bad':''):''}${st.x.includes(i)?' dim':''}" data-a="pick,${i}"${ans||st.x.includes(i)?' disabled':''}>${o}</button>`).join('')}</div>`
-+(ans?`<div class="g r fb${ok?' okb':''}"><span class="y" style="font-size:40px">${ok?'★':'☆'}</span><div class="c"><div style="font-size:26px;font-weight:900">${ok?'Richtig! +1 Stern':(st.s==9?'Zeit vorbei! ':'Fast! ')+'Richtig: '+st.o[st.c]}</div><div class="m">${g?sent(v,0,1)+' – '+v.sd:'to '+v.en+' = '+v.de}</div></div><button class="btn" style="margin-left:auto" data-a="nextq">Weiter</button></div>`:'')},
++(ans?`<div class="g r fb${ok?' okb':''}"><span class="y" style="font-size:40px">${ok?'★':'☆'}</span><div class="c"><div style="font-size:26px;font-weight:900">${ok?'Richtig! +1 Stern':(st.s==9?'Zeit vorbei! ':'Fast! ')+'Richtig: <span class="eng">'+st.o[st.c]+'</span>'}</div><div class="m">${g?'<span class="eng">'+sent(v,0,1)+'</span> – '+v.sd:'<span class="eng">to '+v.en+'</span> = '+v.de}</div></div><button class="btn" style="margin-left:auto" data-a="nextq">Weiter</button></div>`:'')},
 
 mem:()=>hd(`<div style="font-size:28px;font-weight:900;flex:1">Bild-Memory · Level ${st.l+1}</div><div class="m">${st.mv} Züge</div>`,'games')
 +`<div class="mgrid">${st.t.map((c,i)=>{const m=st.m.includes(c.id),up=m||st.f.includes(i),v=V[c.id];return `<button class="g tile${m?' good':''}" data-a="flip2,${i}" aria-label="Karte ${i+1}">${up?(c.k?`<span style="font-size:30px">to ${v.en}</span>`:v.e):'?'}</button>`}).join('')}</div>`,
