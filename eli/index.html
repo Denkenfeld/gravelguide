@@ -176,6 +176,8 @@ body.rail.lets main{padding-right:104px}
 .seg button{padding:8px 11px}
 .tools>.tab{padding:8px 12px}
 @media (max-width:1050px){.seg .lbl{display:none}}
+#sthumb{will-change:transform;transition:none}
+#rail{transition:none}
 </style>
 </head>
 <body>
@@ -343,7 +345,7 @@ function fcard(i,back){
     <div class="face back"><div class="stars" data-id="${i}">${starsHTML(i)}</div>${inner(w,de)}</div>
   </div></div>`;
 }
-function railSet(mode,avail,cur){RAIL.mode=mode;RAIL.avail=avail||new Set();RAIL.cur=cur||null}
+function railSet(mode,avail,cur){RAIL.mode=mode;RAIL.avail=avail||new Set();RAIL.cur=cur||null;RAIL.tops=null;RAIL.ver++}
 function renderWords(){
   const chs=chaptersWithData(),all=W.map((_,i)=>i),tr=st.mode==="train",back=!tr;
   const chips=`<div class="chips"><button class="chip" data-view="az" aria-pressed="${st.view==="az"}">A–Z</button>`+
@@ -2698,14 +2700,15 @@ function openChapter(n){
 }
 
 // ---- Schnellleiste rechts: Scrollbalken + A–Z-Sprung ----
-const RAIL={mode:"off",avail:new Set(),cur:null};
+const RAIL={mode:"off",avail:new Set(),cur:null,ver:0,tops:null};
 const hdr=document.querySelector("header"),rail=document.getElementById("rail"),sbar=document.getElementById("sbar"),sthumb=document.getElementById("sthumb"),lets=document.getElementById("lets"),bub=document.getElementById("bub");
 const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 lets.innerHTML=ABC.split("").map(L=>`<span data-L="${L}">${L}</span>`).join("");
+const vpH=()=>document.documentElement.clientHeight||window.innerHeight;
+const docH=()=>Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);
 function hdrBottom(){const safe=parseFloat(getComputedStyle(document.documentElement).paddingTop)||0;return hdr.classList.contains("hide")?safe:safe+hdr.offsetHeight}
-let hideT=0,hold=false,lastY=window.scrollY,hdrHide=false,hdrLock=0;
-function touchLets(){if(RAIL.mode==="off")return;rail.classList.add("show");clearTimeout(hideT);if(!hold)hideT=setTimeout(()=>rail.classList.remove("show"),1400)}
-function holdLets(on){hold=on;if(on){if(RAIL.mode!=="off")rail.classList.add("show");clearTimeout(hideT)}else touchLets()}
+// Kopfzeile: beim Runterscrollen aus, beim Hochscrollen ein
+let lastY=window.scrollY,hdrHide=false,hdrLock=0;
 function hdrSet(h){hdrHide=h;hdr.classList.toggle("hide",h);updateRail()}
 function hdrScroll(){
   const y=window.scrollY;
@@ -2715,49 +2718,74 @@ function hdrScroll(){
   const h=dy>0&&y>120;
   if(h!==hdrHide)hdrSet(h);
 }
-let railRaf=0;
+// Position des ersten Eintrags je Buchstabe (zwischengespeichert, spart Layout-Arbeit beim Scrollen)
+function topsOf(){
+  if(RAIL.tops)return RAIL.tops;
+  const seen=new Set(),arr=[];
+  main.querySelectorAll("[data-l]").forEach(el=>{const L=el.dataset.l;if(!seen.has(L)){seen.add(L);arr.push({L,top:el.getBoundingClientRect().top+window.scrollY})}});
+  return RAIL.tops=arr;
+}
+let lastHh=-1,lastCur=undefined,lastVer=-1,sdrag=null;
 function updateRail(){
   const show=st.tab==="w"||st.tab==="d"||st.tab==="s";
   rail.hidden=!show;document.body.classList.toggle("rail",show);
   if(!show)return;
   const hb=hdrBottom();
-  document.documentElement.style.setProperty("--hh",hb+"px");
-  lets.hidden=RAIL.mode==="off";
-  rail.classList.toggle("always",RAIL.mode!=="off");document.body.classList.toggle("lets",RAIL.mode!=="off");
+  if(hb!==lastHh){lastHh=hb;document.documentElement.style.setProperty("--hh",hb+"px")}
+  const on=RAIL.mode!=="off";
+  lets.hidden=!on;rail.classList.toggle("always",on);document.body.classList.toggle("lets",on);
   if(RAIL.mode==="scroll"){
-    const el=[...main.querySelectorAll("[data-l]")].find(e=>e.getBoundingClientRect().bottom>hb+16);
-    if(el)RAIL.cur=el.dataset.l;
+    const t=topsOf(),line=window.scrollY+hb+24;let cur=t.length?t[0].L:null;
+    for(const x of t){if(x.top<=line)cur=x.L;else break}
+    RAIL.cur=cur;
   }
-  lets.querySelectorAll("span").forEach(sp=>{const L=sp.dataset.L;sp.classList.toggle("off",!RAIL.avail.has(L));sp.classList.toggle("on",L===RAIL.cur)});
-  if(sdrag&&RAIL.cur&&RAIL.mode!=="off"){bub.textContent=RAIL.cur;bub.hidden=false}
-  const vh=window.innerHeight,dh=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight),tr=sbar.clientHeight||1,maxS=Math.max(0,dh-vh);
-  const th=Math.max(56,Math.min(tr,tr*vh/Math.max(dh,1))),f=maxS>0?Math.min(1,window.scrollY/maxS):0;
-  sthumb.style.height=th+"px";sthumb.style.transform=`translateY(${f*(tr-th)}px)`;
-  sbar.style.opacity=maxS>40?"1":".4";
+  if(RAIL.cur!==lastCur||RAIL.ver!==lastVer){
+    lastCur=RAIL.cur;lastVer=RAIL.ver;
+    lets.querySelectorAll("span").forEach(sp=>{const L=sp.dataset.L;sp.classList.toggle("off",!RAIL.avail.has(L));sp.classList.toggle("on",L===RAIL.cur)});
+  }
+  if(sdrag&&RAIL.cur&&on){bub.textContent=RAIL.cur;bub.hidden=false}
+  if(!sdrag){   // beim Ziehen folgt der Balken direkt dem Finger
+    const vh=vpH(),dh=docH(),tr=sbar.clientHeight||1,maxS=Math.max(0,dh-vh);
+    const th=Math.max(56,Math.min(tr,tr*vh/Math.max(dh,1))),f=maxS>0?Math.min(1,Math.max(0,window.scrollY/maxS)):0;
+    sthumb.style.height=th+"px";sthumb.style.transform=`translateY(${f*(tr-th)}px)`;
+    sbar.style.opacity=maxS>40?"1":".4";
+  }
 }
+let railRaf=0;
 function railSoon(){if(!railRaf)railRaf=requestAnimationFrame(()=>{railRaf=0;updateRail()})}
-window.addEventListener("scroll",()=>{hdrScroll();railSoon();touchLets()},{passive:true});
-window.addEventListener("resize",railSoon);
-window.addEventListener("orientationchange",railSoon);
-if("ResizeObserver" in window)new ResizeObserver(railSoon).observe(document.getElementById("main"));
+window.addEventListener("scroll",()=>{hdrScroll();railSoon()},{passive:true});
+const railReset=()=>{RAIL.tops=null;railSoon()};
+window.addEventListener("resize",railReset);
+window.addEventListener("orientationchange",railReset);
+if("ResizeObserver" in window)new ResizeObserver(railReset).observe(document.getElementById("main"));
 
-// Scrollbalken ziehen / auf die Leiste tippen
-let sdrag=null;
+// Scrollbalken ziehen: Maße beim Anfassen festhalten, Balken folgt dem Finger, Seite folgt per rAF
+function sApply(){
+  if(!sdrag)return;
+  sdrag.raf=0;
+  window.scrollTo(0,sdrag.f*sdrag.maxS);
+  updateRail();
+}
 function sMove(e){
   if(!sdrag)return;
-  const vh=window.innerHeight,dh=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight),maxS=Math.max(0,dh-vh);
   const y=e.clientY-sdrag.top-sdrag.off,f=Math.min(1,Math.max(0,y/Math.max(1,sdrag.tr-sdrag.th)));
-  window.scrollTo(0,f*maxS);
+  sdrag.f=f;
+  sthumb.style.transform=`translateY(${f*(sdrag.tr-sdrag.th)}px)`;
+  if(!sdrag.raf)sdrag.raf=requestAnimationFrame(sApply);
 }
 sbar.addEventListener("pointerdown",e=>{
   try{sbar.setPointerCapture(e.pointerId)}catch(_){}
   const r=sbar.getBoundingClientRect(),t=sthumb.getBoundingClientRect(),th=sthumb.offsetHeight;
-  hdrSet(true);hdrLock=Infinity;holdLets(true);
-  sdrag={top:r.top,tr:r.height,th,off:(e.clientY>=t.top&&e.clientY<=t.bottom)?e.clientY-t.top:th/2};
-  sMove(e);updateRail();e.preventDefault();
+  hdrLock=Infinity;   // Kopfzeile während des Ziehens nicht verändern, sonst ändert sich die Leistenhöhe
+  sdrag={top:r.top,tr:r.height,th,maxS:Math.max(0,docH()-vpH()),f:0,raf:0,off:(e.clientY>=t.top&&e.clientY<=t.bottom)?e.clientY-t.top:th/2};
+  sMove(e);sApply();e.preventDefault();
 });
-sbar.addEventListener("pointermove",e=>{sMove(e);railSoon()});
-["pointerup","pointercancel"].forEach(ev=>sbar.addEventListener(ev,()=>{sdrag=null;hdrLock=Date.now()+400;holdLets(false);bubT=setTimeout(()=>{bub.hidden=true},450)}));
+sbar.addEventListener("pointermove",sMove);
+["pointerup","pointercancel"].forEach(ev=>sbar.addEventListener(ev,()=>{
+  if(sdrag&&sdrag.raf)cancelAnimationFrame(sdrag.raf);
+  sdrag=null;hdrLock=Date.now()+400;lastY=window.scrollY;
+  bubT=setTimeout(()=>{bub.hidden=true},450);railSoon();
+}));
 
 // A–Z: nächstliegenden vorhandenen Buchstaben wählen
 function nearLetter(L){
@@ -2781,18 +2809,18 @@ function letterApply(){
     st.letter=L;render();
     const t=main.querySelector(".grid,.dict");if(t)scrollToEl(t);
   }
-  holdLets(false);bubT=setTimeout(()=>{bub.hidden=true},450);
+  bubT=setTimeout(()=>{bub.hidden=true},450);
 }
-lets.addEventListener("pointerdown",e=>{try{lets.setPointerCapture(e.pointerId)}catch(_){}holdLets(true);letterPreview(e);e.preventDefault()});
+lets.addEventListener("pointerdown",e=>{try{lets.setPointerCapture(e.pointerId)}catch(_){}letterPreview(e);e.preventDefault()});
 lets.addEventListener("pointermove",e=>{if(ldrag)letterPreview(e)});
 lets.addEventListener("pointerup",letterApply);
-lets.addEventListener("pointercancel",()=>{ldrag=null;bub.hidden=true;holdLets(false)});
+lets.addEventListener("pointercancel",()=>{ldrag=null;bub.hidden=true});
 
 // ---- Steuerung ----
 const main=document.getElementById("main");
 function render(){
   stop();
-  RAIL.mode="off";RAIL.avail=new Set();RAIL.cur=null;
+  RAIL.mode="off";RAIL.avail=new Set();RAIL.cur=null;RAIL.tops=null;RAIL.ver++;
   tabW.setAttribute("aria-pressed",st.tab==="w");tabS.setAttribute("aria-pressed",st.tab==="s");tabD.setAttribute("aria-pressed",st.tab==="d");tabB.setAttribute("aria-pressed",st.tab==="b");
   st.tab==="w"?renderWords():st.tab==="d"?renderDict():st.tab==="b"?renderBook():renderStory();
   document.querySelectorAll(".rate button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.r===st.rate));
